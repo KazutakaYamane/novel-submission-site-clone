@@ -1,0 +1,179 @@
+# ------------------------------------------------------------
+# ローカル開発用 Docker Compose
+# - 本番(ECS)と同じ Dockerfile / 同じ Nginx 設定を使う
+# - 本番との差分: dev ターゲットビルド、Vite/Mailpit/Minio が同居、bind mount
+# - macOS / Linux 両対応(host.docker.internal は ARM Mac でも使える)
+# ------------------------------------------------------------
+name: novel-submission-site-clone
+
+services:
+  # ---------- Nginx(本番と同じイメージビルド) ----------
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      app:
+        condition: service_started
+    networks: [app]
+    restart: unless-stopped
+
+  # ---------- Laravel + php-fpm ----------
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      target: dev   # 本番ビルドは CI で target: prod を指定
+      args:
+        # ホスト側 uid/gid と合わせる(macOS は気にしなくて OK、Linux で重要)
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    volumes:
+      # ソースをマウント。delegated は macOS で I/O 高速化
+      - ./app:/var/www/html:delegated
+      # vendor は名前付きボリュームでホストと分離(macOS の I/O 詰まり対策)
+      - vendor:/var/www/html/vendor
+      # storage も同様(本番と権限が違うのでホスト側と分けたい場合)
+      - storage:/var/www/html/storage
+    environment:
+      # APP
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:${APP_PORT:-8080}
+      # DB(compose のサービス名で解決)
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: novel_submission_site
+      DB_USERNAME: novel_submission_site
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      QUEUE_CONNECTION: redis
+      # Mail (Mailpit)
+      MAIL_MAILER: smtp
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM_ADDRESS: noreply@novel-submission-site-clone.local
+      # S3 互換(Minio)
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: ap-northeast-1
+      AWS_BUCKET: novel-submission-site-clone
+      AWS_ENDPOINT: http://minio:9000
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      # Xdebug: ホスト側 IDE が listen している前提
+      PHP_IDE_CONFIG: "serverName=novel-submission-site-clone"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks: [app]
+    restart: unless-stopped
+
+  # ---------- MySQL ----------
+  db:
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=caching_sha2_password
+    environment:
+      MYSQL_DATABASE: novel_submission_site
+      MYSQL_USER: novel_submission_site
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      # JST に揃える
+      TZ: Asia/Tokyo
+    volumes:
+      - mysqldata:/var/lib/mysql
+      # 初期化 SQL を置く場合はこちらに(追加 DB / ユーザ等)
+      - ./docker/db/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "novel-submission-site", "-psecret"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [app]
+    restart: unless-stopped
+
+  # ---------- Redis ----------
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks: [app]
+    restart: unless-stopped
+
+  # ---------- メール確認 UI(Mailpit) ----------
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"  # Web UI
+      - "${MAILPIT_SMTP_PORT:-1025}:1025" # SMTP
+    networks: [app]
+    restart: unless-stopped
+
+  # ---------- S3 互換ストレージ(Minio) ----------
+  # 本番の S3 と同じ API で開発できる。バケットは初回手動作成
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - miniodata:/data
+    ports:
+      - "${MINIO_PORT:-9000}:9000"      # API
+      - "${MINIO_CONSOLE_PORT:-9001}:9001" # 管理 UI
+    networks: [app]
+    restart: unless-stopped
+
+  # ---------- web (Next.js フロントエンド HMR) ----------
+  # frontend/ ディレクトリで Laravel(app/)とは独立して動かす Next.js。
+  # ページ単位で SSG/SSR/ISR を使い分ける(方式A)。本番は ARM64 イメージとして
+  # 独立 ECS サービスにデプロイし、静的アセットは S3 + CloudFront で配信する。
+  # サービス名 web は本番の 2 サービス構成(web=Next.js / api=Laravel)と揃える。
+  web:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+    environment:
+      # ブラウザ(クライアント)からの /api は next.config.ts の rewrites で nginx へ。
+      # サーバーサイド(SSR/ISR)の fetch はこの内部 URL を使う。
+      # 本番は Service Connect の http://api:80 に差し替える。
+      INTERNAL_API_URL: "http://nginx:80"
+    volumes:
+      - ./frontend:/app:delegated
+      - node_modules:/app/node_modules
+      - next_cache:/app/.next      # .next を named volume にして I/O を分離
+    ports:
+      - "${NEXT_PORT:-3000}:3000"
+    networks: [app]
+    profiles: [frontend]  # `docker compose --profile frontend up` で起動
+    restart: unless-stopped
+
+networks:
+  app:
+    driver: bridge
+
+volumes:
+  mysqldata:
+  redisdata:
+  miniodata:
+  vendor:
+  storage:
+  node_modules:
+  next_cache:

@@ -1,0 +1,58 @@
+# ------------------------------------------------------------
+# .dockerignore: Docker build に渡さないファイル
+# ビルドコンテキストを小さく保つことで、CI でのビルド時間を短縮し
+# 秘密情報の混入も防ぐ
+# ------------------------------------------------------------
+
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+.devcontainer
+.claude
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Laravel ローカル
+app/.env
+app/.env.*
+!app/.env.example
+app/storage/logs/*
+app/storage/framework/cache/*
+app/storage/framework/sessions/*
+app/storage/framework/views/*
+app/storage/framework/testing/*
+app/bootstrap/cache/*
+!app/bootstrap/cache/.gitignore
+
+# 依存(イメージ側でビルドする)
+app/vendor
+app/node_modules
+app/public/build
+app/public/hot
+
+# テスト/カバレッジ
+app/.phpunit.cache
+app/coverage
+app/.phpunit.result.cache
+
+# Docker 関連(再帰参照を避ける)
+compose.yaml
+compose.*.yaml
+
+# ドキュメント・IaC(ビルドに不要)
+README.md
+README-docker.md
+docs
+terraform
+.terraform
+

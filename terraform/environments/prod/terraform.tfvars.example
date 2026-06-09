@@ -1,0 +1,16 @@
+# Copy to terraform.tfvars and edit for your environment.
+
+# 必須: 公開ドメイン。Route 53 public hosted zone を同一アカウントで保有していること。
+domain_name = "novel-submission-site-clone.example.com"
+
+# 以下はデフォルトで OK。peering 等で CIDR が衝突する場合のみ上書き。
+# project              = "novel-submission-site-clone"
+# environment          = "prod"
+# region               = "ap-northeast-1"
+# vpc_cidr             = "10.0.0.0/16"
+# azs                  = ["ap-northeast-1a", "ap-northeast-1c"]
+# public_subnet_cidrs  = ["10.0.0.0/24", "10.0.1.0/24"]
+# private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+
+# Secrets Manager の削除猶予。検証中の destroy/recreate 高速化が必要なら 0 に。
+# secrets_recovery_window_in_days = 7

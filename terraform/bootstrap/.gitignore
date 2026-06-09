@@ -1,0 +1,13 @@
+# State stays local for the bootstrap root module — see README.md (鶏卵問題への対処)。
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform working directory and plan output
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+
+# User-specific overrides
+terraform.tfvars
+*.auto.tfvars

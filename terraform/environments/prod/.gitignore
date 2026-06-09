@@ -1,0 +1,13 @@
+# State は S3 backend に置く想定。万一ローカルに出力されたら除外する。
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform working directory and plan output
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+
+# User-specific overrides
+terraform.tfvars
+*.auto.tfvars
