@@ -12,6 +12,14 @@ services:
     build:
       context: .
       dockerfile: docker/nginx/Dockerfile
+      target: dev   # 本番ビルドは target: prod(app/public を焼き込み)
+    environment:
+      # default.conf.template の upstream 切替(ECS Fargate では 127.0.0.1 を注入)
+      PHP_FPM_HOST: app
+    volumes:
+      # try_files がファイル実在を確認するため public/ だけ共有する(read-only)。
+      # PHP 実行自体は php-fpm 側のファイルシステムで行われる。
+      - ./app/public:/var/www/html/public:ro
     ports:
       - "${APP_PORT:-8080}:80"
     depends_on:
@@ -98,7 +106,8 @@ services:
     ports:
       - "${DB_PORT:-3306}:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "novel-submission-site", "-psecret"]
+      # $$ は compose の変数展開を避け、コンテナ内の env(MYSQL_USER 等)を参照する
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER -p$$MYSQL_PASSWORD"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -150,11 +159,15 @@ services:
     build:
       context: .
       dockerfile: docker/node/Dockerfile
+      target: dev   # 本番は --platform linux/arm64 --target prod でビルド
     environment:
       # ブラウザ(クライアント)からの /api は next.config.ts の rewrites で nginx へ。
       # サーバーサイド(SSR/ISR)の fetch はこの内部 URL を使う。
       # 本番は Service Connect の http://api:80 に差し替える。
       INTERNAL_API_URL: "http://nginx:80"
+      # ISR cacheHandler(cache-handler.mjs)の backend。本番は ElastiCache の URL を
+      # Secrets Manager から注入。未設定ならハンドラは in-memory に fallback する。
+      REDIS_URL: "redis://redis:6379"
     volumes:
       - ./frontend:/app:delegated
       - node_modules:/app/node_modules

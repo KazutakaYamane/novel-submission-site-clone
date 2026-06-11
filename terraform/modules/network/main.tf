@@ -93,11 +93,23 @@ resource "aws_route_table_association" "private" {
 # ---------------------------------------------------------------------------
 # Security Groups
 # ---------------------------------------------------------------------------
-# トポロジ:
-#   internet --(443)--> ALB --(80)--> ECS(nginx) --(localhost:9000)--> ECS(app) --(3306)--> RDS
-# ALB が SG レベルで internet を絞り、ECS は ALB SG だけを許可、RDS は ECS SG だけを許可する。
-# Egress は ALB / ECS のみ all-out(ECR / CloudWatch / Secrets Manager 取得用)。
-# RDS は egress 不要(応答パケットは SG ステートフルで通る)。
+# トポロジ(方式A: Next.js / Laravel を独立 ECS サービスに分離。ADR-INFRA 決定6〜8):
+#
+#   internet --(443)--> ALB ┬--(3000)--> ECS web(Next.js)
+#                           └--(80)----> ECS api(nginx + php-fpm)
+#   ECS web --(80, East-West / Service Connect)--> ECS api
+#   ECS api --(3306)--> RDS
+#   ECS web / api --(6379)--> ElastiCache(Redis)
+#     (web: ISR 共有キャッシュ cacheHandler / api: Laravel session・cache・queue)
+#
+# - ECS SG は web / api に分離する。スケール特性・通信経路が異なり、
+#   「api は ALB と web からのみ」「RDS は api からのみ」を SG で表現するため。
+# - Service Connect の East-West は client(web) Envoy → server(api) Envoy の直接通信。
+#   ingressPortOverride を使わないため、許可ポートはコンテナポート(80)と同じ。
+# - Egress は ECS のみ all-out(ECR / CloudWatch / Secrets Manager 取得用)。
+#   RDS / Redis は egress 不要(応答パケットは SG ステートフルで通る)。
+# - TODO(フェーズ2以降の堅牢化): ALB の 443 ingress を CloudFront の
+#   managed prefix list(com.amazonaws.global.cloudfront.origin-facing)に絞る。
 
 resource "aws_security_group" "alb" {
   name        = "${local.name}-alb"
@@ -123,43 +135,116 @@ resource "aws_vpc_security_group_egress_rule" "alb_all" {
   description       = "All egress"
 }
 
-resource "aws_security_group" "ecs" {
-  name        = "${local.name}-ecs"
-  description = "ECS tasks (nginx + app)"
+# ----- ECS: web(Next.js) -----
+
+resource "aws_security_group" "ecs_web" {
+  name        = "${local.name}-ecs-web"
+  description = "ECS tasks for Next.js (web)"
   vpc_id      = aws_vpc.this.id
 
-  tags = { Name = "${local.name}-ecs-sg" }
+  tags = { Name = "${local.name}-ecs-web-sg" }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ecs_from_alb" {
-  security_group_id            = aws_security_group.ecs.id
+resource "aws_vpc_security_group_ingress_rule" "web_from_alb" {
+  security_group_id            = aws_security_group.ecs_web.id
+  referenced_security_group_id = aws_security_group.alb.id
+  from_port                    = 3000
+  to_port                      = 3000
+  ip_protocol                  = "tcp"
+  description                  = "Next.js server port from ALB"
+}
+
+resource "aws_vpc_security_group_egress_rule" "web_all" {
+  security_group_id = aws_security_group.ecs_web.id
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+  description       = "All egress (ECR, CloudWatch, Service Connect to api, Redis, etc.)"
+}
+
+# ----- ECS: api(Laravel = nginx + php-fpm) -----
+
+resource "aws_security_group" "ecs_api" {
+  name        = "${local.name}-ecs-api"
+  description = "ECS tasks for Laravel API (nginx + php-fpm)"
+  vpc_id      = aws_vpc.this.id
+
+  tags = { Name = "${local.name}-ecs-api-sg" }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "api_from_alb" {
+  security_group_id            = aws_security_group.ecs_api.id
   referenced_security_group_id = aws_security_group.alb.id
   from_port                    = 80
   to_port                      = 80
   ip_protocol                  = "tcp"
-  description                  = "Nginx port from ALB"
+  description                  = "Nginx port from ALB (North-South: /api/*)"
 }
 
-resource "aws_vpc_security_group_egress_rule" "ecs_all" {
-  security_group_id = aws_security_group.ecs.id
+# East-West: Next.js の SSR/ISR サーバーサイド fetch(Service Connect 経由)。
+# ADR-INFRA 決定7。公開 ALB をヘアピンせず VPC 内に閉じる。
+resource "aws_vpc_security_group_ingress_rule" "api_from_web" {
+  security_group_id            = aws_security_group.ecs_api.id
+  referenced_security_group_id = aws_security_group.ecs_web.id
+  from_port                    = 80
+  to_port                      = 80
+  ip_protocol                  = "tcp"
+  description                  = "Nginx port from Next.js tasks (East-West: Service Connect)"
+}
+
+resource "aws_vpc_security_group_egress_rule" "api_all" {
+  security_group_id = aws_security_group.ecs_api.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
-  description       = "All egress (ECR, CloudWatch, Secrets Manager, RDS, etc.)"
+  description       = "All egress (ECR, CloudWatch, Secrets Manager, RDS, Redis, etc.)"
 }
+
+# ----- RDS -----
 
 resource "aws_security_group" "rds" {
   name        = "${local.name}-rds"
-  description = "RDS for MySQL ingress from ECS"
+  description = "RDS for MySQL ingress from Laravel ECS tasks"
   vpc_id      = aws_vpc.this.id
 
   tags = { Name = "${local.name}-rds-sg" }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "rds_from_ecs" {
+# DB へ到達できるのは Laravel(api)のみ。web(Next.js)は API 契約面越しにしか
+# データへアクセスできない、という責務境界を SG でも表現する。
+resource "aws_vpc_security_group_ingress_rule" "rds_from_api" {
   security_group_id            = aws_security_group.rds.id
-  referenced_security_group_id = aws_security_group.ecs.id
+  referenced_security_group_id = aws_security_group.ecs_api.id
   from_port                    = 3306
   to_port                      = 3306
   ip_protocol                  = "tcp"
-  description                  = "MySQL from ECS tasks"
+  description                  = "MySQL from Laravel ECS tasks"
+}
+
+# ----- ElastiCache(Redis) -----
+
+resource "aws_security_group" "redis" {
+  name        = "${local.name}-redis"
+  description = "ElastiCache Redis ingress from ECS tasks (web + api)"
+  vpc_id      = aws_vpc.this.id
+
+  tags = { Name = "${local.name}-redis-sg" }
+}
+
+# web: Next.js ISR 共有キャッシュ(custom cacheHandler)。ADR-INFRA 決定8。
+resource "aws_vpc_security_group_ingress_rule" "redis_from_web" {
+  security_group_id            = aws_security_group.redis.id
+  referenced_security_group_id = aws_security_group.ecs_web.id
+  from_port                    = 6379
+  to_port                      = 6379
+  ip_protocol                  = "tcp"
+  description                  = "Redis from Next.js tasks (ISR shared cache)"
+}
+
+# api: Laravel の session / cache / queue。
+resource "aws_vpc_security_group_ingress_rule" "redis_from_api" {
+  security_group_id            = aws_security_group.redis.id
+  referenced_security_group_id = aws_security_group.ecs_api.id
+  from_port                    = 6379
+  to_port                      = 6379
+  ip_protocol                  = "tcp"
+  description                  = "Redis from Laravel tasks (session/cache/queue)"
 }

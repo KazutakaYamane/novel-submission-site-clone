@@ -1,7 +1,12 @@
 # Copy to terraform.tfvars and edit for your environment.
 
-# 必須: 公開ドメイン。Route 53 public hosted zone を同一アカウントで保有していること。
+# 必須: 公開ドメイン(サブドメイン委譲方式)。
+# このアカウントに hosted zone が Terraform で新規作成され(dns.tf)、apply 後に
+# output の NS 4 値を親ドメイン側 DNS に登録する(親が別アカウント/外部でも可)。
 domain_name = "novel-submission-site-clone.example.com"
+
+# ECS にデプロイするイメージタグ(フェーズ1 は手動 push の latest)
+# image_tag = "latest"
 
 # 以下はデフォルトで OK。peering 等で CIDR が衝突する場合のみ上書き。
 # project              = "novel-submission-site-clone"

@@ -39,6 +39,8 @@ app/vendor
 app/node_modules
 app/public/build
 app/public/hot
+frontend/node_modules
+frontend/.next
 
 # テスト/カバレッジ
 app/.phpunit.cache

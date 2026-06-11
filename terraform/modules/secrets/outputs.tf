@@ -26,3 +26,13 @@ output "app_key_secret_name" {
   description = "Laravel APP_KEY シークレットの名前(ID)。"
   value       = aws_secretsmanager_secret.app_key.name
 }
+
+output "redis_url_secret_arn" {
+  description = "REDIS_URL を保持する Secrets Manager のシークレット ARN。Laravel / Next.js 両タスクの secrets ブロックから注入する。"
+  value       = aws_secretsmanager_secret.redis_url.arn
+}
+
+output "redis_url_secret_name" {
+  description = "REDIS_URL シークレットの名前(ID)。"
+  value       = aws_secretsmanager_secret.redis_url.name
+}

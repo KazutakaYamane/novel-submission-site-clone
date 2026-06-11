@@ -89,7 +89,13 @@ RUN composer install \
         --no-interaction --optimize-autoloader
  
 COPY --chown=www-data:www-data app/ ./
- 
+
+RUN mkdir -p \
+        storage/framework/sessions \
+        storage/framework/views \
+        storage/framework/cache/data \
+        storage/logs
+
 RUN composer dump-autoload --optimize --classmap-authoritative \
     && php artisan config:cache \
     && php artisan route:cache \

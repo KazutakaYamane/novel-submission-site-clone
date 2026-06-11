@@ -56,3 +56,16 @@ resource "aws_secretsmanager_secret_version" "app_key" {
   secret_id     = aws_secretsmanager_secret.app_key.id
   secret_string = "base64:${random_id.app_key.b64_std}"
 }
+
+# REDIS_URL は random 生成ではなく cache モジュールのエンドポイントから導出される値。
+# Laravel(session/cache/queue)と Next.js(ISR cacheHandler)の両タスクに注入する。
+resource "aws_secretsmanager_secret" "redis_url" {
+  name                    = "${local.name}/redis/url"
+  description             = "ElastiCache connection URL (redis://host:port). Laravel + Next.js ISR cacheHandler."
+  recovery_window_in_days = var.recovery_window_in_days
+}
+
+resource "aws_secretsmanager_secret_version" "redis_url" {
+  secret_id     = aws_secretsmanager_secret.redis_url.id
+  secret_string = var.redis_url
+}

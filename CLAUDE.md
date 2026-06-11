@@ -114,11 +114,14 @@ The `docker/db/init/` directory is mounted to `/docker-entrypoint-initdb.d` for 
 
 ## Infrastructure (Terraform)
 
-- `terraform/bootstrap/` — **applied**. Local state. Creates only the S3 bucket for remote tfstate.
-- `terraform/environments/prod/` — **not applied** (no resources in AWS yet). Remote state on S3, S3-native lock. Wires `network` + `secrets` modules; `database`/`ecs-service`/`cloudfront` are TODO.
-- `terraform/modules/` — `network` (VPC/subnet/SG, no NAT) and `secrets` (Secrets Manager) implemented.
+Three root modules, each with its own state:
 
-So the AWS account currently runs **no billable resources** beyond the (empty) tfstate bucket.
+- `terraform/bootstrap/` — **applied**. Local state. Creates only the S3 bucket for remote tfstate.
+- `terraform/environments/prod-persistent/` — **applied**. Remote state (`prod-persistent/terraform.tfstate`). Holds resources that must survive prod destroy/recreate cycles: the Route 53 hosted zone (destroying it changes the NS set, forcing re-delegation from the parent `kyyk517.com` account) and the 3 ECR repositories (`laravel-app` / `laravel-nginx` / `nextjs` — images would be lost). **Never destroy this root** during normal operation (~$0.50/month).
+- `terraform/environments/prod/` — **applied** (full walking-skeleton stack: VPC, RDS, ElastiCache, ALB+ACM, ECS cluster + 2 services, CloudFront, Secrets Manager). Remote state on S3, S3-native lock. References the zone and ECR via `data` sources (`data.tf`) — requires prod-persistent to be applied first.
+- `terraform/modules/` — `network`, `secrets`, `cache`, `database`, `ecs-service`, `cloudfront` all implemented.
+
+**Cost operation**: prod is designed for apply/destroy cycling (RDS `skip_final_snapshot`, secrets `recovery_window=0`). Work session: `apply` prod (~30–40 min, CloudFront is the long pole) → work → `destroy` prod (~20–30 min). Destroying prod loses DB data (re-run migrations/seeders) but keeps the zone delegation and pushed images. Full-running cost ≈ $50/month; destroyed ≈ $0.50/month.
 
 ## Planned but Not Yet Implemented
 
@@ -126,5 +129,3 @@ Per `portfolio-project-knowledge.md` (frontend = Next.js on ECS, "method A"; see
 - prod modules: `database` (RDS MySQL), `cache` (ElastiCache — required for ISR shared cache + Laravel session/cache/queue), `ecs-service` (ALB + 2 Target Groups + **two ECS services: Laravel & Next.js** + Auto Scaling + **Service Connect** for East-West), `cloudfront` (CloudFront + ACM, behaviors: `default`→Next.js / `/api/*`→Laravel / `/_next/static`→long-cache). Plus a Cloud Map HTTP namespace and split ECS SGs (Next.js / Laravel) with an East-West ingress rule.
 - `.github/workflows/` — CI/CD (GitHub Actions with OIDC; ARM64 builds; **two image pipelines** — Laravel and Next.js — both build→ECR→ECS, plus static-asset S3 sync + CloudFront invalidation)
 - `docs/adr/` — ADR-INFRA written; ADR-TF / ADR-BE / ADR-FE still to be authored as files (ADR-FE confirmed text lives in `portfolio-project-knowledge.md` §10.2)
-
-> Decision history note: the frontend was SPA (Vite+React) through session 6; session 7 (2026-06-09) switched to Next.js on ECS. ADRs and `portfolio-project-knowledge.md` reflect the new direction.

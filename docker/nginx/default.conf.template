@@ -1,17 +1,21 @@
 # ------------------------------------------------------------
-# Nginx 設定: Laravel JSON API の前段
-# - SPA は S3 + CloudFront から配信されるため、本 Nginx は JSON API のみを返す
-# - php-fpm への upstream はローカル(ECS タスク内 or compose 内同一ネットワーク)
+# Nginx 設定テンプレート: Laravel JSON API の前段
+# - UI は Next.js(別 ECS サービス)が描画するため、本 Nginx は JSON API のみを返す
 # - HTTPS は前段の ALB / CloudFront で終端、ここは HTTP のみ
 # - ALB がヘルスチェックする /health は静的に 200 を返す(DBに依存させない)
+#
+# テンプレート機構: nginx 公式イメージの entrypoint が起動時に
+# /etc/nginx/templates/*.template を envsubst して /etc/nginx/conf.d/ に出力する。
+# 置換されるのは「環境変数として定義済みの名前」だけなので、$uri 等の nginx 変数は
+# そのまま残る。
 # ------------------------------------------------------------
 
 upstream php_fpm {
-    # compose: service 名 "app" の 9000
-    # 本番(ECS on Fargate のタスク内同居)も同じく "app:9000" を使う。
-    # awsvpc network mode のため、タスク内コンテナ間は localhost で通信される
-    # (compose のサービス名と本番のコンテナ名を揃えることで、設定を共通化している)。
-    server app:9000;
+    # php-fpm の宛先は PHP_FPM_HOST で切り替える:
+    #   - compose      : "app"(サービス名で DNS 解決。Dockerfile の ENV が既定値)
+    #   - ECS Fargate  : "127.0.0.1"(awsvpc はタスク内コンテナが localhost を共有
+    #     するが、コンテナ名の DNS 解決は無い。Task Definition 側で注入済み。§7.3)
+    server ${PHP_FPM_HOST}:9000;
     keepalive 16;
 }
 

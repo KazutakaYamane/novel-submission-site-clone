@@ -1,0 +1,52 @@
+# ------------------------------------------------------------
+# 最小CI(フェーズ1): push / PR ごとに品質チェック3点を回すだけ。
+# デプロイ(イメージビルド → ECR → ECS、OIDC 等)はフェーズ2で別ワークフロー化する。
+#
+# 設計メモ:
+# - docker/app/Dockerfile はビルドしない。品質チェックに環境の完全一致は不要で、
+#   setup-php の方が数分速い(本番一致が要るのは prod イメージのビルド側)。
+# - ツールのバージョンと設定は composer.lock / pint.json / phpstan.neon が持つので、
+#   CI はローカルと同じコマンドを呼ぶだけ。
+# - テストの DB は phpunit.xml の sqlite :memory:。MySQL 固有機能(ngram FULLTEXT 等)の
+#   テストが必要になったら services: に mysql:8.0 を足す(フェーズ3以降)。
+# ------------------------------------------------------------
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - uses: actions/cache@v4
+        with:
+          path: app/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('app/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # 安い順に並べて fail-fast(フォーマット → 静的解析 → テスト)
+      - name: Pint (format check)
+        run: ./vendor/bin/pint --test
+
+      - name: PHPStan (static analysis)
+        run: ./vendor/bin/phpstan analyse --no-progress
+
+      - name: Pest (tests)
+        run: ./vendor/bin/pest

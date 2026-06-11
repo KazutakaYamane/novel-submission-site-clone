@@ -23,12 +23,22 @@ output "alb_security_group_id" {
   value       = aws_security_group.alb.id
 }
 
-output "ecs_security_group_id" {
-  description = "Security Group ID for ECS tasks."
-  value       = aws_security_group.ecs.id
+output "ecs_web_security_group_id" {
+  description = "Security Group ID for Next.js (web) ECS tasks."
+  value       = aws_security_group.ecs_web.id
+}
+
+output "ecs_api_security_group_id" {
+  description = "Security Group ID for Laravel (api) ECS tasks."
+  value       = aws_security_group.ecs_api.id
 }
 
 output "rds_security_group_id" {
   description = "Security Group ID for RDS."
   value       = aws_security_group.rds.id
+}
+
+output "redis_security_group_id" {
+  description = "Security Group ID for ElastiCache (Redis)."
+  value       = aws_security_group.redis.id
 }
