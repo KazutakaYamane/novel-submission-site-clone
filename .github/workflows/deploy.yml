@@ -1,0 +1,194 @@
+# ------------------------------------------------------------
+# デプロイパイプライン(フェーズ2): master マージで本番へ自動デプロイ。
+# 認証は OIDC(prod-persistent の github-deploy ロール)。アクセスキー不使用。
+#
+# ジョブ構成:
+#   build-laravel ─┐
+#   build-nextjs ──┴→ deploy(静的アセット S3 sync → migrate → ECS 更新 → invalidation)
+#
+# 設計メモ:
+# - ビルドは ubuntu-24.04-arm(パブリックリポジトリ無料のネイティブ ARM64)。
+#   QEMU 不要。タグは latest(デプロイ用) + git SHA(追跡・ロールバック用)の2本。
+# - prod は apply/destroy 運用のため、クラスタが無いときは deploy ジョブを
+#   スキップする(ビルドと ECR push は成功させる)。
+# - S3 sync はサービス更新より先(ローリング中の新タスクが新アセットを参照する)。
+#   --delete は使わない(新旧タスク混在中も旧ハッシュのファイルを残す)。
+# - migrate はサービス更新より先(新コード=新スキーマ前提。逆順だと旧スキーマ+
+#   新コードの瞬間ができる)。one-off task の app コンテナの exit code で成否判定。
+# - CloudFront distribution ID は destroy/recreate で変わるためエイリアスから検索。
+# ------------------------------------------------------------
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'app/**'
+      - 'frontend/**'
+      - 'docker/**'
+      - '.github/workflows/deploy.yml'
+
+permissions:
+  id-token: write # OIDC トークンの発行に必要
+  contents: read
+
+# 連続マージでデプロイが競合しないよう直列化(キャンセルはしない)
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-1
+  DEPLOY_ROLE_ARN: arn:aws:iam::107155696364:role/novel-submission-site-clone-github-deploy
+  ECR_REGISTRY: 107155696364.dkr.ecr.ap-northeast-1.amazonaws.com
+  ECR_PREFIX: novel-submission-site-clone
+  CLUSTER: novel-submission-site-clone-prod
+  STATIC_BUCKET: novel-submission-site-clone-prod-static-assets
+  DOMAIN: novel-portfolio.kyyk517.com
+
+jobs:
+  # ---------------- Laravel: laravel-app + laravel-nginx の2イメージ ----------------
+  build-laravel:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push laravel-app
+        run: |
+          IMAGE="$ECR_REGISTRY/$ECR_PREFIX/laravel-app"
+          docker build --target prod -f docker/app/Dockerfile \
+            -t "$IMAGE:latest" -t "$IMAGE:${{ github.sha }}" .
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ github.sha }}"
+
+      - name: Build & push laravel-nginx
+        run: |
+          IMAGE="$ECR_REGISTRY/$ECR_PREFIX/laravel-nginx"
+          docker build --target prod -f docker/nginx/Dockerfile \
+            -t "$IMAGE:latest" -t "$IMAGE:${{ github.sha }}" .
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ github.sha }}"
+
+  # ---------------- Next.js: イメージ + 静的アセット抽出 ----------------
+  build-nextjs:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push nextjs
+        run: |
+          IMAGE="$ECR_REGISTRY/$ECR_PREFIX/nextjs"
+          docker build --target prod -f docker/node/Dockerfile \
+            -t "$IMAGE:latest" -t "$IMAGE:${{ github.sha }}" .
+          docker push "$IMAGE:latest"
+          docker push "$IMAGE:${{ github.sha }}"
+
+      # /_next/static はイメージ同梱と同一物を S3 + CloudFront からも配信する。
+      # deploy ジョブが S3 sync するためイメージから取り出して受け渡す
+      - name: Extract static assets
+        run: |
+          IMAGE="$ECR_REGISTRY/$ECR_PREFIX/nextjs"
+          CID=$(docker create "$IMAGE:${{ github.sha }}")
+          docker cp "$CID:/app/.next/static" ./next-static
+          docker rm "$CID"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: next-static
+          path: next-static
+          retention-days: 1
+
+  # ---------------- デプロイ(prod 稼働中のみ) ----------------
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build-laravel, build-nextjs]
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # prod は作業時 apply / 終了時 destroy で回すため、クラスタ不在は正常系。
+      # その場合はビルド済みイメージを ECR に残してデプロイだけスキップする
+      - name: Check prod cluster exists
+        id: cluster
+        run: |
+          ACTIVE=$(aws ecs describe-clusters --clusters "$CLUSTER" \
+            --query "length(clusters[?status=='ACTIVE'])" --output text)
+          if [ "$ACTIVE" = "1" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::prod クラスタが存在しないためデプロイをスキップ(イメージは ECR に push 済み)"
+          fi
+
+      - uses: actions/download-artifact@v4
+        if: steps.cluster.outputs.exists == 'true'
+        with:
+          name: next-static
+          path: next-static
+
+      - name: Sync static assets to S3
+        if: steps.cluster.outputs.exists == 'true'
+        run: |
+          aws s3 sync ./next-static "s3://$STATIC_BUCKET/_next/static" \
+            --cache-control "public,max-age=31536000,immutable"
+
+      - name: Run database migration (one-off task)
+        if: steps.cluster.outputs.exists == 'true'
+        run: |
+          # 実行中の api サービスからタスク定義とネットワーク設定を流用する
+          # (サブネット/SG の ID は prod の destroy/recreate で変わるため動的に取得)
+          SERVICE_JSON=$(aws ecs describe-services --cluster "$CLUSTER" \
+            --services "$CLUSTER-api" --query 'services[0]')
+          TASK_DEF=$(echo "$SERVICE_JSON" | jq -r '.taskDefinition')
+          NET_CONF=$(echo "$SERVICE_JSON" | jq -c '{awsvpcConfiguration: .networkConfiguration.awsvpcConfiguration}')
+
+          TASK_ARN=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --task-definition "$TASK_DEF" \
+            --launch-type FARGATE \
+            --network-configuration "$NET_CONF" \
+            --overrides '{"containerOverrides":[{"name":"app","command":["php","artisan","migrate","--force"]}]}' \
+            --query 'tasks[0].taskArn' --output text)
+          echo "migration task: $TASK_ARN"
+
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK_ARN"
+          EXIT_CODE=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK_ARN" \
+            --query "tasks[0].containers[?name=='app'] | [0].exitCode" --output text)
+          echo "migration exit code: $EXIT_CODE"
+          [ "$EXIT_CODE" = "0" ] || exit 1
+
+      - name: Deploy ECS services
+        if: steps.cluster.outputs.exists == 'true'
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service "$CLUSTER-api" \
+            --force-new-deployment --query 'service.serviceName'
+          aws ecs update-service --cluster "$CLUSTER" --service "$CLUSTER-web" \
+            --force-new-deployment --query 'service.serviceName'
+          aws ecs wait services-stable --cluster "$CLUSTER" \
+            --services "$CLUSTER-api" "$CLUSTER-web"
+
+      - name: Invalidate CloudFront
+        if: steps.cluster.outputs.exists == 'true'
+        run: |
+          # distribution ID は destroy/recreate で変わるためエイリアスから検索
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?contains(Aliases.Items, '$DOMAIN')].Id | [0]" \
+            --output text)
+          aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*" \
+            --query 'Invalidation.Id'

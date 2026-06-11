@@ -12,3 +12,13 @@ output "ecr_repository_urls" {
   description = "ECR リポジトリ URL(手動 push / CI から参照)。"
   value       = { for k, repo in aws_ecr_repository.this : k => repo.repository_url }
 }
+
+output "github_deploy_role_arn" {
+  description = "GitHub Actions の deploy ワークフローが引き受けるロール ARN(deploy.yml の role-to-assume)。"
+  value       = aws_iam_role.github_deploy.arn
+}
+
+output "github_plan_role_arn" {
+  description = "GitHub Actions の terraform plan ワークフローが引き受けるロール ARN(tf-plan.yml の role-to-assume)。"
+  value       = aws_iam_role.github_plan.arn
+}

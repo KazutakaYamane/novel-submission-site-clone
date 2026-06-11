@@ -1,0 +1,138 @@
+# ------------------------------------------------------------
+# Terraform Plan(フェーズ2): terraform/ に変更がある PR で fmt / validate / plan を
+# 実行し、plan 結果を PR コメントに投稿する。
+# 認証は OIDC(prod-persistent の github-plan ロール = 読み取り専用)。
+#
+# 設計メモ:
+# - plan ロールは state への書き込み権限を持たないため -lock=false で実行する
+#   (PR の plan は参考情報。apply はローカルから手動の運用)。
+# - prod は apply/destroy 運用のため、destroy 中の prod の plan は「全リソース作成」
+#   になる。これは正常(コメントの注記参照)。
+# - terraform のバージョンはローカル(1.15.x)に合わせる。古いバージョンは新しい
+#   バージョンが書いた state を読めないため。
+# ------------------------------------------------------------
+name: Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/tf-plan.yml'
+
+permissions:
+  id-token: write # OIDC トークンの発行に必要
+  contents: read
+  pull-requests: write # plan 結果のコメント投稿
+
+env:
+  AWS_REGION: ap-northeast-1
+  PLAN_ROLE_ARN: arn:aws:iam::107155696364:role/novel-submission-site-clone-github-plan
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15.5'
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive terraform/
+
+  plan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        root: [prod-persistent, prod]
+    defaults:
+      run:
+        working-directory: terraform/environments/${{ matrix.root }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.15.5'
+          terraform_wrapper: false # stdout をそのまま変数に取り込むため
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.PLAN_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: terraform init
+        run: terraform init -input=false
+
+      - name: terraform validate
+        run: terraform validate
+
+      - name: terraform plan
+        id: plan
+        run: |
+          set +e
+          terraform plan -input=false -lock=false -no-color \
+            -detailed-exitcode > plan.txt 2>&1
+          EXIT=$?
+          set -e
+          # -detailed-exitcode: 0=差分なし / 1=エラー / 2=差分あり
+          echo "exitcode=$EXIT" >> "$GITHUB_OUTPUT"
+          tail -c 60000 plan.txt > plan-trimmed.txt
+          [ "$EXIT" != "1" ]
+
+      - name: Comment plan result on PR
+        if: always() && steps.plan.outputs.exitcode != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const root = '${{ matrix.root }}';
+            const exitcode = '${{ steps.plan.outputs.exitcode }}';
+            const status = { '0': '✅ 差分なし', '2': '📝 差分あり', '1': '❌ エラー' }[exitcode] ?? '❓';
+            const plan = fs.readFileSync(
+              `terraform/environments/${root}/plan-trimmed.txt`, 'utf8');
+            const marker = `<!-- tf-plan:${root} -->`;
+            // テンプレートリテラルだと YAML のインデントが Markdown に混入して
+            // コードフェンスが壊れるため、行配列で組み立てる
+            const lines = [
+              marker,
+              `## Terraform Plan: \`${root}\` — ${status}`,
+              '',
+            ];
+            if (root === 'prod') {
+              lines.push('> prod は apply/destroy 運用のため、destroy 中は「全リソース作成」の plan になります(正常)。', '');
+            }
+            lines.push(
+              '<details><summary>plan 出力(末尾 60KB)</summary>',
+              '',
+              '```',
+              plan,
+              '```',
+              '',
+              '</details>',
+            );
+            const body = lines.join('\n');
+
+            // 同じ root の既存コメントがあれば更新、なければ新規作成(sticky comment)
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
