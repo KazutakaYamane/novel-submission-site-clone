@@ -96,21 +96,22 @@ RUN mkdir -p \
         storage/framework/cache/data \
         storage/logs
 
-RUN composer dump-autoload --optimize --classmap-authoritative \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache \
-    && php artisan event:cache
- 
+# 注意: config:cache 等はここ(ビルド時)では実行しない。ビルド時の空 env が
+# 焼き込まれ、実行時に Task Definition が注入する DB_HOST 等が無視されるため。
+# キャッシュ生成は entrypoint.prod.sh(起動時)が行う。
+RUN composer dump-autoload --optimize --classmap-authoritative
+
 COPY docker/app/php.prod.ini /usr/local/etc/php/conf.d/zz-prod.ini
- 
+COPY --chmod=755 docker/app/entrypoint.prod.sh /usr/local/bin/entrypoint.prod.sh
+
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
- 
+
 USER www-data
 EXPOSE 9000
- 
+
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
     CMD php-fpm-healthcheck || exit 1
- 
+
+ENTRYPOINT ["entrypoint.prod.sh"]
 CMD ["php-fpm", "-F"]

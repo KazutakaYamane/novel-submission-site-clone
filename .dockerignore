@@ -34,6 +34,10 @@ app/storage/framework/testing/*
 app/bootstrap/cache/*
 !app/bootstrap/cache/.gitignore
 
+# ローカル開発の SQLite(イメージに入ると「DB接続OK」の偽陽性を生む。
+# git 管理外のためローカルビルドと CI ビルドの差異にもなる)
+app/database/*.sqlite*
+
 # 依存(イメージ側でビルドする)
 app/vendor
 app/node_modules

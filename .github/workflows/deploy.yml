@@ -27,6 +27,10 @@ on:
       - 'frontend/**'
       - 'docker/**'
       - '.github/workflows/deploy.yml'
+  # prod の apply/destroy 運用用: apply 直後に push なしで再デプロイ+マイグレーション
+  # を流せるようにする(gh workflow run deploy.yml)。OIDC の信頼ポリシーは
+  # ref:refs/heads/master 条件のため、master 上での手動実行のみ認証が通る
+  workflow_dispatch:
 
 permissions:
   id-token: write # OIDC トークンの発行に必要
