@@ -25,14 +25,14 @@ jobs:
         working-directory: app
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           coverage: none
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: app/vendor
           key: composer-${{ runner.os }}-${{ hashFiles('app/composer.lock') }}
