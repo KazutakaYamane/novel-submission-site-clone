@@ -5,3 +5,4 @@ auth.json
 .DS_Store
 Thumbs.dbdesktop.iniehthumbs.db
 .vscode/
+terraform.tfstate
