@@ -1,0 +1,13 @@
+# この root だけ state をローカルに置く(README.md)。
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Terraform working directory and plan output
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+
+# User-specific overrides
+terraform.tfvars
+*.auto.tfvars

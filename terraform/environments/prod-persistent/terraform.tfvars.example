@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and edit.
+
+# 必須: サブドメイン。prod の domain_name と同じ値にする。
+domain_name = "novel-submission-site-clone.example.com"
+
+# 以下は既定値のままでよい。
+# github_repository = "KazutakaYamane/novel-submission-site-clone"
+# project           = "novel-submission-site-clone"
+# environment       = "prod"
+# region            = "ap-northeast-1"

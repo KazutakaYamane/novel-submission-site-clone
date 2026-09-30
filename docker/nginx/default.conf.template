@@ -1,0 +1,53 @@
+# ------------------------------------------------------------
+# Nginx 設定テンプレート: Laravel JSON API の前段
+# - UI は Next.js(別 ECS サービス)が描画するため、本 Nginx は JSON API のみを返す
+# - HTTPS は前段の ALB / CloudFront で終端、ここは HTTP のみ
+# - ALB がヘルスチェックする /health は静的に 200 を返す(DBに依存させない)
+# - port 80 は ALB 経由(ブラウザ)、port 8080 は Service Connect 経由(Next.js の SSR)で受ける。
+#   8080 には SG で Next.js タスクからしか届かないため、8080 でだけ X-User-IP を信頼する
+#
+# テンプレート機構: nginx 公式イメージの entrypoint が起動時に
+# /etc/nginx/templates/*.template を envsubst して /etc/nginx/conf.d/ に出力する。
+# 置換されるのは「環境変数として定義済みの名前」だけなので、$uri 等の nginx 変数は
+# そのまま残る。
+# ------------------------------------------------------------
+
+upstream php_fpm {
+    # php-fpm の宛先は PHP_FPM_HOST で切り替える:
+    #   - compose      : "app"(サービス名で DNS 解決。Dockerfile の ENV が既定値)
+    #   - ECS Fargate  : "127.0.0.1"
+    server ${PHP_FPM_HOST}:9000;
+    keepalive 16;
+}
+
+# CloudFront-Viewer-Address は CloudFront が必ず上書きするため、ユーザーは偽装できない。
+# 値は "IP:port" なので末尾のポートを除く。CloudFront を通らない compose では接続元を使う
+map $http_cloudfront_viewer_address $viewer_ip {
+    "~^(?<ip>.+):\d+$" $ip;
+    default            $remote_addr;
+}
+
+# SSR はユーザーの IP を X-User-IP に入れて呼ぶ。ISR の生成など特定のユーザーに
+# 紐づかない呼び出しにはこのヘッダーがないため、接続元(Next.js 側)を使う
+map $http_x_user_ip $ssr_client_ip {
+    ""      $remote_addr;
+    default $http_x_user_ip;
+}
+
+# ブラウザ → CloudFront → ALB
+server {
+    listen 80 default_server;
+    server_name _;
+
+    set $client_ip $viewer_ip;
+    include /etc/nginx/snippets/laravel.conf;
+}
+
+# Next.js(SSR)→ Service Connect
+server {
+    listen 8080;
+    server_name _;
+
+    set $client_ip $ssr_client_ip;
+    include /etc/nginx/snippets/laravel.conf;
+}

@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and edit.
+
+# 必須: 公開ドメイン。prod-persistent の domain_name と同じ値にする。
+domain_name = "novel-submission-site-clone.example.com"
+
+# 以下は既定値のままでよい。
+# image_tag                       = "latest"
+# project                         = "novel-submission-site-clone"
+# environment                     = "prod"
+# region                          = "ap-northeast-1"
+# vpc_cidr                        = "10.0.0.0/16"
+# azs                             = ["ap-northeast-1a", "ap-northeast-1c"]
+# secrets_recovery_window_in_days = 0

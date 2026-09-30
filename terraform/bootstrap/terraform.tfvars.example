@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars and adjust if needed. All values are optional —
+# defaults in variables.tf cover the common case.
+
+# project = "novel-submission-site-clone"
+# region  = "ap-northeast-1"
+
+# Override only if you need a non-default bucket name (e.g. the default bucket
+# name happens to collide with an existing global S3 bucket).
+# state_bucket_name = "novel-submission-site-clone-tfstate-123456789012"
+
+# noncurrent_version_expiration_days = 90

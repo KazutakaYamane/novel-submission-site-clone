@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+auth.json
+
+.claude/settings.local.json
+
+node_modules/
+*.log
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+
+.vscode/
+.idea/
