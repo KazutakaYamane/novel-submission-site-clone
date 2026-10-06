@@ -2,8 +2,8 @@
 # ------------------------------------------------------------
 # Nginx: php-fpm の前段。本番では ECS タスク内に同居(sidecar)
 # - base: 共通設定(テンプレート + envsubst)
-# - dev : compose 用。app/public は bind mount されるため何も焼かない
-# - prod: Fargate 用。bind mount 不可のため app/public を焼き込む
+# - dev : compose 用。backend/public は bind mount されるため何も焼かない
+# - prod: Fargate 用。bind mount 不可のため backend/public を焼き込む
 #   (docker/app/Dockerfile の base/dev/prod 構成と対応)
 # ------------------------------------------------------------
 FROM nginx:1.27-alpine AS base
@@ -32,15 +32,15 @@ HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
 EXPOSE 80 8080
 
 # ------------------------------------------------------------
-# dev: compose が ./app/public を read-only bind mount する(compose.yaml)
+# dev: compose が ./backend/public を read-only bind mount する(compose.yaml)
 # ------------------------------------------------------------
 FROM base AS dev
 
 # ------------------------------------------------------------
 # prod: ECS Fargate の sidecar(laravel-nginx イメージ)
 # - Fargate は bind mount 不可のため、try_files / realpath_root が参照する
-#   app/public をイメージに焼き込む(php-fpm 側と同一パス /var/www/html/public)
-# - ビルド時の前提: コンテキスト直下に app/ がスキャフォールド済みであること
+#   backend/public をイメージに焼き込む(php-fpm 側と同一パス /var/www/html/public)
+# - ビルド時の前提: コンテキスト直下に backend/ がスキャフォールド済みであること
 # ------------------------------------------------------------
 FROM base AS prod
 
@@ -48,4 +48,4 @@ FROM base AS prod
 # Task Definition でも同値を注入しているが、イメージ単体でも本番既定値にしておく。
 ENV PHP_FPM_HOST=127.0.0.1
 
-COPY app/public /var/www/html/public
+COPY backend/public /var/www/html/public

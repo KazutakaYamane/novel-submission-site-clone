@@ -83,12 +83,12 @@ CMD ["php-fpm", "-F"]
 # ローカルマシンには影響しない(ローカルは常に target: dev)
 FROM base AS prod
  
-COPY --chown=www-data:www-data app/composer.json app/composer.lock ./
+COPY --chown=www-data:www-data backend/composer.json backend/composer.lock ./
 RUN composer install \
         --no-dev --no-scripts --no-autoloader --prefer-dist \
         --no-interaction --optimize-autoloader
  
-COPY --chown=www-data:www-data app/ ./
+COPY --chown=www-data:www-data backend/ ./
 
 RUN mkdir -p \
         storage/framework/sessions \

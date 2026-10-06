@@ -11,14 +11,14 @@ services:
     build:
       context: .
       dockerfile: docker/nginx/Dockerfile
-      target: dev   # 本番ビルドは target: prod(app/public を焼き込み)
+      target: dev   # 本番ビルドは target: prod(backend/public を焼き込み)
     environment:
       # default.conf.template の upstream 切替(ECS Fargate では 127.0.0.1 を注入)
       PHP_FPM_HOST: app
     volumes:
       # try_files がファイル実在を確認するため public/ だけ共有する(read-only)。
       # PHP 実行自体は php-fpm 側のファイルシステムで行われる。
-      - ./app/public:/var/www/html/public:ro
+      - ./backend/public:/var/www/html/public:ro
     ports:
       - "${APP_PORT:-8080}:80"
     depends_on:
@@ -37,7 +37,7 @@ services:
         UID: ${UID:-1000}
         GID: ${GID:-1000}
     volumes:
-      - ./app:/var/www/html:delegated
+      - ./backend:/var/www/html:delegated
       - vendor:/var/www/html/vendor
       - storage:/var/www/html/storage
     environment:
@@ -142,7 +142,7 @@ services:
     restart: unless-stopped
 
   # ---------- web (Next.js フロントエンド HMR) ----------
-  # frontend/ ディレクトリで Laravel(app/)とは独立して動かす Next.js。
+  # frontend/ ディレクトリで Laravel(backend/)とは独立して動かす Next.js。
   # サービス名 web は本番の 2 サービス構成(web=Next.js / api=Laravel)と揃える。
   web:
     build:
@@ -163,7 +163,6 @@ services:
     ports:
       - "${NEXT_PORT:-3000}:3000"
     networks: [app]
-    profiles: [frontend]  
     restart: unless-stopped
 
 networks:
