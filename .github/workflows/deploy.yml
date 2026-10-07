@@ -36,8 +36,8 @@ jobs:
       laravel: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.laravel == 'true' }}
       nextjs: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.nextjs == 'true' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -55,7 +55,7 @@ jobs:
     outputs:
       cluster_exists: ${{ steps.check.outputs.exists }}
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -76,8 +76,8 @@ jobs:
     # ECS タスクが ARM64 のため、ネイティブ ARM ランナーでビルドして QEMU を避ける
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -96,8 +96,8 @@ jobs:
               exit 1
             fi
           done
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
         if: steps.exists.outputs.laravel_app != 'true'
         with:
           context: .
@@ -108,7 +108,7 @@ jobs:
           tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_PREFIX }}/laravel-app:${{ env.IMAGE_TAG }}
           cache-from: type=gha,scope=laravel-app
           cache-to: type=gha,scope=laravel-app,mode=max
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         if: steps.exists.outputs.laravel_nginx != 'true'
         with:
           context: .
@@ -125,8 +125,8 @@ jobs:
     if: needs.changes.outputs.nextjs == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -145,8 +145,8 @@ jobs:
               exit 1
             fi
           done
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/build-push-action@v7
         if: steps.exists.outputs.nextjs != 'true'
         with:
           context: .
@@ -164,7 +164,7 @@ jobs:
     if: ${{ !cancelled() && needs.guard.outputs.cluster_exists == 'true' && needs.build-laravel.result == 'success' }}
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -226,7 +226,7 @@ jobs:
     # linux/arm64 イメージからファイルを取り出すため、ランナーもアーキテクチャを合わせる
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
@@ -282,7 +282,7 @@ jobs:
     if: ${{ !cancelled() }}
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
