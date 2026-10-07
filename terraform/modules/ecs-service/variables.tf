@@ -155,3 +155,15 @@ variable "log_retention_in_days" {
   type        = number
   default     = 7
 }
+
+variable "origin_verify_header_name" {
+  description = "CloudFront が付けるヘッダー名。cloudfront モジュールの同名変数と揃える。"
+  type        = string
+  default     = "X-Origin-Verify"
+}
+
+variable "origin_verify_header_value" {
+  description = "CloudFront が付けるヘッダー値。一致しないリクエストは ALB が 403 を返す。"
+  type        = string
+  sensitive   = true
+}

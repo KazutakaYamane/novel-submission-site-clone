@@ -165,6 +165,11 @@ resource "aws_cloudfront_distribution" "this" {
     origin_id   = local.origin_id_alb
     domain_name = var.origin_domain_name
 
+    custom_header {
+      name  = var.origin_verify_header_name
+      value = var.origin_verify_header_value
+    }
+
     custom_origin_config {
       origin_protocol_policy = "https-only"
       https_port             = 443

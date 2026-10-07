@@ -8,6 +8,7 @@ RDS マスターパスワードと Laravel APP_KEY を Terraform 側で生成し
 |---|---|---|
 | `random_password.db_master` | 32 文字、`!#$%&*+-=?_` 限定の特殊文字 | RDS の master_password。RDS が受け付けない `/` `@` `"` スペースを避けるため特殊文字を絞る |
 | `random_id.app_key` | 32 バイト乱数 | Laravel APP_KEY の原データ。`base64:<b64_std>` 形式で保存(`php artisan key:generate` と同じ書式) |
+| `random_password.origin_verify` | 32 文字、英数字のみ | CloudFront → ALB の転送元検証ヘッダーの値。Secrets Manager には保存せず、cloudfront と ecs-service に Terraform で渡す |
 | `aws_secretsmanager_secret.db_password` | name: `<project>-<env>/rds/master-password` | RDS パスワード |
 | `aws_secretsmanager_secret.app_key` | name: `<project>-<env>/laravel/app-key` | Laravel APP_KEY |
 
@@ -17,4 +18,5 @@ RDS マスターパスワードと Laravel APP_KEY を Terraform 側で生成し
 |---|---|---|
 | `db_password_secret_arn` | × | ECS Task Definition の `secrets` ブロック |
 | `db_password_value` | ○ | database モジュールへの master_password 配線 |
+| `origin_verify_value` | ○ | cloudfront(ヘッダー付与)と ecs-service(ALB での検証)への受け渡し |
 | `app_key_secret_arn` | × | ECS Task Definition の `secrets` ブロック(APP_KEY 注入) |

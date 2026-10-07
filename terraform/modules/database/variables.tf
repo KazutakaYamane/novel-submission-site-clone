@@ -59,6 +59,18 @@ variable "allocated_storage" {
   default     = 20
 }
 
+variable "multi_az" {
+  description = "RDS を Multi-AZ 構成にするか。"
+  type        = bool
+  default     = false
+}
+
+variable "deletion_protection" {
+  description = "RDS の削除保護。true の間は terraform destroy が失敗する。"
+  type        = bool
+  default     = false
+}
+
 variable "skip_final_snapshot" {
   description = "destroy 時に最終スナップショットを省略するか。"
   type        = bool

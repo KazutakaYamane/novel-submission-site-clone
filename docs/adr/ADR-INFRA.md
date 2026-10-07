@@ -81,7 +81,7 @@ ECS上でこのSSR/ISRを動かすために、以下の3点を決めた。
 **代償**:
 - タスクがPublic IPを持つため、SGの設定を誤るとインターネットに直接露出する。
 - ECSタスクのegressは`0.0.0.0/0`の全許可になる。NATなしではECRなどの宛先IPが変わるため、宛先で絞れない。
-- プレフィックスリストは、全世界の`CloudFront`のIPを許可する。他人の`CloudFront`ディストリビューションからもALBのSGは通過できる。`CloudFront`がオリジンに付けるカスタムヘッダーをALBのリスナールールで検証する対策は、未実装(実装予定)。
+- プレフィックスリストは、全世界の`CloudFront`のIPを許可する。他人の`CloudFront`ディストリビューションからもALBのSGは通過できるため、`CloudFront`がオリジンへの転送時に付ける`X-Origin-Verify`ヘッダーをALBのリスナールールで検証する。ヘッダーの値は`modules/secrets`の`random_password.origin_verify`で生成し、`cloudfront`と`ecs-service`に渡す。一致しないリクエストは、リスナーのデフォルトアクション(固定レスポンス403)で拒否する。ヘッダー値は`CloudFront`の設定とTerraformのstateに平文で残る。
 - ALBからタスクへの転送はVPC内のHTTPで、暗号化していない。
 - 本番移行時はNATまたはVPCエンドポイントを置き、タスクをprivate subnetに戻す。
 
@@ -100,7 +100,7 @@ ECS上でこのSSR/ISRを動かすために、以下の3点を決めた。
 
 **却下した案**: 最終スナップショットを残す案。`destroy`のたびにスナップショットが増えて課金され、同名のスナップショットが残ると次回の`destroy`が失敗する。
 
-**代償**: 誤って`destroy`するとDBの内容を復旧できない。`prod-persistent`(hosted zone・ECR・GitHub OIDC)は`prod`と別のstateに分けてあり、`prod`の`destroy`では消えない。
+**代償**: 誤って`destroy`するとDBの内容を復旧できない。これらの値は`environments/prod/variables.tf`の`db_multi_az` / `db_deletion_protection` / `db_skip_final_snapshot` / `secrets_recovery_window_in_days`から渡しており、本番運用に移すときは`terraform.tfvars`で上書きする。`prod-persistent`(hosted zone・ECR・GitHub OIDC)は`prod`と別のstateに分けてあり、`prod`の`destroy`では消えない。
 
 ### ECS Execを有効にしている
 

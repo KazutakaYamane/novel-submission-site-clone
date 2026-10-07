@@ -12,6 +12,8 @@
 | `/_next/image*` | ALB(同上) | 自前(`url` / `w` / `q` と `Accept` をキーに含める) |
 | `/static/*` | S3(OAC) | `CachingOptimized` |
 
+ALBオリジンへの転送時にカスタムヘッダー`X-Origin-Verify`を付ける。ALB側がこの値を検証し、他のCloudFrontディストリビューションからの転送を拒否する(ecs-serviceモジュール)。
+
 ## 主要 outputs
 
 | 名前 | 用途 |

@@ -23,3 +23,9 @@ output "app_key_secret_name" {
   description = "Laravel APP_KEY シークレットの名前(ID)。"
   value       = aws_secretsmanager_secret.app_key.name
 }
+
+output "origin_verify_value" {
+  description = "CloudFront → ALB の転送元検証ヘッダーの値。cloudfront(付与)と ecs-service(検証)モジュールへの受け渡し専用。"
+  value       = random_password.origin_verify.result
+  sensitive   = true
+}

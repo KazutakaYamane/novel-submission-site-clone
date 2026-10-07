@@ -134,12 +134,38 @@ resource "aws_lb_listener" "https" {
   # validation 完了を待たずに listener を作ると失敗する
   certificate_arn = aws_acm_certificate_validation.alb.certificate_arn
 
+  # プレフィックスリストは全世界の CloudFront を許可するため、他人のディストリビューション
+  # からの転送を防ぐ。ヘッダーが一致するルールに当たらないリクエストはここで拒否する
   default_action {
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Forbidden"
+      status_code  = "403"
+    }
+  }
+
+  tags = { Name = "${local.name}-https" }
+}
+
+resource "aws_lb_listener_rule" "web" {
+  listener_arn = aws_lb_listener.https.arn
+  priority     = 100
+
+  condition {
+    http_header {
+      http_header_name = var.origin_verify_header_name
+      values           = [var.origin_verify_header_value]
+    }
+  }
+
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.web.arn
   }
 
-  tags = { Name = "${local.name}-https" }
+  tags = { Name = "${local.name}-web-rule" }
 }
 
 resource "aws_lb_listener_rule" "api" {
@@ -149,6 +175,13 @@ resource "aws_lb_listener_rule" "api" {
   condition {
     path_pattern {
       values = ["/api/*"]
+    }
+  }
+
+  condition {
+    http_header {
+      http_header_name = var.origin_verify_header_name
+      values           = [var.origin_verify_header_value]
     }
   }
 

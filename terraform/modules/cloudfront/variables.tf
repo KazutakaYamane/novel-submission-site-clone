@@ -22,3 +22,15 @@ variable "origin_domain_name" {
   description = "ALB オリジンの FQDN(ecs-service モジュールの origin_domain_name)。"
   type        = string
 }
+
+variable "origin_verify_header_name" {
+  description = "ALB オリジンへの転送時に付けるヘッダー名。ecs-service モジュールの同名変数と揃える。"
+  type        = string
+  default     = "X-Origin-Verify"
+}
+
+variable "origin_verify_header_value" {
+  description = "ALB オリジンへの転送時に付けるヘッダー値。ecs-service モジュールの ALB が一致を検証する。"
+  type        = string
+  sensitive   = true
+}

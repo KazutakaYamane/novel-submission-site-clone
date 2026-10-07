@@ -35,6 +35,10 @@ module "database" {
   private_subnet_ids = module.network.private_subnet_ids
   security_group_id  = module.network.rds_security_group_id
   master_password    = module.secrets.db_password_value
+
+  multi_az            = var.db_multi_az
+  deletion_protection = var.db_deletion_protection
+  skip_final_snapshot = var.db_skip_final_snapshot
 }
 
 module "ecs_service" {
@@ -63,6 +67,8 @@ module "ecs_service" {
 
   db_password_secret_arn = module.secrets.db_password_secret_arn
   app_key_secret_arn     = module.secrets.app_key_secret_arn
+
+  origin_verify_header_value = module.secrets.origin_verify_value
 }
 
 module "cloudfront" {
@@ -79,4 +85,6 @@ module "cloudfront" {
   domain_name        = var.domain_name
   zone_id            = data.aws_route53_zone.this.zone_id
   origin_domain_name = module.ecs_service.origin_domain_name
+
+  origin_verify_header_value = module.secrets.origin_verify_value
 }

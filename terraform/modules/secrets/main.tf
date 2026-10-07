@@ -13,6 +13,13 @@ resource "random_password" "db_master" {
   min_special      = 2
 }
 
+# CloudFront が ALB への転送時に付けるヘッダーの共有値。ALB 側で一致を検証する。
+# ヘッダーに使うため特殊文字を含めない。
+resource "random_password" "origin_verify" {
+  length  = 32
+  special = false
+}
+
 # php artisan key:generate と同じ "base64:<32 bytes>" 形式にする。
 resource "random_id" "app_key" {
   byte_length = 32

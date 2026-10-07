@@ -48,7 +48,7 @@ resource "aws_db_instance" "this" {
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [var.security_group_id]
   publicly_accessible    = false
-  multi_az               = false
+  multi_az               = var.multi_az
 
   parameter_group_name = aws_db_parameter_group.this.name
 
@@ -62,7 +62,7 @@ resource "aws_db_instance" "this" {
 
   skip_final_snapshot       = var.skip_final_snapshot
   final_snapshot_identifier = var.skip_final_snapshot ? null : "${local.name}-mysql-final"
-  deletion_protection       = false
+  deletion_protection       = var.deletion_protection
 
   tags = { Name = "${local.name}-mysql" }
 }
