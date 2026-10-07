@@ -26,3 +26,15 @@ variable "github_repository" {
   type        = string
   default     = "KazutakaYamane/novel-submission-site-clone"
 }
+
+variable "github_owner_id" {
+  description = "GitHub オーナーの数値 ID。OIDC の sub クレームは repo:<owner>@<owner_id>/<repo>@<repo_id> の形式で発行される。"
+  type        = string
+  default     = "50511241"
+}
+
+variable "github_repository_id" {
+  description = "GitHub リポジトリの数値 ID。同名のリポジトリを作り直した場合に別物として扱うため、sub の照合に含める。"
+  type        = string
+  default     = "1408407741"
+}

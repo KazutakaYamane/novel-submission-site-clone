@@ -11,6 +11,11 @@ locals {
   prod_prefix          = "${var.project}-${var.environment}"
   ecs_cluster_arn      = "arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:cluster/${local.prod_prefix}"
   static_assets_bucket = "${local.prod_prefix}-static-assets"
+
+  # sub クレームは名前に数値 ID を付けた形式で発行される
+  github_owner      = split("/", var.github_repository)[0]
+  github_repo       = split("/", var.github_repository)[1]
+  github_sub_prefix = "repo:${local.github_owner}@${var.github_owner_id}/${local.github_repo}@${var.github_repository_id}"
 }
 
 resource "aws_iam_openid_connect_provider" "github" {
@@ -44,7 +49,7 @@ data "aws_iam_policy_document" "github_deploy_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/master"]
+      values   = ["${local.github_sub_prefix}:ref:refs/heads/master"]
     }
   }
 }
@@ -212,7 +217,7 @@ data "aws_iam_policy_document" "github_plan_trust" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:pull_request"]
+      values   = ["${local.github_sub_prefix}:pull_request"]
     }
   }
 }
