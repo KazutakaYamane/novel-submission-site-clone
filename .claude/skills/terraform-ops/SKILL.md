@@ -7,13 +7,19 @@ description: Terraform root module layout and the prod apply/destroy cost-cyclin
 
 Three root modules, each with its own state:
 
-- `terraform/bootstrap/` — **applied**. Local state. Creates only the S3 bucket for remote tfstate.
-- `terraform/environments/prod-persistent/` — **applied**. Remote state (`prod-persistent/terraform.tfstate`). Holds resources that must survive prod destroy/recreate cycles: the Route 53 hosted zone (destroying it changes the NS set, forcing re-delegation from the parent `kyyk517.com` account) the 3 ECR repositories (`laravel-app` / `laravel-nginx` / `nextjs` — images would be lost), and the GitHub Actions OIDC provider with two IAM roles (`github_deploy` / `github_plan`, `github-oidc.tf`). **Never destroy this root** during normal operation (~$0.50/month).
-- `terraform/environments/prod/` — **currently destroyed** (verified 2026-10-06: empty state, no ECS cluster, CloudFront, RDS, or ALB). Defines the full walking-skeleton stack: VPC, RDS, ElastiCache, ALB+ACM, ECS cluster + 2 services, CloudFront, Secrets Manager. Remote state on S3, S3-native lock. References the zone and ECR via `data` sources (`data.tf`) — requires prod-persistent to be applied first.
+- `terraform/bootstrap/` — Local state. Creates only the S3 bucket for remote tfstate.
+- `terraform/environments/prod-persistent/` — Remote state (`prod-persistent/terraform.tfstate`). Holds resources that must survive prod destroy/recreate cycles: the Route 53 hosted zone (destroying it changes the NS set, forcing re-delegation from the parent `kyyk517.com` account) the 3 ECR repositories (`laravel-app` / `laravel-nginx` / `nextjs` — images would be lost), and the GitHub Actions OIDC provider with two IAM roles (`github_deploy` / `github_plan`, `github-oidc.tf`). **Never destroy this root** during normal operation (~$0.50/month).
+- `terraform/environments/prod/` — Applied and destroyed repeatedly (cost cycling, see below), so it may or may not exist at any moment. Check with `aws ecs list-clusters` before assuming either state. Defines the full walking-skeleton stack: VPC, RDS, ElastiCache, ALB+ACM, ECS cluster + 2 services, CloudFront, Secrets Manager. Remote state on S3, S3-native lock. References the zone and ECR via `data` sources (`data.tf`) — requires prod-persistent to be applied first.
 - `terraform/modules/` — `network`, `secrets`, `cache`, `database`, `ecs-service`, `cloudfront` all implemented.
 
 **Cost operation**: prod is designed for apply/destroy cycling (RDS `skip_final_snapshot`, secrets `recovery_window=0`). Work session: `apply` prod (~30–40 min, CloudFront is the long pole) → work → `destroy` prod (~20–30 min). Destroying prod loses DB data (re-run migrations/seeders) but keeps the zone delegation and pushed images. Full-running cost ≈ $50/month; destroyed ≈ $0.50/month.
 
-## CI/CD (planned, not implemented)
+## CI/CD
 
-`.github/workflows/` does not exist yet. The OIDC provider and the `github_deploy` / `github_plan` IAM roles already exist in `terraform/environments/prod-persistent/github-oidc.tf`. Planned pipeline: ARM64 builds, two image pipelines (Laravel, Next.js) to ECR → ECS, static assets to S3 + CloudFront invalidation.
+Implemented in `.github/workflows/`:
+
+- `deploy.yml` (push to `master`, `workflow_dispatch`): ARM64 build on `ubuntu-24.04-arm` → ECR (`:<sha>` only, repositories are IMMUTABLE; existing tags are not rebuilt) → skip deploy if the ECS cluster is not ACTIVE → api (register a task definition revision from the family's latest revision with the SHA image, migration via one-off task, `update-service`) → web (S3 sync, CloudFront invalidation, register revision, `update-service`) → record the deployed SHAs in SSM (`/novel-submission-site-clone/prod/image-tag/{laravel,nextjs}`). Assumes `github_deploy`, which only trusts `ref:refs/heads/master`; never use `environment:` in this workflow.
+- `prod` reads those SSM parameters via `data.aws_ssm_parameter` to pick the image tags, so `plan`, `apply` and `destroy` all fail until the workflow has run once. Run it before the first `apply` of `prod`. The parameters are created by CI, not Terraform.
+- `terraform-plan.yml` (pull_request): `terraform plan -lock=false` for `prod` and `prod-persistent` with `github_plan`. `terraform apply` is never run from GitHub Actions.
+
+Design rationale is in `docs/adr/ADR-INFRA.md` (CI/CD section).

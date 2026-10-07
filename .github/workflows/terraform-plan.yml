@@ -1,0 +1,73 @@
+name: terraform-plan
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-plan.yml'
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: ap-northeast-1
+  AWS_ROLE_ARN: arn:aws:iam::107155696364:role/novel-submission-site-clone-github-plan
+  # terraform.tfvars は gitignore 対象で CI に無いため、必須変数をここで渡す
+  TF_VAR_domain_name: novel-portfolio.kyyk517.com
+
+jobs:
+  plan:
+    # フォークからの PR には OIDC トークンが発行されず、ロールも引き受けられない
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        root: [prod, prod-persistent]
+    defaults:
+      run:
+        working-directory: terraform/environments/${{ matrix.root }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~> 1.11'
+          # wrapper は終了コードと出力を加工するため、plan 結果の取得に邪魔
+          terraform_wrapper: false
+      - run: terraform init -input=false
+      # github_plan は state への書き込み権限を持たないためロックを取れない
+      - name: plan
+        id: plan
+        run: |
+          set -o pipefail
+          terraform plan -lock=false -input=false -no-color 2>&1 | tee "$RUNNER_TEMP/plan.txt"
+      - name: comment
+        if: ${{ !cancelled() }}
+        uses: actions/github-script@v7
+        env:
+          ROOT: ${{ matrix.root }}
+          OUTCOME: ${{ steps.plan.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = `<!-- terraform-plan:${process.env.ROOT} -->`;
+            let plan = fs.existsSync(`${process.env.RUNNER_TEMP}/plan.txt`)
+              ? fs.readFileSync(`${process.env.RUNNER_TEMP}/plan.txt`, 'utf8') : '';
+            // コメント本文の上限(65536 文字)に収める
+            if (plan.length > 60000) plan = '...(先頭を省略)\n' + plan.slice(-60000);
+            const body = `${marker}\n### terraform plan: \`${process.env.ROOT}\` (${process.env.OUTCOME})\n\n<details><summary>出力</summary>\n\n\`\`\`\n${plan}\n\`\`\`\n</details>`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(c => c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }

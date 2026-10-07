@@ -17,6 +17,8 @@ Sections: Context / Decision / Alternatives considered (why rejected) / Conseque
 
 Planned ADRs: ADR-TF, ADR-BE, ADR-FE.
 
+Write only decisions that the current code and infrastructure embody. Leave out anything that comes from the working session: incidents during development, the order the author did things, a temporary state, or a user's passing remark. An alternative belongs under "Alternatives considered" only if a reader would plausibly ask "why not that?" about the finished system, and the reason must hold without knowing the session.
+
 ## Both
 
 - Back claims with concrete facts: service names, numbers, config values, file paths.

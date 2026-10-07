@@ -56,9 +56,9 @@ module "ecs_service" {
   ecs_web_security_group_id = module.network.ecs_web_security_group_id
   ecs_api_security_group_id = module.network.ecs_api_security_group_id
 
-  web_image       = "${data.aws_ecr_repository.this["nextjs"].repository_url}:${var.image_tag}"
-  api_app_image   = "${data.aws_ecr_repository.this["laravel-app"].repository_url}:${var.image_tag}"
-  api_nginx_image = "${data.aws_ecr_repository.this["laravel-nginx"].repository_url}:${var.image_tag}"
+  web_image       = "${data.aws_ecr_repository.this["nextjs"].repository_url}:${data.aws_ssm_parameter.image_tag["nextjs"].insecure_value}"
+  api_app_image   = "${data.aws_ecr_repository.this["laravel-app"].repository_url}:${data.aws_ssm_parameter.image_tag["laravel"].insecure_value}"
+  api_nginx_image = "${data.aws_ecr_repository.this["laravel-nginx"].repository_url}:${data.aws_ssm_parameter.image_tag["laravel"].insecure_value}"
 
   db_host     = module.database.endpoint_address
   db_name     = module.database.db_name

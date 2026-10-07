@@ -60,6 +60,25 @@ ECS上でこのSSR/ISRを動かすために、以下の3点を決めた。
 **代償**: HTMLへのリクエストはすべて東京リージョンのNext.jsまで届く。
 - 海外の読者へのレスポンスが遅くなる。
 - アクセスが集中したとき、負荷をCloudFrontで吸収できず、Next.jsとElastiCacheが直接負荷を受ける。
+
+## CI/CDをどう構成するか
+
+**採用**: GitHub Actionsで、`master`へのpushにイメージのビルドとECSへのデプロイ(`deploy.yml`)、PRに`terraform plan`(`terraform-plan.yml`)を実行する。AWSへの認証はOIDCで行い、IAMロールは`prod`の`destroy`で消えないよう`prod-persistent`に置く(`github-oidc.tf`)。`terraform apply`はGitHub Actionsから実行せず、手元で実行する。
+
+デプロイはapi → webの順にする。ECS Service Connectでは、apiの登録後に起動したwebでないとapiの名前を解決できない。
+
+イメージはコミットSHAのタグでだけpushする(ECRは`IMMUTABLE`)。デプロイでは、タスク定義ファミリーの最新リビジョンのイメージだけをSHAに差し替えた新リビジョンをCIが登録し、サービスに指定する。デプロイに成功したSHAはCIがSSM Parameter Store(`/novel-submission-site-clone/prod/image-tag/laravel`と`.../nextjs`)に書き、`prod`のTerraformが`data`ソースで読む。`prod`を`destroy`して`apply`し直したときも、最後にデプロイしたイメージで起動する。
+
+**却下した案**:
+- サービスごとにワークフローを分ける案: 両方が変わったpushで、api → webの順序を保証できない。
+- GitHub Actionsから`terraform apply`を実行する案: mergeだけでインフラの変更が反映される。
+
+
+**代償**:
+- SSMパラメータはTerraformで宣言せず、CIだけが作る。無い状態で`prod`をplan・apply・destroyすると失敗するため、`prod`を初めて作る前にCIを一度実行する。
+- サービスは`ignore_task_definition_changes = true`で、Terraformのタスク定義の変更を直接は反映しない。CIが次のデプロイで、Terraformが作ったリビジョンのイメージだけを差し替えるため、反映はデプロイ時になる。
+- デプロイのたびにSSMのSHAが変わるため、`prod`のplanにタスク定義の差分が出る。applyしても同じイメージのリビジョンが増えるだけである。
+
 ---
 
 ## 運用コストを抑えるための構成上の妥協

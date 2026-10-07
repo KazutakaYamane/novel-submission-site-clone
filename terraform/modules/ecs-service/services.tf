@@ -14,6 +14,10 @@ module "web_service" {
   name        = "${local.name}-web"
   cluster_arn = aws_ecs_cluster.this.arn
 
+  # CI がイメージを差し替えたリビジョンをサービスに指定するため、
+  # terraform apply でサービスが Terraform のリビジョンに戻らないようにする
+  ignore_task_definition_changes = true
+
   cpu    = var.web_cpu
   memory = var.web_memory
 
@@ -85,6 +89,10 @@ module "api_service" {
 
   name        = "${local.name}-api"
   cluster_arn = aws_ecs_cluster.this.arn
+
+  # CI がイメージを差し替えたリビジョンをサービスに指定するため、
+  # terraform apply でサービスが Terraform のリビジョンに戻らないようにする
+  ignore_task_definition_changes = true
 
   cpu    = var.api_cpu
   memory = var.api_memory

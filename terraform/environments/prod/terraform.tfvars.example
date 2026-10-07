@@ -4,7 +4,6 @@
 domain_name = "novel-submission-site-clone.example.com"
 
 # 以下は既定値のままでよい。
-# image_tag                       = "latest"
 # project                         = "novel-submission-site-clone"
 # environment                     = "prod"
 # region                          = "ap-northeast-1"

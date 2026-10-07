@@ -8,6 +8,14 @@ Novel submission platform clone built as a job-interview portfolio. Laravel JSON
 - When code changes invalidate `README.md` or `docs/adr/` text, update that text in the same change.
 - `docs/agent_memo/` (gitignored): implementation specs. Delete each spec once code and tests replace it.
 
+## Design principles
+
+The project is in early development and has no backward-compatibility obligations. Always build the optimal design and structure.
+
+- Do not add a workaround, a compatibility shim, or a `moved`/migration step whose only purpose is to preserve the current state of a design that is not optimal. Change the design itself and rebuild what depends on it.
+- Before a change that breaks existing code, data, or infrastructure, investigate the blast radius (callers, state, running resources, docs) and show the user the optimal design, what it breaks, and the cost of rebuilding. Then proceed once the user agrees.
+- If the optimal design is not chosen, record it as an accepted trade-off in the ADR instead of presenting a workaround as the design.
+
 ## Commands
 
 PHP runs in the container: `docker compose exec app <cmd>`

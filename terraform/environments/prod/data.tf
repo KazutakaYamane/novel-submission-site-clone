@@ -11,3 +11,12 @@ data "aws_ecr_repository" "this" {
 
   name = "${var.project}/${each.key}"
 }
+
+# CI(deploy.yml)がデプロイに成功したイメージの SHA を書き込む。
+# prod を作り直したときに、最後にデプロイしたイメージで起動するために読む。
+# 無いと plan・apply・destroy のすべてが失敗するため、CI を一度実行してから使う。
+data "aws_ssm_parameter" "image_tag" {
+  for_each = toset(["laravel", "nextjs"])
+
+  name = "/${var.project}/${var.environment}/image-tag/${each.key}"
+}

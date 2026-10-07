@@ -10,8 +10,8 @@ resource "aws_ecr_repository" "this" {
 
   name = "${var.project}/${each.key}"
 
-  # latest タグを上書きする運用のため MUTABLE。
-  image_tag_mutability = "MUTABLE"
+  # コミット SHA のタグで push し、同じタグは上書きしない。
+  image_tag_mutability = "IMMUTABLE"
 
   image_scanning_configuration {
     scan_on_push = true
@@ -35,7 +35,7 @@ resource "aws_ecr_lifecycle_policy" "this" {
         selection = {
           tagStatus   = "any"
           countType   = "imageCountMoreThan"
-          countNumber = 10
+          countNumber = 30
         }
         action = { type = "expire" }
       }

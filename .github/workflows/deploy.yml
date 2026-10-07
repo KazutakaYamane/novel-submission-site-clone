@@ -1,0 +1,298 @@
+name: deploy
+
+on:
+  push:
+    branches: [master]
+  # github_deploy の信頼条件は ref:refs/heads/master。master 上で実行する限り手動実行でも引き受けられる
+  workflow_dispatch:
+
+# 並行実行すると migration と ECS 更新が前後し、スキーマとコードの組み合わせが崩れる
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+  AWS_ROLE_ARN: arn:aws:iam::107155696364:role/novel-submission-site-clone-github-deploy
+  ECR_REGISTRY: 107155696364.dkr.ecr.ap-northeast-1.amazonaws.com
+  ECR_PREFIX: novel-submission-site-clone
+  CLUSTER: novel-submission-site-clone-prod
+  API_SERVICE: novel-submission-site-clone-prod-api
+  WEB_SERVICE: novel-submission-site-clone-prod-web
+  STATIC_BUCKET: novel-submission-site-clone-prod-static-assets
+  DOMAIN_NAME: novel-portfolio.kyyk517.com
+  IMAGE_TAG: ${{ github.sha }}
+  # prod の Terraform が data source で読む。パスを変える場合は prod/data.tf と github-oidc.tf も変える
+  SSM_IMAGE_TAG_PREFIX: /novel-submission-site-clone/prod/image-tag
+
+jobs:
+  changes:
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      laravel: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.laravel == 'true' }}
+      nextjs: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.nextjs == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            laravel:
+              - 'backend/**'
+              - 'docker/app/**'
+              - 'docker/nginx/**'
+            nextjs:
+              - 'frontend/**'
+              - 'docker/node/**'
+
+  # prod の destroy 中は ECS クラスタが無い。その間もイメージの push は通し、デプロイだけ飛ばす
+  guard:
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      cluster_exists: ${{ steps.check.outputs.exists }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - id: check
+        run: |
+          status=$(aws ecs describe-clusters --clusters "$CLUSTER" \
+            --query 'clusters[0].status' --output text)
+          if [ "$status" = "ACTIVE" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::ECS クラスタが ACTIVE ではない(status=$status)ため、デプロイをスキップする"
+          fi
+
+  build-laravel:
+    needs: changes
+    if: needs.changes.outputs.laravel == 'true'
+    # ECS タスクが ARM64 のため、ネイティブ ARM ランナーでビルドして QEMU を避ける
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      # ECR は IMMUTABLE のため、同じコミットの再実行(手動デプロイなど)で既存タグへの push が失敗する。
+      # 存在するイメージはビルドと push を省略する
+      - name: check existing images
+        id: exists
+        run: |
+          for repo in laravel-app laravel-nginx; do
+            if out=$(aws ecr describe-images --repository-name "$ECR_PREFIX/$repo" \
+                  --image-ids imageTag="$IMAGE_TAG" 2>&1); then
+              echo "${repo//-/_}=true" >> "$GITHUB_OUTPUT"
+            elif ! echo "$out" | grep -q ImageNotFoundException; then
+              echo "$out"
+              exit 1
+            fi
+          done
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        if: steps.exists.outputs.laravel_app != 'true'
+        with:
+          context: .
+          file: docker/app/Dockerfile
+          target: prod
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_PREFIX }}/laravel-app:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=laravel-app
+          cache-to: type=gha,scope=laravel-app,mode=max
+      - uses: docker/build-push-action@v6
+        if: steps.exists.outputs.laravel_nginx != 'true'
+        with:
+          context: .
+          file: docker/nginx/Dockerfile
+          target: prod
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_PREFIX }}/laravel-nginx:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=laravel-nginx
+          cache-to: type=gha,scope=laravel-nginx,mode=max
+
+  build-nextjs:
+    needs: changes
+    if: needs.changes.outputs.nextjs == 'true'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      # ECR は IMMUTABLE のため、同じコミットの再実行(手動デプロイなど)で既存タグへの push が失敗する。
+      # 存在するイメージはビルドと push を省略する
+      - name: check existing images
+        id: exists
+        run: |
+          for repo in nextjs; do
+            if out=$(aws ecr describe-images --repository-name "$ECR_PREFIX/$repo" \
+                  --image-ids imageTag="$IMAGE_TAG" 2>&1); then
+              echo "${repo//-/_}=true" >> "$GITHUB_OUTPUT"
+            elif ! echo "$out" | grep -q ImageNotFoundException; then
+              echo "$out"
+              exit 1
+            fi
+          done
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        if: steps.exists.outputs.nextjs != 'true'
+        with:
+          context: .
+          file: docker/node/Dockerfile
+          target: prod
+          platforms: linux/arm64
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_PREFIX }}/nextjs:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=nextjs
+          cache-to: type=gha,scope=nextjs,mode=max
+
+  # Service Connect は api が登録された後に起動した web でないと名前解決できないため、api → web の順
+  deploy-api:
+    needs: [guard, build-laravel]
+    if: ${{ !cancelled() && needs.guard.outputs.cluster_exists == 'true' && needs.build-laravel.result == 'success' }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ファミリーの最新リビジョンのイメージだけを SHA タグに差し替えて登録する。
+      # 元を最新リビジョンにするのは、Terraform が作ったリビジョン(CPU・環境変数の変更など)を
+      # 次のデプロイで取り込むため。サービスのリビジョンは Terraform が上書きしない
+      - name: register task definition
+        id: register
+        run: |
+          new=$(aws ecs describe-task-definition --task-definition "$API_SERVICE" --include TAGS \
+            | jq --arg app "$ECR_REGISTRY/$ECR_PREFIX/laravel-app:$IMAGE_TAG" \
+                 --arg nginx "$ECR_REGISTRY/$ECR_PREFIX/laravel-nginx:$IMAGE_TAG" '
+                .taskDefinition + {tags: .tags}
+                | .containerDefinitions |= map(
+                    if .name == "app" then .image = $app
+                    elif .name == "nginx" then .image = $nginx
+                    else . end)
+                | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                      .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+                | if (.tags | length) == 0 then del(.tags) else . end')
+          arn=$(aws ecs register-task-definition --cli-input-json "$new" \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+
+      # api の入れ替え前に新リビジョンで実行する。マイグレーションは旧コードが
+      # 動いたままでも通る(カラム追加などの後方互換な変更のみ)ことが前提
+      - name: migrate
+        run: |
+          service=$(aws ecs describe-services --cluster "$CLUSTER" --services "$API_SERVICE" \
+            --query 'services[0]' --output json)
+          task_arn=$(aws ecs run-task \
+            --cluster "$CLUSTER" \
+            --launch-type FARGATE \
+            --task-definition "${{ steps.register.outputs.arn }}" \
+            --network-configuration "$(echo "$service" | jq -c '{awsvpcConfiguration: .networkConfiguration.awsvpcConfiguration}')" \
+            --overrides '{"containerOverrides":[{"name":"app","command":["php","artisan","migrate","--force"]}]}' \
+            --query 'tasks[0].taskArn' --output text)
+          echo "task: $task_arn"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task_arn"
+          exit_code=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task_arn" \
+            --query "tasks[0].containers[?name=='app'].exitCode | [0]" --output text)
+          if [ "$exit_code" != "0" ]; then
+            echo "::error::migration が失敗した(exitCode=$exit_code)。CloudWatch Logs を確認すること"
+            exit 1
+          fi
+
+      - name: update api service
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service "$API_SERVICE" \
+            --task-definition "${{ steps.register.outputs.arn }}" > /dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$API_SERVICE"
+
+  deploy-web:
+    needs: [guard, build-nextjs, deploy-api]
+    # api だけ変更された push では build-nextjs が skipped になるため web は動かさない。
+    # deploy-api が skipped(Next.js のみの変更)の場合は、そのまま web を進める
+    if: ${{ !cancelled() && needs.guard.outputs.cluster_exists == 'true' && needs.build-nextjs.result == 'success' && (needs.deploy-api.result == 'success' || needs.deploy-api.result == 'skipped') }}
+    # linux/arm64 イメージからファイルを取り出すため、ランナーもアーキテクチャを合わせる
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: extract static assets
+        run: |
+          image="$ECR_REGISTRY/$ECR_PREFIX/nextjs:$IMAGE_TAG"
+          docker pull "$image"
+          id=$(docker create "$image")
+          docker cp "$id:/app/.next/static" ./static
+          docker rm "$id"
+
+      # --delete は付けない。旧リビジョンの HTML を掴んだままのブラウザが
+      # 旧ハッシュのアセットを要求するため、古いファイルも残す
+      - name: sync static assets
+        run: |
+          aws s3 sync ./static "s3://$STATIC_BUCKET/_next/static" \
+            --cache-control "public,max-age=31536000,immutable"
+
+      # distribution ID は prod の作り直しで変わるため、エイリアスから引く
+      - name: invalidate CloudFront
+        run: |
+          dist_id=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[0]=='$DOMAIN_NAME'].Id | [0]" --output text)
+          aws cloudfront create-invalidation --distribution-id "$dist_id" --paths '/*' > /dev/null
+
+      - name: register task definition
+        id: register
+        run: |
+          new=$(aws ecs describe-task-definition --task-definition "$WEB_SERVICE" --include TAGS \
+            | jq --arg web "$ECR_REGISTRY/$ECR_PREFIX/nextjs:$IMAGE_TAG" '
+                .taskDefinition + {tags: .tags}
+                | .containerDefinitions |= map(if .name == "web" then .image = $web else . end)
+                | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
+                      .compatibilities, .registeredAt, .registeredBy, .deregisteredAt)
+                | if (.tags | length) == 0 then del(.tags) else . end')
+          arn=$(aws ecs register-task-definition --cli-input-json "$new" \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "arn=$arn" >> "$GITHUB_OUTPUT"
+
+      - name: update web service
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service "$WEB_SERVICE" \
+            --task-definition "${{ steps.register.outputs.arn }}" > /dev/null
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$WEB_SERVICE"
+
+  # デプロイが成功したイメージだけを記録する。失敗したデプロイの SHA を記録すると、
+  # prod を作り直したときに壊れたイメージで起動してしまう。
+  # クラスタが無くデプロイを飛ばした場合も、ビルドが成功していれば記録する
+  publish-tags:
+    needs: [build-laravel, build-nextjs, deploy-api, deploy-web]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: record laravel tag
+        if: ${{ needs.build-laravel.result == 'success' && contains(fromJSON('["success","skipped"]'), needs.deploy-api.result) }}
+        run: |
+          aws ssm put-parameter --name "$SSM_IMAGE_TAG_PREFIX/laravel" \
+            --type String --value "$IMAGE_TAG" --overwrite > /dev/null
+      - name: record nextjs tag
+        if: ${{ needs.build-nextjs.result == 'success' && needs.deploy-api.result != 'failure' && contains(fromJSON('["success","skipped"]'), needs.deploy-web.result) }}
+        run: |
+          aws ssm put-parameter --name "$SSM_IMAGE_TAG_PREFIX/nextjs" \
+            --type String --value "$IMAGE_TAG" --overwrite > /dev/null

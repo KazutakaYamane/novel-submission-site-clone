@@ -113,11 +113,32 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = [local.ecs_cluster_arn]
   }
 
-  # DescribeTaskDefinition はリソースレベル制限非対応
+  # DescribeTaskDefinition / RegisterTaskDefinition はリソースレベル制限非対応
   statement {
-    sid       = "EcsDescribeTaskDefinition"
-    actions   = ["ecs:DescribeTaskDefinition"]
+    sid       = "EcsTaskDefinition"
+    actions   = ["ecs:DescribeTaskDefinition", "ecs:RegisterTaskDefinition"]
     resources = ["*"]
+  }
+
+  # 既存のタスク定義のタグを引き継いで登録するために必要
+  statement {
+    sid       = "EcsTagTaskDefinition"
+    actions   = ["ecs:TagResource"]
+    resources = ["arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.prod_prefix}-*:*"]
+  }
+
+  # 同じコミットの再実行で、push 済みのイメージのビルドを省略するための存在確認
+  statement {
+    sid       = "EcrDescribeImages"
+    actions   = ["ecr:DescribeImages"]
+    resources = [for repo in aws_ecr_repository.this : repo.arn]
+  }
+
+  # デプロイに成功したイメージの SHA の記録(prod の Terraform が起動時に読む)
+  statement {
+    sid       = "SsmImageTag"
+    actions   = ["ssm:PutParameter"]
+    resources = ["arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/${var.environment}/image-tag/*"]
   }
 
   # one-off task にタスクロール/実行ロールを渡す(ECS タスクへの受け渡しに限定)
