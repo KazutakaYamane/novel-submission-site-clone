@@ -49,10 +49,10 @@ RUN if [ "$UID" != "82" ] || [ "$GID" != "82" ]; then \
     fi
  
 # ============== dev ==============
-# 重要: dev 段は app/ には一切依存しない
+# 重要: dev 段は backend/ には一切依存しない
 # - アプリ本体は compose.yaml の bind mount で実行時に注入される
 # - composer install / create-project はコンテナ起動後に実行する
-# - これにより、ホストに PHP/Composer を入れず、空の app/ から始められる
+# - これにより、ホストに PHP/Composer を入れず、空の backend/ から始められる
 FROM base AS dev
  
 RUN set -eux; \
