@@ -7,9 +7,9 @@ afterEach(() => {
 });
 
 describe("apiUrl", () => {
-  it("INTERNAL_API_URL に /api/v1 とパスを連結する", () => {
+  it("INTERNAL_API_URL に /api とパスを連結する", () => {
     vi.stubEnv("INTERNAL_API_URL", "http://nginx:8080");
-    expect(apiUrl("/health")).toBe("http://nginx:8080/api/v1/health");
+    expect(apiUrl("/health")).toBe("http://nginx:8080/api/health");
   });
 
   it("INTERNAL_API_URL が未設定ならエラーにする", () => {
