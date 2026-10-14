@@ -28,18 +28,6 @@ COPY docker/app/www.conf /usr/local/etc/php-fpm.d/www.conf
  
 WORKDIR /var/www/html
  
-# opcache + JIT
-RUN { \
-        echo "opcache.enable=1"; \
-        echo "opcache.enable_cli=0"; \
-        echo "opcache.memory_consumption=192"; \
-        echo "opcache.interned_strings_buffer=16"; \
-        echo "opcache.max_accelerated_files=20000"; \
-        echo "opcache.validate_timestamps=0"; \
-        echo "opcache.jit_buffer_size=64M"; \
-        echo "opcache.jit=tracing"; \
-    } > /usr/local/etc/php/conf.d/zz-opcache.ini
- 
 ARG UID=82
 ARG GID=82
 RUN if [ "$UID" != "82" ] || [ "$GID" != "82" ]; then \
