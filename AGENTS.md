@@ -6,7 +6,8 @@ Novel submission platform clone built as a job-interview portfolio. Laravel JSON
 
 - `docs/adr/`: architecture, infra, and tech-stack decisions. If a change conflicts with an ADR, propose an ADR update instead of silently diverging.
 - When code changes invalidate `README.md` or `docs/adr/` text, update that text in the same change.
-- `docs/agent_memo/` (gitignored): implementation specs. Delete each spec once code and tests replace it.
+- `docs/agent_memo/` (gitignored): implementation specs. Keep specs for work not yet implemented in `docs/agent_memo/todo/`, and move each spec to `docs/agent_memo/done/` once its implementation is finished.
+- `docs/agent_memo/todo/tasks/`: task memos. The user reads and understands all code, so implement exactly one task per request (the one the user names) and stop. Do not treat other task files' contents (results, work logs, `status`) as the current state of the code; verify against the repo.
 
 ## Design principles
 
