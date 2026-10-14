@@ -7,7 +7,9 @@ Novel submission platform clone built as a job-interview portfolio. Laravel JSON
 - `docs/adr/`: architecture, infra, and tech-stack decisions. If a change conflicts with an ADR, propose an ADR update instead of silently diverging.
 - When code changes invalidate `README.md` or `docs/adr/` text, update that text in the same change.
 - `docs/agent_memo/` (gitignored): implementation specs. Keep specs for work not yet implemented in `docs/agent_memo/todo/`, and move each spec to `docs/agent_memo/done/` once its implementation is finished.
-- `docs/agent_memo/todo/tasks/`: task memos. The user reads and understands all code, so implement exactly one task per request (the one the user names) and stop. Do not treat other task files' contents (results, work logs, `status`) as the current state of the code; verify against the repo.
+- `docs/agent_memo/todo/tasks/`: task memos for unfinished work. When a task is finished, set `status: done` and move the file to `docs/agent_memo/done/tasks/` in the same step.
+- Starting a task: create a GitHub issue with `gh issue create` from `.github/ISSUE_TEMPLATE/feature.md`, record the issue number in the task file's front matter as `issue:`, and check out a branch named `<issue number>-<slug>` (the task file name without the `T-NNNN-` prefix, e.g. `12-auth-register`). The user's instruction to start a task authorizes creating that issue.
+- Task scope: the user reads and understands all code, so implement exactly one task per request (the one the user names) and stop. Do not treat other task files' contents (results, work logs, `status`) as the current state of the code; verify against the repo.
 
 ## Design principles
 
@@ -29,6 +31,7 @@ PHP runs in the container: `docker compose exec app <cmd>`
 
 - Laravel returns JSON only. All UI rendering belongs to Next.js.
 - Generate UUIDs in the app with `Str::uuid()`, not in the DB.
+- Backend code follows the layers in `docs/adr/ADR-BACKEND.md`: single-action (`__invoke`) controllers and use cases, repository interfaces in `app/Domain`, and Eloquent only in `app/Infrastructure`.
 
 
 ## Code comments

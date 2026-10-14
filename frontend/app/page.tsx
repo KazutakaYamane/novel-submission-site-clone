@@ -21,7 +21,7 @@ export default async function Home() {
   return (
     <main>
       <h1>novel-site-clone 動作確認</h1>
-      <p>SSR で INTERNAL_API_URL 経由の /api/v1/health を呼んだ結果</p>
+      <p>SSR で INTERNAL_API_URL 経由の /api/health を呼んだ結果</p>
       <p data-testid="api-status">API: {health?.status ?? "unreachable"}</p>
       <pre>{health ? JSON.stringify(health, null, 2) : `API に到達できない: ${error}`}</pre>
       <ul>
@@ -29,7 +29,7 @@ export default async function Home() {
           <Link href="/isr">/isr</Link>: ISR キャッシュ(Redis 共有)の確認
         </li>
         <li>
-          <a href="/api/v1/health">/api/v1/health</a>: ブラウザからの API 呼び出し(CloudFront/ALB 経由)
+          <a href="/api/health">/api/health</a>: ブラウザからの API 呼び出し(CloudFront/ALB 経由)
         </li>
       </ul>
     </main>

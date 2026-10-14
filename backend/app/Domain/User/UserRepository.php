@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Domain\User;
+
+interface UserRepository
+{
+    public function existsByEmail(string $email): bool;
+
+    /**
+     * @throws EmailAlreadyTaken
+     */
+    public function create(string $name, string $email, string $hashedPassword): User;
+}
