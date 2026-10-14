@@ -165,6 +165,25 @@ services:
     networks: [app]
     restart: unless-stopped
 
+  # ---------- E2E (Playwright) ----------
+  # 普段は起動しない。`docker compose run --rm e2e` で実行する。
+  # イメージのタグは e2e/package.json の @playwright/test と同じバージョンに揃える
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.64.0-noble
+    profiles: [e2e]
+    # ホストのファイルが root 所有にならないよう、bind mount の所有者と揃える
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /e2e
+    environment:
+      BASE_URL: http://web:3000
+      # 非 root 実行時に npm のキャッシュ先が書き込み可能になるようにする
+      HOME: /tmp
+    volumes:
+      - ./e2e:/e2e
+    command: ["sh", "-c", "npm ci && npx playwright test"]
+    depends_on: [web]
+    networks: [app]
+
 networks:
   app:
     driver: bridge

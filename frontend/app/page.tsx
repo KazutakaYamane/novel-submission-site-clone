@@ -22,6 +22,7 @@ export default async function Home() {
     <main>
       <h1>novel-site-clone 動作確認</h1>
       <p>SSR で INTERNAL_API_URL 経由の /api/v1/health を呼んだ結果</p>
+      <p data-testid="api-status">API: {health?.status ?? "unreachable"}</p>
       <pre>{health ? JSON.stringify(health, null, 2) : `API に到達できない: ${error}`}</pre>
       <ul>
         <li>
