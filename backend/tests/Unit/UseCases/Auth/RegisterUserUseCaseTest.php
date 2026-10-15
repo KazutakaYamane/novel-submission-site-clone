@@ -12,6 +12,17 @@ beforeEach(function () {
         /** @var array<string, array{user: User, hashedPassword: string}> */
         public array $rows = [];
 
+        public function findById(string $id): ?User
+        {
+            foreach ($this->rows as $row) {
+                if ($row['user']->id === $id) {
+                    return $row['user'];
+                }
+            }
+
+            return null;
+        }
+
         public function existsByEmail(string $email): bool
         {
             return isset($this->rows[$email]);

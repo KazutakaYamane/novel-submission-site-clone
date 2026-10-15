@@ -34,6 +34,10 @@ PHP runs in the container: `docker compose exec app <cmd>`
 - Backend code follows the layers in `docs/adr/ADR-BACKEND.md`: single-action (`__invoke`) controllers and use cases, repository interfaces in `app/Domain`, and Eloquent only in `app/Infrastructure`.
 
 
+## Tests
+
+- A test double that implements an interface implements every method with the same behavior as the real implementation, backed by the double's in-memory state (e.g. a fake repository's `findById` searches the rows that its `create` stored). Do not fill a method the test does not call with a fixed return value such as `return null`.
+
 ## Code comments
 
 - Write a comment only for what the code cannot show: why, constraints, external requirements, non-obvious side effects.
