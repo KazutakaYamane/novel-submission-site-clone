@@ -4,6 +4,8 @@ namespace App\Domain\User;
 
 interface UserRepository
 {
+    public function findById(string $id): ?User;
+
     public function existsByEmail(string $email): bool;
 
     /**

@@ -10,6 +10,13 @@ use Illuminate\Database\UniqueConstraintViolationException;
 
 final class EloquentUserRepository implements UserRepository
 {
+    public function findById(string $id): ?User
+    {
+        $model = UserModel::find($id);
+
+        return $model === null ? null : self::toEntity($model);
+    }
+
     public function existsByEmail(string $email): bool
     {
         return UserModel::where('email', $email)->exists();
