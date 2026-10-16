@@ -1,6 +1,6 @@
 <?php
 
-// 層の依存の向きとシングルアクションのルール(docs/adr/ADR-BACKEND.md)
+// 層の依存の向きとシングルアクションのルール(docs/adr/0008-backend-layers.md)
 
 arch('Domain は Laravel にもほかの層にも依存しない')
     ->expect('App\Domain')

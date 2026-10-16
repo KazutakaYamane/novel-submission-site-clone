@@ -56,19 +56,19 @@ variable "secrets_recovery_window_in_days" {
 # ---------------------------------------------------------------------------
 
 variable "db_multi_az" {
-  description = "RDS を Multi-AZ にするか。テストデータのみのため false(ADR-INFRA)。"
+  description = "RDS を Multi-AZ にするか。テストデータのみのため false(docs/adr/0007)。"
   type        = bool
   default     = false
 }
 
 variable "db_deletion_protection" {
-  description = "RDS の削除保護。apply/destroy を繰り返す運用のため false(ADR-INFRA)。"
+  description = "RDS の削除保護。apply/destroy を繰り返す運用のため false(docs/adr/0007)。"
   type        = bool
   default     = false
 }
 
 variable "db_skip_final_snapshot" {
-  description = "destroy 時に RDS の最終スナップショットを省略するか。再作成のたびにスナップショットが残らないよう true(ADR-INFRA)。"
+  description = "destroy 時に RDS の最終スナップショットを省略するか。再作成のたびにスナップショットが残らないよう true(docs/adr/0007)。"
   type        = bool
   default     = true
 }
