@@ -12,6 +12,7 @@ use App\Infrastructure\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Hashing\LaravelPasswordHasher;
 use App\Infrastructure\Health\LaravelDependencyChecker;
 use App\Infrastructure\Sanctum\SanctumAccessTokens;
+use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -29,6 +30,14 @@ class AppServiceProvider extends ServiceProvider
         AccessTokens::class => SanctumAccessTokens::class,
         Transaction::class => DatabaseTransaction::class,
     ];
+
+    public function register(): void
+    {
+        // Scramble は dev 依存で、本番イメージ(composer install --no-dev)には入らない
+        if (class_exists(Scramble::class)) {
+            $this->app->register(OpenApiServiceProvider::class);
+        }
+    }
 
     public function boot(): void
     {
