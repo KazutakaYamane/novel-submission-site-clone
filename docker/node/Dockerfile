@@ -46,9 +46,6 @@ RUN npm ci
 FROM base AS build
 
 ENV NEXT_TELEMETRY_DISABLED=1
-# API_REWRITE_URL は渡さない。本番の /api/* は CloudFront/ALB が Laravel へ直接振り分けるため、
-# next.config.ts は API_REWRITE_URL が未設定なら /api/* の rewrites を作らない。
-# rewrites の転送先に INTERNAL_API_URL(8080)を使うと、ブラウザが付けた X-User-IP が信頼されてしまう
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY frontend/ ./

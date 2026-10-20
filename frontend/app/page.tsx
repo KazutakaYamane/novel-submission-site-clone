@@ -1,37 +1,15 @@
-import { headers } from "next/headers";
-import Link from "next/link";
-import { fetchHealth, type Health } from "@/lib/api";
+import { Suspense } from "react";
+import { HealthStatus } from "./health-status";
 
-export const dynamic = "force-dynamic";
-
-async function loadHealth(): Promise<{ health?: Health; error?: string }> {
-  const h = await headers();
-  const userIp = h.get("cloudfront-viewer-address")?.replace(/:\d+$/, "") ?? h.get("x-forwarded-for")?.split(",")[0];
-  try {
-    return { health: await fetchHealth(userIp) };
-  } catch (e) {
-    return { error: String(e) };
-  }
-}
-
-// ALB のヘルスチェック(/)は 200 のみ見るため、API が落ちていてもこのページは 200 を返す
-export default async function Home() {
-  const { health, error } = await loadHealth();
-
+// ALB のヘルスチェック(/)は 200 のみ見る。事前描画したシェルを返すので、API が落ちていても 200 になる
+export default function Home() {
   return (
     <main>
       <h1>novel-site-clone 動作確認</h1>
-      <p>SSR で INTERNAL_API_URL 経由の /api/health を呼んだ結果</p>
-      <p data-testid="api-status">API: {health?.status ?? "unreachable"}</p>
-      <pre>{health ? JSON.stringify(health, null, 2) : `API に到達できない: ${error}`}</pre>
-      <ul>
-        <li>
-          <Link href="/isr">/isr</Link>: ISR キャッシュ(Redis 共有)の確認
-        </li>
-        <li>
-          <a href="/api/health">/api/health</a>: ブラウザからの API 呼び出し(CloudFront/ALB 経由)
-        </li>
-      </ul>
+      <p>Next.js サーバーから INTERNAL_API_URL 経由で /api/health を呼んだ結果</p>
+      <Suspense fallback={<p>確認中…</p>}>
+        <HealthStatus />
+      </Suspense>
     </main>
   );
 }

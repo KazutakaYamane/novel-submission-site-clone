@@ -151,9 +151,6 @@ services:
     environment:
       # SSR 用の 8080 を呼ぶ(本番は Service Connect の http://api:8080)。
       INTERNAL_API_URL: "http://nginx:8080"
-      # ブラウザからの /api/* を rewrites で転送する先。本番の CloudFront → ALB に合わせて port 80 に送り、
-      # ブラウザが付けた X-User-IP を信頼させない。本番では未設定(rewrites を作らない)
-      API_REWRITE_URL: "http://nginx:80"
       REDIS_URL: "redis://redis:6379"
     volumes:
       - ./frontend:/app:delegated
