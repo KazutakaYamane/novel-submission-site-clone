@@ -5,11 +5,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-// SPA と同じく stateful ドメインの Origin を付け、Sanctum に cookie セッションを使わせる
-beforeEach(function () {
-    $this->withHeader('Origin', 'http://localhost:3000');
-});
-
 function registerPayload(array $overrides = []): array
 {
     return [
@@ -30,26 +25,41 @@ it('会員登録すると 201 とユーザーを返し、id は UUID で passwor
     expect(Str::isUuid($response->json('data.id')))->toBeTrue();
 });
 
-it('会員登録した直後はログイン状態になる', function () {
-    $this->postJson('/api/auth/register', registerPayload())->assertCreated();
+it('会員登録すると 7 日後に期限が切れるトークンを返す', function () {
+    $this->freezeTime();
 
-    $this->assertAuthenticatedAs(User::where('email', 'taro@example.com')->firstOrFail());
+    $this->postJson('/api/auth/register', registerPayload())
+        ->assertCreated()
+        ->assertJsonPath('expires_at', now()->addDays(7)->format(DateTimeInterface::ATOM))
+        ->assertJsonStructure(['token']);
 });
 
-it('email の形式が不正なら 422 で email のエラーを返す', function () {
+it('会員登録で返したトークンで /api/me が自分を返す', function () {
+    $token = $this->postJson('/api/auth/register', registerPayload())->json('token');
+
+    $this->withToken($token)
+        ->getJson('/api/me')
+        ->assertOk()
+        ->assertJsonPath('data.email', 'taro@example.com');
+});
+
+it('email の形式が不正なら 422 で email のエラーを返し、ユーザーもトークンも作らない', function () {
     $this->postJson('/api/auth/register', registerPayload(['email' => 'not-an-email']))
         ->assertUnprocessable()
         ->assertOnlyJsonValidationErrors(['email']);
 
-    $this->assertGuest();
+    $this->assertDatabaseCount('users', 0);
+    $this->assertDatabaseCount('personal_access_tokens', 0);
 });
 
-it('登録済みの email なら 422 で email のエラーを返す', function () {
+it('登録済みの email なら 422 で email のエラーを返し、トークンを発行しない', function () {
     User::factory()->create(['email' => 'taro@example.com']);
 
     $this->postJson('/api/auth/register', registerPayload())
         ->assertUnprocessable()
         ->assertOnlyJsonValidationErrors(['email']);
+
+    $this->assertDatabaseCount('personal_access_tokens', 0);
 });
 
 it('password が 8 文字未満なら 422 で password のエラーを返す', function () {

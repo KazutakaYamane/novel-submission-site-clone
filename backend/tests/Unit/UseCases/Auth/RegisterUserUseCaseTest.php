@@ -1,8 +1,11 @@
 <?php
 
+use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\IssuedToken;
 use App\Domain\Shared\PasswordHasher;
 use App\Domain\User\EmailAlreadyTaken;
 use App\Domain\User\User;
+use App\Domain\User\UserCredentials;
 use App\Domain\User\UserRepository;
 use App\UseCases\Auth\RegisterUserUseCase;
 
@@ -21,6 +24,15 @@ beforeEach(function () {
             }
 
             return null;
+        }
+
+        public function findCredentialsByEmail(string $email): ?UserCredentials
+        {
+            if (! isset($this->rows[$email])) {
+                return null;
+            }
+
+            return new UserCredentials($this->rows[$email]['user']->id, $this->rows[$email]['hashedPassword']);
         }
 
         public function existsByEmail(string $email): bool
@@ -43,22 +55,53 @@ beforeEach(function () {
         {
             return 'hashed:'.$plain;
         }
+
+        public function check(string $plain, string $hashed): bool
+        {
+            return $hashed === 'hashed:'.$plain;
+        }
     };
 
-    $this->registerUserUseCase = new RegisterUserUseCase($this->users, $hasher);
+    $this->tokens = new class implements AccessTokens
+    {
+        /** @var array<string, string> 平文トークン => ユーザー ID */
+        public array $issued = [];
+
+        public function issue(string $userId): IssuedToken
+        {
+            $token = 'token-'.count($this->issued);
+            $this->issued[$token] = $userId;
+
+            return new IssuedToken($token, new DateTimeImmutable('+7 days'));
+        }
+
+        public function revoke(string $plainTextToken): void
+        {
+            unset($this->issued[$plainTextToken]);
+        }
+    };
+
+    $this->registerUserUseCase = new RegisterUserUseCase($this->users, $hasher, $this->tokens);
 });
 
 it('パスワードをハッシュにしてからユーザーを保存する', function () {
-    $user = ($this->registerUserUseCase)('山田太郎', 'taro@example.com', 'password123');
+    ($this->registerUserUseCase)('山田太郎', 'taro@example.com', 'password123');
 
-    expect($user->email)->toBe('taro@example.com')
-        ->and($this->users->rows['taro@example.com']['hashedPassword'])->toBe('hashed:password123');
+    expect($this->users->rows['taro@example.com']['hashedPassword'])->toBe('hashed:password123');
 });
 
-it('登録済みのメールアドレスなら EmailAlreadyTaken を投げ、保存しない', function () {
+it('保存したユーザーのトークンを発行して、ユーザーと一緒に返す', function () {
+    $authenticated = ($this->registerUserUseCase)('山田太郎', 'taro@example.com', 'password123');
+
+    expect($authenticated->user->email)->toBe('taro@example.com')
+        ->and($this->tokens->issued)->toBe([$authenticated->token->token => $authenticated->user->id]);
+});
+
+it('登録済みのメールアドレスなら EmailAlreadyTaken を投げ、保存もトークンの発行もしない', function () {
     ($this->registerUserUseCase)('山田太郎', 'taro@example.com', 'password123');
 
     expect(fn () => ($this->registerUserUseCase)('別の人', 'taro@example.com', 'password456'))
         ->toThrow(EmailAlreadyTaken::class)
-        ->and($this->users->rows)->toHaveCount(1);
+        ->and($this->users->rows)->toHaveCount(1)
+        ->and($this->tokens->issued)->toHaveCount(1);
 });

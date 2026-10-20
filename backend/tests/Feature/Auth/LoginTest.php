@@ -4,7 +4,6 @@ use App\Infrastructure\Eloquent\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
-    $this->withHeader('Origin', 'http://localhost:3000');
     User::factory()->create([
         'name' => '山田太郎',
         'email' => 'taro@example.com',
@@ -12,24 +11,34 @@ beforeEach(function () {
     ]);
 });
 
-it('正しい資格情報なら 200 とユーザーを返し、以後の /api/me が自分を返す', function () {
+it('正しい資格情報なら 200 とユーザーと 7 日後に期限が切れるトークンを返す', function () {
+    $this->freezeTime();
+
     $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'password123'])
         ->assertOk()
         ->assertJsonPath('data.email', 'taro@example.com')
-        ->assertJsonMissingPath('data.password');
+        ->assertJsonMissingPath('data.password')
+        ->assertJsonPath('expires_at', now()->addDays(7)->format(DateTimeInterface::ATOM))
+        ->assertJsonStructure(['token']);
+});
 
-    $this->getJson('/api/me')
+it('ログインで返したトークンで /api/me が自分を返す', function () {
+    $token = $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'password123'])
+        ->json('token');
+
+    $this->withToken($token)
+        ->getJson('/api/me')
         ->assertOk()
         ->assertJsonPath('data.email', 'taro@example.com');
 });
 
-it('パスワード誤りと未登録のメールに、同じ 422 とメッセージを返す', function (string $email, string $password) {
+it('パスワード誤りと未登録のメールに、同じ 422 とメッセージを返し、トークンを発行しない', function (string $email, string $password) {
     $this->postJson('/api/auth/login', ['email' => $email, 'password' => $password])
         ->assertUnprocessable()
         ->assertOnlyJsonValidationErrors(['email'])
         ->assertJsonPath('errors.email.0', 'メールアドレスまたはパスワードが正しくありません');
 
-    $this->assertGuest();
+    $this->assertDatabaseCount('personal_access_tokens', 0);
 })->with([
     'パスワード誤り' => ['taro@example.com', 'wrong-password'],
     '未登録のメール' => ['nobody@example.com', 'password123'],
