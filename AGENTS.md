@@ -24,7 +24,7 @@ The project is in early development and has no backward-compatibility obligation
 
 - Before changing code under `backend/`, read `backend/AGENTS.md` (layers, per-layer rules, commands, test layout).
 - Before changing code under `frontend/`, read `frontend/AGENTS.md` (boundaries, caching, data fetching, Server Actions, auth, commands).
-- `docs/adr/` records why decisions were made. The author writes ADRs; do not put coding rules there.
+- `docs/adr/` records why decisions were made. do not put coding rules there.
 - Prefer enforcing a rule mechanically (Pest `arch()` tests, PHPStan, ESLint) over describing it in prose.
 
 ## Constraints

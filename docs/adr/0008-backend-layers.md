@@ -24,12 +24,12 @@ app/
 | Domain | エンティティ(`readonly`クラス)、Repositoryなどのインターフェース、ドメイン例外 | PHPの標準機能だけ |
 | Infrastructure | DomainのInterfaceの実装 | Domain、Laravel |
 
-ルール:
+### ルール
 
 - コントローラーとUseCaseは`__invoke`だけを公開する。コントローラー1つがルート1本に対応し、UseCase1つを呼ぶ。
 - RepositoryはEloquentモデルをエンティティに詰め替えて返す。
 - メールアドレスの重複など、DBを見ないと決まらない検証はUseCaseが行い、ドメイン例外を投げる。Http層がそれをステータスコードに変換する。
-- 認可はUseCaseが、ユーザーIDとエンティティを比べて判定する。権限がなければ403を返す。存在を知られると困るリソース(他人の下書きの話など)は、存在しないときと同じ404を返す。ログインしているかどうかは、ルートの`auth:sanctum`で判定する。
+- 認可はUseCaseがユーザーIDとエンティティを比べて判定する。権限がなければ403を返す。存在を知られると困るリソース(他人の下書きの話など)は、存在しないときと同じ404を返す。ログインしているかどうかは、ルートの`auth:sanctum`で判定する。
 - Http層は`Auth::id()`だけをUseCaseに渡す。ログインは`Auth::attempt()`、会員登録の直後は`Auth::loginUsingId()`で行う。
   - ログインの方法と、層の表の「認証セッションの操作」は superseded by [0011](0011-sanctum-api-token.md)
 - パスワードのハッシュや現在時刻など、UseCaseがLaravelの機能を使うときは、DomainにInterfaceを置いてInfrastructureで実装する。
@@ -46,5 +46,5 @@ app/
 ## 代償
 
 - Repositoryごとに、モデルとエンティティの詰め替えのコードが要る。
-- Eloquentモデルを前提にした機能を使わない。対象は、ルートモデルバインディング、Policy、`Auth::user()`、FormRequestの`unique`・`exists`ルール、`LengthAwarePaginator`。ページネーションには、一覧と件数を持つ型をDomainに定義する。
+- Eloquentモデルを前提にした機能を使わない。対象はルートモデルバインディング、Policy、`Auth::user()`、FormRequestの`unique`・`exists`ルール、`LengthAwarePaginator`。ページネーションには一覧と件数を持つ型をDomainに定義する。
 - ログイン中のユーザーのエンティティが必要なときは、Repositoryで読み直すSELECTが1回増える。
