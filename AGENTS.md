@@ -4,8 +4,9 @@ Novel submission platform clone built as a job-interview portfolio. Laravel JSON
 
 ## Sources of truth
 
-- `docs/adr/`: architecture, infra, and tech-stack decisions. If a change conflicts with an ADR, propose an ADR update instead of silently diverging.
-- When code changes invalidate `README.md` or `docs/adr/` text, update that text in the same change.
+- `docs/adr/`: the source of truth for decisions and why they were made. One decision per file, named `NNNN-<slug>.md` in the order decided; `docs/adr/README.md` lists each with its status. An ADR is not edited to follow the code; when a change conflicts with an ADR's decision or its premises, stop and propose a new ADR that supersedes it. The old ADR stays, marked `superseded by`.
+- `AGENTS.md`, `backend/AGENTS.md`, `frontend/AGENTS.md`, and mechanical checks (`arch()` tests, PHPStan, ESLint): the source of truth for coding rules. If a rule contradicts an ADR, report the contradiction to the user instead of changing either side.
+- When code changes invalidate `README.md` text, list the affected passages to the user in the same change. The author rewrites them.
 - `docs/agent_memo/` (gitignored): implementation specs. Keep specs for work not yet implemented in `docs/agent_memo/todo/`, and move each spec to `docs/agent_memo/done/` once its implementation is finished.
 - `docs/agent_memo/todo/tasks/`: task memos for unfinished work. When a task is finished, set `status: done` and move the file to `docs/agent_memo/done/tasks/` in the same step.
 - Starting a task: create a GitHub issue with `gh issue create` from `.github/ISSUE_TEMPLATE/feature.md`, record the issue number in the task file's front matter as `issue:`, and check out a branch named `<issue number>-<slug>` (the task file name without the `T-NNNN-` prefix, e.g. `12-auth-register`). The user's instruction to start a task authorizes creating that issue.
@@ -17,22 +18,19 @@ The project is in early development and has no backward-compatibility obligation
 
 - Do not add a workaround, a compatibility shim, or a `moved`/migration step whose only purpose is to preserve the current state of a design that is not optimal. Change the design itself and rebuild what depends on it.
 - Before a change that breaks existing code, data, or infrastructure, investigate the blast radius (callers, state, running resources, docs) and show the user the optimal design, what it breaks, and the cost of rebuilding. Then proceed once the user agrees.
-- If the optimal design is not chosen, record it as an accepted trade-off in the ADR instead of presenting a workaround as the design.
+- If the optimal design is not chosen, propose recording it as an accepted trade-off in an ADR instead of presenting a workaround as the design.
 
-## Commands
+## Where coding rules live
 
-PHP runs in the container: `docker compose exec app <cmd>`
-
-- Test: `./vendor/bin/pest [--filter Name]`
-- Static analysis: `./vendor/bin/phpstan analyse`
-- Format: `./vendor/bin/pint` (`--test` to check only)
+- Before changing code under `backend/`, read `backend/AGENTS.md` (layers, per-layer rules, commands, test layout).
+- Before changing code under `frontend/`, read `frontend/AGENTS.md` (boundaries, caching, data fetching, Server Actions, auth, commands).
+- `docs/adr/` records why decisions were made. do not put coding rules there.
+- Prefer enforcing a rule mechanically (Pest `arch()` tests, PHPStan, ESLint) over describing it in prose.
 
 ## Constraints
 
 - Laravel returns JSON only. All UI rendering belongs to Next.js.
 - Generate UUIDs in the app with `Str::uuid()`, not in the DB.
-- Backend code follows the layers in `docs/adr/ADR-BACKEND.md`: single-action (`__invoke`) controllers and use cases, repository interfaces in `app/Domain`, and Eloquent only in `app/Infrastructure`.
-
 
 ## Tests
 

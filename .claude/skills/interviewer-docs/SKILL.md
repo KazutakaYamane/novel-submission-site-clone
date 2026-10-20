@@ -13,11 +13,10 @@ Include a section on AI usage: that Claude Code is used, and which parts the aut
 
 ## ADR
 
-Sections: Context / Decision / Alternatives considered (why rejected) / Consequences (including accepted trade-offs).
+One decision per file, named `docs/adr/NNNN-<slug>.md` and listed in `docs/adr/README.md`. Sections: 問題 / 採用 / 却下した案 (why rejected) / 代償 (including accepted trade-offs). Omit a section that has no content.
 
-Planned ADRs: ADR-TF, ADR-BE, ADR-FE.
 
-Write only decisions that the current code and infrastructure embody. Leave out anything that comes from the working session: incidents during development, the order the author did things, a temporary state, or a user's passing remark. An alternative belongs under "Alternatives considered" only if a reader would plausibly ask "why not that?" about the finished system, and the reason must hold without knowing the session.
+Write only decisions that the current code and infrastructure embody. Leave out anything that comes from the working session: incidents during development, the order the author did things, a temporary state, or a user's passing remark. An alternative belongs under 却下した案 only if a reader would plausibly ask "why not that?" about the finished system, and the reason must hold without knowing the session.
 
 ## Issue
 

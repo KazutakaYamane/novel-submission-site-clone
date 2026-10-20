@@ -22,4 +22,4 @@ Implemented in `.github/workflows/`:
 - `prod` reads those SSM parameters via `data.aws_ssm_parameter` to pick the image tags, so `plan`, `apply` and `destroy` all fail until the workflow has run once. Run it before the first `apply` of `prod`. The parameters are created by CI, not Terraform.
 - `terraform-plan.yml` (pull_request): `terraform plan -lock=false` for `prod` and `prod-persistent` with `github_plan`. `terraform apply` is never run from GitHub Actions.
 
-Design rationale is in `docs/adr/ADR-INFRA.md` (CI/CD section).
+Design rationale is in `docs/adr/0006-ci-cd.md`.
