@@ -6,6 +6,8 @@ interface UserRepository
 {
     public function findById(string $id): ?User;
 
+    public function findCredentialsByEmail(string $email): ?UserCredentials;
+
     public function existsByEmail(string $email): bool;
 
     /**

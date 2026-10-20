@@ -37,10 +37,6 @@
         <server name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="sync" force="true"/>
         <server name="QUEUE_CONNECTION" value="sync" force="true"/>
-        <env name="SESSION_DRIVER" value="array" force="true"/>
-        <server name="SESSION_DRIVER" value="array" force="true"/>
-        <env name="SANCTUM_STATEFUL_DOMAINS" value="localhost:3000" force="true"/>
-        <server name="SANCTUM_STATEFUL_DOMAINS" value="localhost:3000" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

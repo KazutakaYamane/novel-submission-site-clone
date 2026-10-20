@@ -56,10 +56,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       CACHE_STORE: redis
-      SESSION_DRIVER: redis
       QUEUE_CONNECTION: redis
-      # Sanctum: Next.js(ブラウザの Origin)からの /api/* をセッション認証にする
-      SANCTUM_STATEFUL_DOMAINS: localhost:${NEXT_PORT:-3000}
       # Mail (Mailpit)
       MAIL_MAILER: smtp
       MAIL_HOST: mailpit

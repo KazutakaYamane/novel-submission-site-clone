@@ -3,18 +3,15 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\UseCases\Auth\LogoutUseCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 
 class LogoutController extends Controller
 {
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, LogoutUseCase $logoutUseCase): Response
     {
-        // auth:sanctum は RequestGuard 経由で認証するため、セッションを持つ web ガードを明示してログアウトする
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $logoutUseCase((string) $request->bearerToken());
 
         return response()->noContent();
     }

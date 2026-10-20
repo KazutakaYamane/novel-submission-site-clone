@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Table(keyType: 'string', incrementing: false)]
 #[Fillable(['name', 'email', 'password'])]
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
 #[UseFactory(UserFactory::class)]
 class User extends Authenticatable
 {
+    use HasApiTokens;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory;
 
