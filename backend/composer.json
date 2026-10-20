@@ -13,6 +13,7 @@
         "predis/predis": "^3.6"
     },
     "require-dev": {
+        "dedoc/scramble": "^0.13.49",
         "fakerphp/faker": "^1.23",
         "larastan/larastan": "^3.12",
         "laravel/pail": "^1.2.5",

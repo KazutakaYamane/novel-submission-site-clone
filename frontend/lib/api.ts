@@ -1,8 +1,6 @@
-export type Health = {
-  status: string;
-  checks: Record<string, { ok: boolean; error?: string }>;
-  client_ip: string;
-};
+import type { operations } from "./api/schema";
+
+export type Health = operations["health"]["responses"][200]["content"]["application/json"];
 
 export function apiUrl(path: string): string {
   const base = process.env.INTERNAL_API_URL;

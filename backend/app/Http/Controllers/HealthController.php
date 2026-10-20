@@ -22,6 +22,7 @@ class HealthController extends Controller
 
         return response()->json([
             'status' => in_array(false, array_column($checks, 'ok'), true) ? 'degraded' : 'ok',
+            /** @var array{database: array{ok: bool, error?: string}, redis: array{ok: bool, error?: string}} */
             'checks' => $checks,
             // nginx が REMOTE_ADDR に入れた値。8080 経由で X-User-IP が反映されることを確認できる
             'client_ip' => $request->ip(),
