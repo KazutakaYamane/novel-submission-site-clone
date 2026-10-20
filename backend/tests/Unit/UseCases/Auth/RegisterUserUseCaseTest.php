@@ -3,6 +3,7 @@
 use App\Domain\Auth\AccessTokens;
 use App\Domain\Auth\IssuedToken;
 use App\Domain\Shared\PasswordHasher;
+use App\Domain\Shared\Transaction;
 use App\Domain\User\EmailAlreadyTaken;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
@@ -81,7 +82,16 @@ beforeEach(function () {
         }
     };
 
-    $this->registerUserUseCase = new RegisterUserUseCase($this->users, $hasher, $this->tokens);
+    // メモリ上の double には巻き戻す DB がないので、処理をそのまま実行する
+    $transaction = new class implements Transaction
+    {
+        public function run(callable $callback): mixed
+        {
+            return $callback();
+        }
+    };
+
+    $this->registerUserUseCase = new RegisterUserUseCase($this->users, $hasher, $this->tokens, $transaction);
 });
 
 it('パスワードをハッシュにしてからユーザーを保存する', function () {

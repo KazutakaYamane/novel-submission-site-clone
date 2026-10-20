@@ -4,6 +4,7 @@ namespace App\Infrastructure\Eloquent\Repositories;
 
 use App\Domain\User\EmailAlreadyTaken;
 use App\Domain\User\User;
+use App\Domain\User\UserCredentials;
 use App\Domain\User\UserRepository;
 use App\Infrastructure\Eloquent\Models\User as UserModel;
 use Illuminate\Database\UniqueConstraintViolationException;
@@ -15,6 +16,13 @@ final class EloquentUserRepository implements UserRepository
         $model = UserModel::find($id);
 
         return $model === null ? null : self::toEntity($model);
+    }
+
+    public function findCredentialsByEmail(string $email): ?UserCredentials
+    {
+        $model = UserModel::where('email', $email)->first(['id', 'password']);
+
+        return $model === null ? null : new UserCredentials($model->id, $model->password);
     }
 
     public function existsByEmail(string $email): bool

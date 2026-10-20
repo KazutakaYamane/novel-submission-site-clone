@@ -7,8 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
 use App\UseCases\Auth\RegisterUserUseCase;
+use DateTimeInterface;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
@@ -16,7 +16,7 @@ class RegisterController extends Controller
     public function __invoke(RegisterRequest $request, RegisterUserUseCase $registerUserUseCase): JsonResponse
     {
         try {
-            $user = $registerUserUseCase(
+            $authenticated = $registerUserUseCase(
                 $request->string('name')->toString(),
                 $request->string('email')->toString(),
                 $request->string('password')->toString(),
@@ -27,9 +27,12 @@ class RegisterController extends Controller
             ]);
         }
 
-        // SessionGuard::login がセッション ID を振り直すので、ここで regenerate しない
-        Auth::loginUsingId($user->id);
-
-        return (new UserResource($user))->response()->setStatusCode(201);
+        return (new UserResource($authenticated->user))
+            ->additional([
+                'token' => $authenticated->token->token,
+                'expires_at' => $authenticated->token->expiresAt->format(DateTimeInterface::ATOM),
+            ])
+            ->response()
+            ->setStatusCode(201);
     }
 }
