@@ -43,6 +43,7 @@ lib/<topic>.ts               framework-free logic shared by 2+ routes (e.g. nota
 - MUST [decision] Put a file in the route folder that uses it. Move it to `components/` or `lib/` only when a second route imports it. Reason: the route folder shows everything the page depends on.
 - MUST [decision] Do not create role folders (`hooks/`, `utils/`, `types/`, `services/`, `containers/`). A hook or type lives next to its only user, or in the shared file that owns the concept.
 - MUST [decision] Every module that calls Laravel or reads the token lives in `lib/api/` or `lib/auth.ts` and starts with `import "server-only";`. Reason: a Client Component import then fails the build [spec].
+- MUST [decision] No import cycles, and `lib/auth.ts` does not import `lib/api/`. Reason: `lib/api/client.ts` imports `lib/auth.ts` for the token. Enforced by `npm run lint` (`import/no-cycle`, `import/no-restricted-paths`).
 - MUST [decision] Unit tests sit next to the source as `<name>.test.ts(x)`.
 
 ## Boundaries
@@ -75,7 +76,7 @@ What goes where on public pages [decision]:
 
 ### Module boundaries
 
-- MUST [decision] `lib/api/` is the only place that calls `fetch` to Laravel. Components call its functions.
+- MUST [decision] `lib/api/client.ts` is the only place that calls `fetch`; other `lib/api/` files call `apiFetch` / `apiFetchAsUser`, and components call `lib/api/` functions. Enforced by `npm run lint` (`no-restricted-globals`).
 - MUST [decision] Data functions return the types the UI needs, built from `schema.d.ts`. Client Components receive only these narrow types or primitives as props, never a raw API response. Reason: anything passed to a Client Component is sent to the browser [spec].
 - MUST [decision] Server Actions live in `actions.ts` files with `"use server";` at the top. Do not define inline actions inside components.
 
@@ -268,7 +269,7 @@ The `as` casts stand in for the generated `schema.d.ts` types until they exist; 
 1. Does every changed route still pass `npm run build`? (catches missing `<Suspense>` and `server-only` imports from the client)
 2. Is `page.tsx` free of `"use client"` and of top-level `await` on `params`, `searchParams`, `cookies()`, `headers()`?
 3. Is every `"use client"` file a leaf that needs state, effects, or events?
-4. Does every call to Laravel go through `lib/api/`, and does every file there start with `import "server-only";`? (grep for `fetch(` outside `lib/api/`)
+4. Does every call to Laravel go through `lib/api/`, and does every file there start with `import "server-only";`? (`fetch` outside `lib/api/client.ts` fails `npm run lint`)
 5. Does every `"use cache"` function use only `apiFetch`, and receive only IDs as arguments?
 6. Does every cached function call `cacheTag` with the tags from the table above and `cacheLife("days")`?
 7. Is per-user data (account, cheer, rating, `/my/*`) read without `"use cache"` and inside `<Suspense>`?
