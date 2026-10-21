@@ -18,6 +18,9 @@ beforeEach(function () {
         /** @var array<string, Work> */
         public array $rows = [];
 
+        /** @var array<string, string> 小文字にした名前 => 最初に登録された表記。本物の tags テーブルと同じく作品の間で共有する */
+        private array $tagNames = [];
+
         private int $sequence = 0;
 
         public function create(
@@ -28,6 +31,7 @@ beforeEach(function () {
             Genre $genre,
             WorkStatus $status,
             array $ratingFlags,
+            array $tags,
         ): Work {
             $work = new Work(
                 // addWork で入れた行の id と重ならないよう、接頭辞を分ける
@@ -39,6 +43,7 @@ beforeEach(function () {
                 genre: $genre,
                 status: $status,
                 ratingFlags: $ratingFlags,
+                tags: $this->storeTags($tags),
                 publishedAt: null,
                 lastEpisodePublishedAt: null,
                 createdAt: new DateTimeImmutable,
@@ -78,10 +83,29 @@ beforeEach(function () {
                 genre: $changes['genre'] ?? $stored->genre,
                 status: $changes['status'] ?? $stored->status,
                 ratingFlags: $changes['ratingFlags'] ?? $stored->ratingFlags,
+                tags: array_key_exists('tags', $changes) ? $this->storeTags($changes['tags']) : $stored->tags,
                 publishedAt: $stored->publishedAt,
                 lastEpisodePublishedAt: $stored->lastEpisodePublishedAt,
                 createdAt: $stored->createdAt,
             );
+        }
+
+        /**
+         * @param  list<string>  $names
+         * @return list<string>
+         */
+        private function storeTags(array $names): array
+        {
+            $tags = [];
+            foreach ($names as $name) {
+                $key = mb_strtolower($name);
+                $this->tagNames[$key] ??= $name;
+                $tags[$key] = $this->tagNames[$key];
+            }
+            // 本物は utf8mb4_bin の normalized_name で並べる。バイト順は UTF-8 のコードポイント順と同じ
+            ksort($tags, SORT_STRING);
+
+            return array_values($tags);
         }
     };
 
@@ -95,6 +119,7 @@ beforeEach(function () {
             genre: Genre::Fantasy,
             status: WorkStatus::Ongoing,
             ratingFlags: [RatingFlag::Violence],
+            tags: ['異世界'],
             publishedAt: $publishedAt,
             lastEpisodePublishedAt: null,
             createdAt: new DateTimeImmutable($createdAt),
@@ -105,7 +130,7 @@ beforeEach(function () {
 describe('CreateWorkUseCase', function () {
     it('ログイン中のユーザーの作品として保存する', function () {
         $work = (new CreateWorkUseCase($this->works))(
-            'user-1', '図書委員の異世界日誌', null, '本の虫の話。', Genre::Fantasy, WorkStatus::Completed, [RatingFlag::Cruelty],
+            'user-1', '図書委員の異世界日誌', null, '本の虫の話。', Genre::Fantasy, WorkStatus::Completed, [RatingFlag::Cruelty], [],
         );
 
         expect($this->works->rows)->toBe([$work->id => $work])
@@ -116,10 +141,26 @@ describe('CreateWorkUseCase', function () {
 
     it('status を指定しなければ連載中にする', function () {
         $work = (new CreateWorkUseCase($this->works))(
-            'user-1', '図書委員の異世界日誌', null, '本の虫の話。', Genre::Fantasy, null, [],
+            'user-1', '図書委員の異世界日誌', null, '本の虫の話。', Genre::Fantasy, null, [], [],
         );
 
         expect($work->status)->toBe(WorkStatus::Ongoing);
+    });
+
+    it('タグは小文字にした名前のコードポイント順で返す', function () {
+        $work = (new CreateWorkUseCase($this->works))(
+            'user-1', '図書委員の異世界日誌', null, '本の虫の話。', Genre::Fantasy, null, [], ['Banana', 'apple'],
+        );
+
+        expect($work->tags)->toBe(['apple', 'Banana']);
+    });
+
+    it('渡したタグを付けて保存する', function () {
+        $work = (new CreateWorkUseCase($this->works))(
+            'user-1', '図書委員の異世界日誌', null, '本の虫の話。', Genre::Fantasy, null, [], ['図書館', '異世界'],
+        );
+
+        expect($this->works->rows[$work->id]->tags)->toEqualCanonicalizing(['図書館', '異世界']);
     });
 });
 
@@ -183,6 +224,15 @@ describe('UpdateMyWorkUseCase', function () {
             ->and($updated->introduction)->toBe('本の虫が異世界の図書館で働く話。')
             ->and($updated->genre)->toBe(Genre::Fantasy)
             ->and($updated->status)->toBe(WorkStatus::Ongoing);
+    });
+
+    it('タグを渡すと全部置き換え、渡さなければ変えない', function () {
+        ($this->addWork)('work-1', 'user-1');
+        $useCase = new UpdateMyWorkUseCase($this->works);
+
+        expect($useCase('user-1', 'work-1', ['title' => '新しいタイトル'])->tags)->toBe(['異世界'])
+            ->and($useCase('user-1', 'work-1', ['tags' => ['図書館', '料理']])->tags)->toEqualCanonicalizing(['図書館', '料理'])
+            ->and($this->works->rows['work-1']->tags)->toEqualCanonicalizing(['図書館', '料理']);
     });
 
     it('他人の公開済みの作品なら WorkAccessDenied を投げ、変えない', function () {

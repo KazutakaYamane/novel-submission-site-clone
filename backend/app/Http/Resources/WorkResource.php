@@ -27,6 +27,7 @@ class WorkResource extends JsonResource
             'genre' => $this->resource->genre,
             'status' => $this->resource->status,
             'rating_flags' => $this->resource->ratingFlags,
+            'tags' => $this->resource->tags,
             'published_at' => $this->resource->publishedAt?->format(DateTimeInterface::ATOM),
             'last_episode_published_at' => $this->resource->lastEpisodePublishedAt?->format(DateTimeInterface::ATOM),
             'created_at' => $this->resource->createdAt->format(DateTimeInterface::ATOM),

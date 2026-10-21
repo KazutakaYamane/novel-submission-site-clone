@@ -8,6 +8,7 @@ return [
     'enum' => ':attributeの値が正しくありません',
     'list' => ':attributeは配列で入力してください',
     'max' => [
+        'array' => ':attributeは:max個以内で指定してください',
         'string' => ':attributeは:max文字以内で入力してください',
     ],
     'min' => [
@@ -27,6 +28,8 @@ return [
         'rating_flags' => 'セルフレイティング',
         'rating_flags.*' => 'セルフレイティング',
         'status' => '連載状況',
+        'tags' => 'タグ',
+        'tags.*' => 'タグ',
         'title' => 'タイトル',
     ],
 ];

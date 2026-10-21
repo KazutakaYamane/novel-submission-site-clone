@@ -24,6 +24,8 @@ class StoreWorkRequest extends FormRequest
             'status' => ['sometimes', Rule::enum(WorkStatus::class)],
             'rating_flags' => ['sometimes', 'list'],
             'rating_flags.*' => [Rule::enum(RatingFlag::class), 'distinct'],
+            'tags' => ['sometimes', 'list', 'max:'.Config::integer('work.tags.max_count')],
+            'tags.*' => ['required', 'string', 'max:'.Config::integer('work.tags.max_length')],
         ];
     }
 
@@ -45,5 +47,13 @@ class StoreWorkRequest extends FormRequest
     public function ratingFlags(): array
     {
         return array_map(RatingFlag::from(...), $this->validated('rating_flags', []));
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function tags(): array
+    {
+        return $this->validated('tags', []);
     }
 }

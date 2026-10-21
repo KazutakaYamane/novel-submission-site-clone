@@ -7,8 +7,13 @@ use App\Domain\Work\RatingFlag;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkRepository;
 use App\Domain\Work\WorkStatus;
+use App\Infrastructure\Eloquent\Models\Tag;
 use App\Infrastructure\Eloquent\Models\Work as WorkModel;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * @phpstan-import-type WorkChanges from WorkRepository
+ */
 final class EloquentWorkRepository implements WorkRepository
 {
     public function create(
@@ -19,30 +24,37 @@ final class EloquentWorkRepository implements WorkRepository
         Genre $genre,
         WorkStatus $status,
         array $ratingFlags,
+        array $tags,
     ): Work {
-        $model = WorkModel::create([
-            'user_id' => $userId,
-            'title' => $title,
-            'catchphrase' => $catchphrase,
-            'introduction' => $introduction,
-            'genre' => $genre->value,
-            'status' => $status->value,
-            'rating_flags' => self::ratingFlagValues($ratingFlags),
-        ]);
+        $model = DB::transaction(function () use ($userId, $title, $catchphrase, $introduction, $genre, $status, $ratingFlags, $tags) {
+            $model = WorkModel::create([
+                'user_id' => $userId,
+                'title' => $title,
+                'catchphrase' => $catchphrase,
+                'introduction' => $introduction,
+                'genre' => $genre->value,
+                'status' => $status->value,
+                'rating_flags' => self::ratingFlagValues($ratingFlags),
+            ]);
+            self::syncTags($model, $tags);
 
-        return self::toEntity($model);
+            return $model;
+        });
+
+        return self::toEntity($model->load('tags'));
     }
 
     public function findById(string $id): ?Work
     {
-        $model = WorkModel::find($id);
+        $model = WorkModel::with('tags')->find($id);
 
         return $model === null ? null : self::toEntity($model);
     }
 
     public function listByUser(string $userId): array
     {
-        return WorkModel::where('user_id', $userId)
+        return WorkModel::with('tags')
+            ->where('user_id', $userId)
             ->latest()
             // created_at は秒単位なので、同じ秒の作品は UUIDv7 の id で作った順に並べる
             ->orderByDesc('id')
@@ -54,11 +66,29 @@ final class EloquentWorkRepository implements WorkRepository
 
     public function update(string $id, array $changes): ?Work
     {
-        $model = WorkModel::find($id);
-        if ($model === null) {
-            return null;
-        }
+        return DB::transaction(function () use ($id, $changes) {
+            // 同じ作品への同時の更新が、中間テーブルの同じ行を同時に INSERT しないようにする
+            $model = WorkModel::lockForUpdate()->find($id);
+            if ($model === null) {
+                return null;
+            }
 
+            $model->fill(self::attributes($changes));
+            $tagsChanged = array_key_exists('tags', $changes) && self::syncTags($model, $changes['tags']);
+            // save() は値が変わった列だけを UPDATE し、何も変わらなければ updated_at も変えない。
+            // タグは works の列ではないので、変わったときは touch() で updated_at を変える
+            $tagsChanged ? $model->touch() : $model->save();
+
+            return self::toEntity($model->load('tags'));
+        });
+    }
+
+    /**
+     * @param  WorkChanges  $changes
+     * @return array<string, mixed>
+     */
+    private static function attributes(array $changes): array
+    {
         $attributes = [];
         if (array_key_exists('title', $changes)) {
             $attributes['title'] = $changes['title'];
@@ -79,10 +109,32 @@ final class EloquentWorkRepository implements WorkRepository
             $attributes['rating_flags'] = self::ratingFlagValues($changes['ratingFlags']);
         }
 
-        // save() は値が変わった列だけを UPDATE し、何も変わらなければ updated_at も変えない
-        $model->fill($attributes)->save();
+        return $attributes;
+    }
 
-        return self::toEntity($model);
+    /**
+     * @param  list<string>  $names
+     * @return bool 作品のタグが変わったか
+     */
+    private static function syncTags(WorkModel $model, array $names): bool
+    {
+        $rows = [];
+        foreach ($names as $name) {
+            $normalized = mb_strtolower($name);
+            // 先に来た表記を残すので、同じキーを上書きしない
+            $rows[$normalized] ??= ['name' => $name, 'normalized_name' => $normalized];
+        }
+        // upsert は既存の行を入力の順にロックするので、同時のリクエスト同士がデッドロックしないよう順を揃える
+        ksort($rows, SORT_STRING);
+        // 数字だけの名前は配列のキーにすると int になり、MySQL が数値として比べるので、検索には行の値を使う
+        $normalizedNames = array_column($rows, 'normalized_name');
+
+        // 既にあるタグは表記を変えずに使う。同時に同じタグを作るリクエストがあっても unique 違反にならない
+        Tag::upsert(array_values($rows), ['normalized_name'], ['normalized_name']);
+
+        $result = $model->tags()->sync(Tag::whereIn('normalized_name', $normalizedNames)->pluck('id')->all());
+
+        return $result['attached'] !== [] || $result['detached'] !== [];
     }
 
     /**
@@ -105,6 +157,7 @@ final class EloquentWorkRepository implements WorkRepository
             genre: Genre::from($model->genre),
             status: WorkStatus::from($model->status),
             ratingFlags: array_map(RatingFlag::from(...), $model->rating_flags),
+            tags: $model->tags->pluck('name')->values()->all(),
             publishedAt: $model->published_at?->toDateTimeImmutable(),
             lastEpisodePublishedAt: $model->last_episode_published_at?->toDateTimeImmutable(),
             createdAt: $model->created_at->toDateTimeImmutable(),

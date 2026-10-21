@@ -10,12 +10,14 @@ namespace App\Domain\Work;
  *     genre?: Genre,
  *     status?: WorkStatus,
  *     ratingFlags?: list<RatingFlag>,
+ *     tags?: list<string>,
  * }
  */
 interface WorkRepository
 {
     /**
      * @param  list<RatingFlag>  $ratingFlags
+     * @param  list<string>  $tags  大文字小文字だけが違う名前は同じタグとして 1 つにまとめる
      */
     public function create(
         string $userId,
@@ -25,6 +27,7 @@ interface WorkRepository
         Genre $genre,
         WorkStatus $status,
         array $ratingFlags,
+        array $tags,
     ): Work;
 
     public function findById(string $id): ?Work;
@@ -36,6 +39,7 @@ interface WorkRepository
 
     /**
      * 渡した項目だけを書き換える。同時に別の項目を変えたリクエストの値を上書きしないため
+     * tags を渡すと、作品のタグを全部置き換える
      *
      * @param  WorkChanges  $changes
      * @return Work|null 書き換えた後の作品。作品が無ければ null

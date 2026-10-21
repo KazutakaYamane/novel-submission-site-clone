@@ -570,6 +570,13 @@
                             "$ref": "#/components/schemas/RatingFlag"
                         },
                         "uniqueItems": true
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 20
+                        }
                     }
                 },
                 "required": [
@@ -609,6 +616,13 @@
                             "$ref": "#/components/schemas/RatingFlag"
                         },
                         "uniqueItems": true
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "maxLength": 20
+                        }
                     }
                 },
                 "title": "UpdateWorkRequest"
@@ -667,6 +681,12 @@
                             "$ref": "#/components/schemas/RatingFlag"
                         }
                     },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
                     "published_at": {
                         "type": [
                             "string",
@@ -691,6 +711,7 @@
                     "genre",
                     "status",
                     "rating_flags",
+                    "tags",
                     "published_at",
                     "last_episode_published_at",
                     "created_at"

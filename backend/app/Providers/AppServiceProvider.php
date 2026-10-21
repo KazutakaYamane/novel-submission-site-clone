@@ -9,6 +9,7 @@ use App\Domain\Shared\Transaction;
 use App\Domain\User\UserRepository;
 use App\Domain\Work\WorkRepository;
 use App\Infrastructure\Database\DatabaseTransaction;
+use App\Infrastructure\Eloquent\EloquentServiceProvider;
 use App\Infrastructure\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Eloquent\Repositories\EloquentWorkRepository;
 use App\Infrastructure\Hashing\LaravelPasswordHasher;
@@ -36,6 +37,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        $this->app->register(EloquentServiceProvider::class);
+
         // Scramble は dev 依存で、本番イメージ(composer install --no-dev)には入らない
         if (class_exists(Scramble::class)) {
             $this->app->register(OpenApiServiceProvider::class);

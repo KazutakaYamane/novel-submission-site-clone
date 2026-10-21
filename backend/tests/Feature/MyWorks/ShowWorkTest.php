@@ -31,6 +31,7 @@ it('自分の作品を返す', function () {
             'genre' => 'fantasy',
             'status' => 'completed',
             'rating_flags' => ['violence'],
+            'tags' => [],
             'published_at' => '2026-10-01T12:00:00+00:00',
             'last_episode_published_at' => '2026-10-02T12:00:00+00:00',
             'created_at' => '2026-09-30T12:00:00+00:00',

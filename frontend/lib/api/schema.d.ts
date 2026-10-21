@@ -154,6 +154,7 @@ export interface components {
             genre: components["schemas"]["Genre"];
             status?: components["schemas"]["WorkStatus"];
             rating_flags?: components["schemas"]["RatingFlag"][];
+            tags?: string[];
         };
         /** UpdateWorkRequest */
         UpdateWorkRequest: {
@@ -163,6 +164,7 @@ export interface components {
             genre?: components["schemas"]["Genre"];
             status?: components["schemas"]["WorkStatus"];
             rating_flags?: components["schemas"]["RatingFlag"][];
+            tags?: string[];
         };
         /** UserResource */
         UserResource: {
@@ -180,6 +182,7 @@ export interface components {
             genre: components["schemas"]["Genre"];
             status: components["schemas"]["WorkStatus"];
             rating_flags: components["schemas"]["RatingFlag"][];
+            tags: string[];
             published_at: string | null;
             last_episode_published_at: string | null;
             created_at: string;

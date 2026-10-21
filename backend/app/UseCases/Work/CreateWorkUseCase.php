@@ -16,6 +16,7 @@ final readonly class CreateWorkUseCase
 
     /**
      * @param  list<RatingFlag>  $ratingFlags
+     * @param  list<string>  $tags
      */
     public function __invoke(
         string $userId,
@@ -25,6 +26,7 @@ final readonly class CreateWorkUseCase
         Genre $genre,
         ?WorkStatus $status,
         array $ratingFlags,
+        array $tags,
     ): Work {
         return $this->works->create(
             $userId,
@@ -34,6 +36,7 @@ final readonly class CreateWorkUseCase
             $genre,
             $status ?? WorkStatus::Ongoing,
             $ratingFlags,
+            $tags,
         );
     }
 }

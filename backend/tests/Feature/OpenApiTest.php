@@ -91,3 +91,14 @@ it('作品の genre・status・rating_flags を値の一覧を持つ型にする
         ->and($schemas['WorkStatus']['enum'])->toBe(['ongoing', 'completed'])
         ->and($schemas['RatingFlag']['enum'])->toBe(['cruelty', 'violence', 'sexual']);
 });
+
+it('作品の応答と作成・更新の入力に tags を文字列の配列として含む', function (string $schema) {
+    $tags = $this->document['components']['schemas'][$schema]['properties']['tags'];
+
+    expect($tags['type'])->toBe('array')
+        ->and($tags['items']['type'])->toBe('string');
+})->with(['WorkResource', 'StoreWorkRequest', 'UpdateWorkRequest']);
+
+it('作品の応答の tags を必須にする', function () {
+    expect($this->document['components']['schemas']['WorkResource']['required'])->toContain('tags');
+});
