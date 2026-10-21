@@ -23,7 +23,7 @@ class RegisterController extends Controller
             );
         } catch (EmailAlreadyTaken) {
             throw ValidationException::withMessages([
-                'email' => __('validation.unique', ['attribute' => 'email']),
+                'email' => __('validation.unique', ['attribute' => __('validation.attributes.email')]),
             ]);
         }
 

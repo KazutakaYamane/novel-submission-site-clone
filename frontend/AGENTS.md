@@ -36,7 +36,7 @@ lib/api/                     server-only: every call to Laravel
   client.ts                  fetch wrapper (base URL, token, X-User-IP, errors)
   schema.d.ts                generated from Laravel's OpenAPI (do not edit)
   <resource>.ts              data functions per API resource (works.ts, episodes.ts, me.ts …)
-lib/auth.ts                  server-only: token cookie read/write, current user, unauthenticated redirect
+lib/auth.ts                  server-only: token cookie read/write, unauthenticated redirect (never calls Laravel)
 lib/<topic>.ts               framework-free logic shared by 2+ routes (e.g. notation.ts)
 ```
 
@@ -99,7 +99,7 @@ Decide in this order and stop at the first match:
 - MUST [decision] Cached data functions call `cacheTag` with every tag that should invalidate them (`top`, `ranking`, `work:{id}`, `episode:{id}`) and `cacheLife("days")`. Reason: invalidation comes from Laravel; `days` bounds staleness if an invalidation job fails.
 - MUST [decision] A cached function returns `null` for a Laravel 404. The calling component calls `notFound()`.
 - MUST [decision] Errors from `apiFetchAsUser`:
-  - 401 → `redirectUnauthenticated()` from `lib/auth.ts`: redirect to `/session-expired` if the token cookie exists, else `/login`. Exception: `getCurrentUser()` returns `null` on 401 and does not redirect, for the header and other optional sections.
+  - 401 → `redirectUnauthenticated()` from `lib/auth.ts`: redirect to `/session-expired` if the token cookie exists, else `/login`. Exception: `getCurrentUser()` in `lib/api/me.ts` returns `null` on 401 and does not redirect, for the header and other optional sections.
   - 403/404 → `notFound()` in pages; returned as an error result in Server Actions.
   - 422 → returned to the caller (only from Server Actions).
   - Other → throw; the nearest `catchError` or `error.tsx` handles it.

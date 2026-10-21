@@ -81,3 +81,18 @@ it('users はデモ用やメール認証用の列を持たない', function () {
     expect(Schema::getColumnListing('users'))
         ->toEqualCanonicalizing(['id', 'name', 'email', 'password', 'created_at', 'updated_at']);
 });
+
+it('422 のメッセージは日本語の項目名で返す', function () {
+    $this->postJson('/api/auth/register', registerPayload(['name' => '', 'email' => 'not-an-email', 'password' => 'short']))
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.name', ['名前を入力してください'])
+        ->assertJsonPath('errors.email', ['メールアドレスの形式が正しくありません'])
+        ->assertJsonPath('errors.password', ['パスワードは8文字以上で入力してください']);
+});
+
+it('登録済みの email なら日本語で重複を伝える', function () {
+    User::factory()->create(['email' => 'taro@example.com']);
+
+    $this->postJson('/api/auth/register', registerPayload())
+        ->assertJsonPath('errors.email', ['このメールアドレスは既に使われています']);
+});
