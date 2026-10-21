@@ -94,7 +94,7 @@ it('定義外の値や上限を超える文字数なら 422 を返す', function
     'rating_flags' => [['rating_flags' => ['gore']], 'rating_flags.0'],
     'title' => [['title' => str_repeat('あ', 101)], 'title'],
     'catchphrase' => [['catchphrase' => str_repeat('あ', 36)], 'catchphrase'],
-    'introduction' => [['introduction' => str_repeat('あ', 2001)], 'introduction'],
+    'introduction' => [['introduction' => str_repeat('あ', 10001)], 'introduction'],
 ]);
 
 it('他人の未公開の作品なら 404 を返し、変えない', function () {

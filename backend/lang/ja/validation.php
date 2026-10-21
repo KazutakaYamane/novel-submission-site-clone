@@ -11,6 +11,7 @@ return [
         'array' => ':attributeは:max個以内で指定してください',
         'string' => ':attributeは:max文字以内で入力してください',
     ],
+    'max_bytes' => ':attributeは:maxバイト以内で入力してください',
     'min' => [
         'string' => ':attributeは:min文字以上で入力してください',
     ],
@@ -19,6 +20,7 @@ return [
     'unique' => 'この:attributeは既に使われています',
 
     'attributes' => [
+        'body' => '本文',
         'catchphrase' => 'キャッチコピー',
         'email' => 'メールアドレス',
         'genre' => 'ジャンル',

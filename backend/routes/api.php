@@ -5,9 +5,13 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\MeController;
+use App\Http\Controllers\MyWorks\ListEpisodesController;
 use App\Http\Controllers\MyWorks\ListWorksController;
+use App\Http\Controllers\MyWorks\ShowEpisodeController;
 use App\Http\Controllers\MyWorks\ShowWorkController;
+use App\Http\Controllers\MyWorks\StoreEpisodeController;
 use App\Http\Controllers\MyWorks\StoreWorkController;
+use App\Http\Controllers\MyWorks\UpdateEpisodeController;
 use App\Http\Controllers\MyWorks\UpdateWorkController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,4 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // ルートモデル結合は使わない(ADR 0008)。UUID でない ID は UseCase に渡さず 404 にする
     Route::get('/my/works/{work}', ShowWorkController::class)->whereUuid('work');
     Route::patch('/my/works/{work}', UpdateWorkController::class)->whereUuid('work');
+
+    Route::get('/my/works/{work}/episodes', ListEpisodesController::class)->whereUuid('work');
+    Route::post('/my/works/{work}/episodes', StoreEpisodeController::class)->whereUuid('work');
+    Route::get('/my/works/{work}/episodes/{episode}', ShowEpisodeController::class)->whereUuid(['work', 'episode']);
+    Route::patch('/my/works/{work}/episodes/{episode}', UpdateEpisodeController::class)->whereUuid(['work', 'episode']);
 });
