@@ -34,6 +34,14 @@ The project is in early development and has no backward-compatibility obligation
 
 ## Tests
 
+- Implement every change under `backend/` and `frontend/` test-first, without being asked:
+  1. Red: write the test and run it; confirm it fails for the reason the change addresses (not an import or setup error).
+  2. Green: write the least code that makes it pass.
+  3. Refactor with the tests passing, then rerun them:
+     - Split modules that mix concerns, and rename files and functions whose names no longer match their contents.
+     - Delete code and exports the change left unused; an unused export in a `"use server"` file is a public endpoint.
+     - Do not edit tests except to move them. A test that must change was testing the implementation, not the behavior.
+  - For a rule enforced by a mechanical check (`arch()`, PHPStan, ESLint), the red step is a temporary violation that the check does not catch yet. Remove the violation after the check catches it.
 - A test double that implements an interface implements every method with the same behavior as the real implementation, backed by the double's in-memory state (e.g. a fake repository's `findById` searches the rows that its `create` stored). Do not fill a method the test does not call with a fixed return value such as `return null`.
 
 ## Code comments
