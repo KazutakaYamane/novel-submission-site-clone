@@ -21,6 +21,7 @@ class StoreWorkController extends Controller
             $request->genre(),
             $request->status(),
             $request->ratingFlags(),
+            $request->tags(),
         );
 
         return (new WorkResource($work))->response()->setStatusCode(201);

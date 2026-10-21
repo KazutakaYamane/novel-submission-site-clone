@@ -8,6 +8,7 @@ final readonly class Work
 {
     /**
      * @param  list<RatingFlag>  $ratingFlags
+     * @param  list<string>  $tags  小文字にした名前のコードポイント順
      */
     public function __construct(
         public string $id,
@@ -18,6 +19,7 @@ final readonly class Work
         public Genre $genre,
         public WorkStatus $status,
         public array $ratingFlags,
+        public array $tags,
         public ?DateTimeImmutable $publishedAt,
         public ?DateTimeImmutable $lastEpisodePublishedAt,
         public DateTimeImmutable $createdAt,

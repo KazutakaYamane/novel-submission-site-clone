@@ -20,7 +20,7 @@ class UpdateWorkRequest extends FormRequest
      */
     public function rules(): array
     {
-        // rating_flags の空の配列は「レイティングを外す」なので required にしない
+        // rating_flags・tags の空の配列は「全部外す」なので required にしない
         // (要素の上のコメントは Scramble が description に出すので、ここに書く)
         return [
             'title' => ['sometimes', 'required', 'string', 'max:'.Config::integer('work.max_length.title')],
@@ -30,6 +30,8 @@ class UpdateWorkRequest extends FormRequest
             'status' => ['sometimes', 'required', Rule::enum(WorkStatus::class)],
             'rating_flags' => ['sometimes', 'list'],
             'rating_flags.*' => [Rule::enum(RatingFlag::class), 'distinct'],
+            'tags' => ['sometimes', 'list', 'max:'.Config::integer('work.tags.max_count')],
+            'tags.*' => ['required', 'string', 'max:'.Config::integer('work.tags.max_length')],
         ];
     }
 
@@ -60,6 +62,9 @@ class UpdateWorkRequest extends FormRequest
         }
         if (array_key_exists('rating_flags', $validated)) {
             $changes['ratingFlags'] = array_map(RatingFlag::from(...), $validated['rating_flags']);
+        }
+        if (array_key_exists('tags', $validated)) {
+            $changes['tags'] = $validated['tags'];
         }
 
         return $changes;
