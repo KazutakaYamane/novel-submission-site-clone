@@ -109,7 +109,7 @@ it('上限の文字数ちょうどなら作成できる', function () {
     $this->postJson('/api/my/works', workPayload([
         'title' => str_repeat('あ', 100),
         'catchphrase' => str_repeat('あ', 35),
-        'introduction' => str_repeat('あ', 2000),
+        'introduction' => str_repeat('あ', 10000),
     ]))->assertCreated();
 });
 
@@ -120,7 +120,7 @@ it('上限の文字数を超えると 422 を返す', function (string $field, i
 })->with([
     ['title', 100],
     ['catchphrase', 35],
-    ['introduction', 2000],
+    ['introduction', 10000],
 ]);
 
 it('422 のメッセージは日本語の項目名で返す', function () {

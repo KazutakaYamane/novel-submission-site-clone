@@ -102,3 +102,23 @@ it('作品の応答と作成・更新の入力に tags を文字列の配列と�
 it('作品の応答の tags を必須にする', function () {
     expect($this->document['components']['schemas']['WorkResource']['required'])->toContain('tags');
 });
+
+it('話の API を Bearer の security scheme 付きで含む', function (string $path, string $method) {
+    $security = $this->document['paths'][$path][$method]['security'] ?? $this->document['security'] ?? [];
+
+    expect($security)->toBe([['http' => []]]);
+})->with([
+    ['/my/works/{work}/episodes', 'get'],
+    ['/my/works/{work}/episodes', 'post'],
+    ['/my/works/{work}/episodes/{episode}', 'get'],
+    ['/my/works/{work}/episodes/{episode}', 'patch'],
+]);
+
+it('話の status を値の一覧を持つ型にし、一覧の話には本文を含めない', function () {
+    $schemas = $this->document['components']['schemas'];
+
+    expect($schemas['EpisodeResource']['properties']['status']['$ref'])->toBe('#/components/schemas/EpisodeStatus')
+        ->and($schemas['EpisodeStatus']['enum'])->toBe(['draft', 'published'])
+        ->and($schemas['EpisodeResource']['properties'])->toHaveKey('body')
+        ->and($schemas['EpisodeSummaryResource']['properties'])->not->toHaveKey('body');
+});

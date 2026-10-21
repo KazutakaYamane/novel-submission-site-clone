@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Domain\Auth\AccessTokens;
+use App\Domain\Episode\EpisodeRepository;
 use App\Domain\Health\DependencyChecker;
 use App\Domain\Shared\PasswordHasher;
 use App\Domain\Shared\Transaction;
@@ -10,6 +11,7 @@ use App\Domain\User\UserRepository;
 use App\Domain\Work\WorkRepository;
 use App\Infrastructure\Database\DatabaseTransaction;
 use App\Infrastructure\Eloquent\EloquentServiceProvider;
+use App\Infrastructure\Eloquent\Repositories\EloquentEpisodeRepository;
 use App\Infrastructure\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Eloquent\Repositories\EloquentWorkRepository;
 use App\Infrastructure\Hashing\LaravelPasswordHasher;
@@ -29,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
     public array $bindings = [
         UserRepository::class => EloquentUserRepository::class,
         WorkRepository::class => EloquentWorkRepository::class,
+        EpisodeRepository::class => EloquentEpisodeRepository::class,
         PasswordHasher::class => LaravelPasswordHasher::class,
         DependencyChecker::class => LaravelDependencyChecker::class,
         AccessTokens::class => SanctumAccessTokens::class,

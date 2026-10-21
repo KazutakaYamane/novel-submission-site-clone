@@ -20,6 +20,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/my/works/{work}/episodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["myWorks.listEpisodes"];
+        put?: never;
+        post: operations["myWorks.storeEpisode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/my/works": {
         parameters: {
             query?: never;
@@ -100,6 +116,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/my/works/{work}/episodes/{episode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["myWorks.showEpisode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["myWorks.updateEpisode"];
+        trace?: never;
+    };
     "/my/works/{work}": {
         parameters: {
             query?: never;
@@ -120,6 +152,28 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** EpisodeResource */
+        EpisodeResource: {
+            id: string;
+            title: string;
+            body: string;
+            position: number;
+            status: components["schemas"]["EpisodeStatus"];
+            published_at: string | null;
+        };
+        /**
+         * EpisodeStatus
+         * @enum {string}
+         */
+        EpisodeStatus: "draft" | "published";
+        /** EpisodeSummaryResource */
+        EpisodeSummaryResource: {
+            id: string;
+            title: string;
+            position: number;
+            status: components["schemas"]["EpisodeStatus"];
+            published_at: string | null;
+        };
         /**
          * Genre
          * @enum {string}
@@ -146,6 +200,11 @@ export interface components {
             email: string;
             password: string;
         };
+        /** StoreEpisodeRequest */
+        StoreEpisodeRequest: {
+            title: string;
+            body?: string | null;
+        };
         /** StoreWorkRequest */
         StoreWorkRequest: {
             title: string;
@@ -155,6 +214,11 @@ export interface components {
             status?: components["schemas"]["WorkStatus"];
             rating_flags?: components["schemas"]["RatingFlag"][];
             tags?: string[];
+        };
+        /** UpdateEpisodeRequest */
+        UpdateEpisodeRequest: {
+            title?: string;
+            body?: string | null;
         };
         /** UpdateWorkRequest */
         UpdateWorkRequest: {
@@ -274,6 +338,93 @@ export interface operations {
                     };
                 };
             };
+        };
+    };
+    "myWorks.listEpisodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Array of `EpisodeSummaryResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EpisodeSummaryResource"][];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "myWorks.storeEpisode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreEpisodeRequest"];
+            };
+        };
+        responses: {
+            /** @description `EpisodeResource` */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EpisodeResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
         };
     };
     "myWorks.listWorks": {
@@ -424,6 +575,95 @@ export interface operations {
                     };
                 };
             };
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "myWorks.showEpisode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+                episode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `EpisodeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EpisodeResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "myWorks.updateEpisode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+                episode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["UpdateEpisodeRequest"];
+            };
+        };
+        responses: {
+            /** @description `EpisodeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EpisodeResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
         };
     };
