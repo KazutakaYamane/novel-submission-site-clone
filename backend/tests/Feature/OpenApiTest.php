@@ -67,3 +67,27 @@ it('ヘルスチェックの応答に依存先ごとの結果の型を含む', f
 it('Scramble の既定のドキュメントのルートを公開しない', function (string $uri) {
     $this->get($uri)->assertNotFound();
 })->with(['/docs/api', '/docs/api.json']);
+
+it('作品の API を Bearer の security scheme 付きで含む', function (string $path, string $method) {
+    $security = $this->document['paths'][$path][$method]['security'] ?? $this->document['security'] ?? [];
+
+    expect($security)->toBe([['http' => []]]);
+})->with([
+    ['/my/works', 'get'],
+    ['/my/works', 'post'],
+    ['/my/works/{work}', 'get'],
+    ['/my/works/{work}', 'patch'],
+]);
+
+// Next.js がジャンルなどの値を型で扱えるよう、文字列ではなく値の一覧として出す
+it('作品の genre・status・rating_flags を値の一覧を持つ型にする', function () {
+    $schemas = $this->document['components']['schemas'];
+    $work = $schemas['WorkResource']['properties'];
+
+    expect($work['genre']['$ref'])->toBe('#/components/schemas/Genre')
+        ->and($work['status']['$ref'])->toBe('#/components/schemas/WorkStatus')
+        ->and($work['rating_flags']['items']['$ref'])->toBe('#/components/schemas/RatingFlag')
+        ->and($schemas['Genre']['enum'])->toHaveCount(14)
+        ->and($schemas['WorkStatus']['enum'])->toBe(['ongoing', 'completed'])
+        ->and($schemas['RatingFlag']['enum'])->toBe(['cruelty', 'violence', 'sexual']);
+});

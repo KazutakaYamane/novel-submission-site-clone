@@ -54,7 +54,7 @@ Dependencies point `Http → UseCases → Domain ← Infrastructure`. `tests/Arc
 - Repositories convert models to entities in a `private static function toEntity()` and never return a model.
 - Convert DB errors that carry domain meaning into domain exceptions (for example `UniqueConstraintViolationException` → `EmailAlreadyTaken`).
 - Register every binding in `AppServiceProvider::$bindings`.
-- Models generate IDs with `Str::uuid()` in the `creating` hook. Do not let the DB generate them.
+- Models generate IDs with `HasUuids` (UUIDv7). Do not let the DB generate them.
 
 Not available because of the layering: route model binding, Policies, `Auth::user()`, FormRequest `unique`/`exists`, `LengthAwarePaginator`. For pagination, define a result type with items and total in Domain.
 
