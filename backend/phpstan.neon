@@ -6,3 +6,5 @@ parameters:
     paths:
         - app
         - routes
+    # casts() の @return array<string, string> では列ごとの型が分からないので、メソッドの中身から読む
+    parseModelCastsMethod: true

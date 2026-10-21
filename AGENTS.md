@@ -30,7 +30,7 @@ The project is in early development and has no backward-compatibility obligation
 ## Constraints
 
 - Laravel returns JSON only. All UI rendering belongs to Next.js.
-- Generate UUIDs in the app with `Str::uuid()`, not in the DB.
+- Generate IDs in the app as UUIDv7, not in the DB.
 
 ## Tests
 

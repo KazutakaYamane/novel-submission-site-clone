@@ -94,6 +94,82 @@
                 "security": []
             }
         },
+        "/my/works": {
+            "get": {
+                "operationId": "myWorks.listWorks",
+                "tags": [
+                    "ListWorks"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `WorkResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/WorkResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "myWorks.storeWork",
+                "tags": [
+                    "StoreWork"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreWorkRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`WorkResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
                 "operationId": "auth.login",
@@ -240,6 +316,148 @@
                 },
                 "security": []
             }
+        },
+        "/my/works/{work}": {
+            "get": {
+                "operationId": "myWorks.showWork",
+                "tags": [
+                    "ShowWork"
+                ],
+                "parameters": [
+                    {
+                        "name": "work",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`WorkResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                ""
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "myWorks.updateWork",
+                "tags": [
+                    "UpdateWork"
+                ],
+                "parameters": [
+                    {
+                        "name": "work",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateWorkRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`WorkResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/WorkResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                ""
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -250,6 +468,26 @@
             }
         },
         "schemas": {
+            "Genre": {
+                "type": "string",
+                "enum": [
+                    "fantasy",
+                    "action",
+                    "sf",
+                    "love_story",
+                    "romance",
+                    "drama",
+                    "horror",
+                    "mystery",
+                    "nonfiction",
+                    "history",
+                    "criticism",
+                    "others",
+                    "maho",
+                    "fan_fiction"
+                ],
+                "title": "Genre"
+            },
             "LoginRequest": {
                 "type": "object",
                 "properties": {
@@ -266,6 +504,15 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "RatingFlag": {
+                "type": "string",
+                "enum": [
+                    "cruelty",
+                    "violence",
+                    "sexual"
+                ],
+                "title": "RatingFlag"
             },
             "RegisterRequest": {
                 "type": "object",
@@ -293,6 +540,79 @@
                 ],
                 "title": "RegisterRequest"
             },
+            "StoreWorkRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "catchphrase": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 35
+                    },
+                    "introduction": {
+                        "type": "string",
+                        "maxLength": 2000
+                    },
+                    "genre": {
+                        "$ref": "#/components/schemas/Genre"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/WorkStatus"
+                    },
+                    "rating_flags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RatingFlag"
+                        },
+                        "uniqueItems": true
+                    }
+                },
+                "required": [
+                    "title",
+                    "introduction",
+                    "genre"
+                ],
+                "title": "StoreWorkRequest"
+            },
+            "UpdateWorkRequest": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "maxLength": 100
+                    },
+                    "catchphrase": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 35
+                    },
+                    "introduction": {
+                        "type": "string",
+                        "maxLength": 2000
+                    },
+                    "genre": {
+                        "$ref": "#/components/schemas/Genre"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/WorkStatus"
+                    },
+                    "rating_flags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RatingFlag"
+                        },
+                        "uniqueItems": true
+                    }
+                },
+                "title": "UpdateWorkRequest"
+            },
             "UserResource": {
                 "type": "object",
                 "properties": {
@@ -316,6 +636,74 @@
                     "created_at"
                 ],
                 "title": "UserResource"
+            },
+            "WorkResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "catchphrase": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "introduction": {
+                        "type": "string"
+                    },
+                    "genre": {
+                        "$ref": "#/components/schemas/Genre"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/WorkStatus"
+                    },
+                    "rating_flags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RatingFlag"
+                        }
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_episode_published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "catchphrase",
+                    "introduction",
+                    "genre",
+                    "status",
+                    "rating_flags",
+                    "published_at",
+                    "last_episode_published_at",
+                    "created_at"
+                ],
+                "title": "WorkResource"
+            },
+            "WorkStatus": {
+                "type": "string",
+                "enum": [
+                    "ongoing",
+                    "completed"
+                ],
+                "title": "WorkStatus"
             }
         },
         "responses": {
@@ -351,6 +739,25 @@
             },
             "AuthenticationException": {
                 "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ModelNotFoundException": {
+                "description": "Not found",
                 "content": {
                     "application/json": {
                         "schema": {

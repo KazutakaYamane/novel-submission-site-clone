@@ -25,6 +25,12 @@ it('会員登録すると 201 とユーザーを返し、id は UUID で passwor
     expect(Str::isUuid($response->json('data.id')))->toBeTrue();
 });
 
+it('ユーザーの id は UUIDv7 にする', function () {
+    $id = $this->postJson('/api/auth/register', registerPayload())->assertCreated()->json('data.id');
+
+    expect(Str::isUuid($id, 7))->toBeTrue();
+});
+
 it('会員登録すると 7 日後に期限が切れるトークンを返す', function () {
     $this->freezeTime();
 
