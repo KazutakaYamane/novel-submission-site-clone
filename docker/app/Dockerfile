@@ -1,14 +1,14 @@
 
 # syntax=docker/dockerfile:1.7
 # ------------------------------------------------------------
-# Laravel 13 (PHP 8.4) アプリ用 multi-stage Dockerfile
+# Laravel 13 (PHP 8.5) アプリ用 multi-stage Dockerfile
 # - base: PHP ランタイム + 拡張(アプリ非依存)
 # - dev:  Xdebug 追加のみ。app/ には依存しない(bind mount 前提)
 # - prod: 依存解決済み、コードを焼き込み(CI 内でのみビルド)
 # ------------------------------------------------------------
  
 # ============== base ==============
-FROM php:8.4-fpm-alpine AS base
+FROM php:8.5-fpm-alpine AS base
  
 RUN set -eux; \
     apk add --no-cache \
@@ -17,7 +17,7 @@ RUN set -eux; \
     apk add --no-cache --virtual .build-deps \
         $PHPIZE_DEPS icu-dev libzip-dev oniguruma-dev linux-headers; \
     docker-php-ext-install -j$(nproc) \
-        pdo_mysql intl zip opcache pcntl bcmath sockets; \
+        pdo_mysql intl zip pcntl bcmath sockets; \
     apk del .build-deps; \
     cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime; \
     echo "Asia/Tokyo" > /etc/timezone

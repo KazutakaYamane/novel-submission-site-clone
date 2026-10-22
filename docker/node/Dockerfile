@@ -10,7 +10,7 @@
 # - /_next/static は S3 + CloudFront 配信が本線だが、ALB 直叩きやローカル検証
 #   でも動くようイメージにも同梱する。
 # ------------------------------------------------------------
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 
 RUN apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
