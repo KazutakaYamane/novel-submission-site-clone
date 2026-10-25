@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Infrastructure\Eloquent\Models\Episode;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\EpisodeModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 
 /**
- * @extends Factory<Episode>
+ * @extends Factory<EpisodeModel>
  */
 class EpisodeFactory extends Factory
 {
@@ -18,7 +18,7 @@ class EpisodeFactory extends Factory
     public function definition(): array
     {
         return [
-            'work_id' => Work::factory(),
+            'work_id' => WorkModel::factory(),
             'title' => fake()->realText(20),
             'body' => fake()->realText(500),
             'status' => 'draft',
@@ -33,7 +33,7 @@ class EpisodeFactory extends Factory
             // Sequence は属性を返した後に index を進めるので、ここで値を取っておく
             $index = $sequence->index;
 
-            return ['position' => fn (array $attributes) => (int) Episode::where('work_id', $attributes['work_id'])->max('position') + $index + 1];
+            return ['position' => fn (array $attributes) => (int) EpisodeModel::where('work_id', $attributes['work_id'])->max('position') + $index + 1];
         });
     }
 }

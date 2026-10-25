@@ -2,7 +2,7 @@
 
 namespace App\Domain\Shared;
 
-interface PasswordHasher
+interface PasswordHasherInterface
 {
     public function hash(string $plain): string;
 

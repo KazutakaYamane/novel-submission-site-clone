@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Database\Eloquent\Model;
+
 // 層の依存の向きとシングルアクションのルール(docs/adr/0008-backend-layers.md)
 
 arch('Domain は Laravel にもほかの層にも依存しない')
@@ -33,3 +35,22 @@ arch('コントローラーは __invoke だけを公開する')
     ->expect('App\Http\Controllers')
     ->classes()
     ->not->toHavePublicMethodsBesides(['__construct', '__invoke']);
+
+// entity と見分けられるよう、Domain の interface は名前で示す
+arch('Domain の interface の名前は Interface で終わる')
+    ->expect('App\Domain')
+    ->interfaces()
+    ->toHaveSuffix('Interface');
+
+arch('Domain の例外の名前は Exception で終わる')
+    ->expect('App\Domain')
+    ->classes()
+    ->extending(DomainException::class)
+    ->toHaveSuffix('Exception');
+
+// Domain の entity と同じ名前にならないよう、Eloquent の Model は名前で示す
+arch('Eloquent の Model の名前は Model で終わる')
+    ->expect('App')
+    ->classes()
+    ->extending(Model::class)
+    ->toHaveSuffix('Model');

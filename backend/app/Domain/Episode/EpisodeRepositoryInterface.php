@@ -10,7 +10,7 @@ use DateTimeImmutable;
  *     body?: string,
  * }
  */
-interface EpisodeRepository
+interface EpisodeRepositoryInterface
 {
     /**
      * 作品の最後の話の次の position に下書きを足す

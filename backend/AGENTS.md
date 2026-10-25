@@ -17,7 +17,7 @@ app/
   Http/                     Controllers/<Feature>/, Requests/<Feature>/, Resources/
   UseCases/<Feature>/       one class per use case, e.g. UseCases/Auth/RegisterUserUseCase.php
   Domain/<Aggregate>/       entities, repository interfaces, domain exceptions, e.g. Domain/User/
-  Domain/Shared/            interfaces used across aggregates, e.g. PasswordHasher
+  Domain/Shared/            interfaces used across aggregates, e.g. PasswordHasherInterface
   Infrastructure/Eloquent/  Models/ and Repositories/ (Eloquent<Name>Repository)
   Infrastructure/<Concern>/ other implementations of Domain interfaces, e.g. Hashing/
 ```
@@ -47,12 +47,12 @@ Dependencies point `Http → UseCases → Domain ← Infrastructure`. `tests/Arc
 
 **Domain**
 - Entities are `final readonly class` with public constructor properties. Dates are `DateTimeImmutable`.
-- Domain exceptions are `final class X extends DomainException {}`, named after the condition (`EmailAlreadyTaken`, `UserNotFound`).
+- Domain exceptions are `final class X extends DomainException {}`, named after the condition with an `Exception` suffix (`EmailAlreadyTakenException`, `UserNotFoundException`).
 - When a UseCase needs a Laravel feature (hashing, clock, queue), define an interface here and implement it in Infrastructure.
 
 **Infrastructure**
 - Repositories convert models to entities in a `private static function toEntity()` and never return a model.
-- Convert DB errors that carry domain meaning into domain exceptions (for example `UniqueConstraintViolationException` → `EmailAlreadyTaken`).
+- Convert DB errors that carry domain meaning into domain exceptions (for example `UniqueConstraintViolationException` → `EmailAlreadyTakenException`).
 - Register every binding in `AppServiceProvider::$bindings`.
 - Models generate IDs with `HasUuids` (UUIDv7). Do not let the DB generate them.
 

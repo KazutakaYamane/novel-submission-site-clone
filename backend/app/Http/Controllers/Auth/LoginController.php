@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Domain\Auth\InvalidCredentials;
+use App\Domain\Auth\InvalidCredentialsException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
@@ -19,7 +19,7 @@ class LoginController extends Controller
                 $request->string('email')->toString(),
                 $request->string('password')->toString(),
             );
-        } catch (InvalidCredentials) {
+        } catch (InvalidCredentialsException) {
             throw ValidationException::withMessages([
                 'email' => 'メールアドレスまたはパスワードが正しくありません',
             ]);

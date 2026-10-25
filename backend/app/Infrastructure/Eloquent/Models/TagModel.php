@@ -3,11 +3,13 @@
 namespace App\Infrastructure\Eloquent\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable(['name', 'normalized_name'])]
-class Tag extends Model
+#[Table('tags')]
+class TagModel extends Model
 {
     use HasUuids;
 

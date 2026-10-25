@@ -5,16 +5,16 @@ namespace App\Infrastructure\Eloquent\Repositories;
 use App\Domain\Work\Genre;
 use App\Domain\Work\RatingFlag;
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
-use App\Infrastructure\Eloquent\Models\Tag;
-use App\Infrastructure\Eloquent\Models\Work as WorkModel;
+use App\Infrastructure\Eloquent\Models\TagModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Facades\DB;
 
 /**
- * @phpstan-import-type WorkChanges from WorkRepository
+ * @phpstan-import-type WorkChanges from WorkRepositoryInterface
  */
-final class EloquentWorkRepository implements WorkRepository
+final class EloquentWorkRepository implements WorkRepositoryInterface
 {
     public function create(
         string $userId,
@@ -145,9 +145,9 @@ final class EloquentWorkRepository implements WorkRepository
         $normalizedNames = array_column($rows, 'normalized_name');
 
         // 既にあるタグは表記を変えずに使う。同時に同じタグを作るリクエストがあっても unique 違反にならない
-        Tag::upsert(array_values($rows), ['normalized_name'], ['normalized_name']);
+        TagModel::upsert(array_values($rows), ['normalized_name'], ['normalized_name']);
 
-        $result = $model->tags()->sync(Tag::whereIn('normalized_name', $normalizedNames)->pluck('id')->all());
+        $result = $model->tags()->sync(TagModel::whereIn('normalized_name', $normalizedNames)->pluck('id')->all());
 
         return $result['attached'] !== [] || $result['detached'] !== [];
     }

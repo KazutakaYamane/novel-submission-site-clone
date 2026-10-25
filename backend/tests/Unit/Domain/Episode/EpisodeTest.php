@@ -1,9 +1,9 @@
 <?php
 
-use App\Domain\Episode\EmptyEpisodeBody;
+use App\Domain\Episode\EmptyEpisodeBodyException;
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeStatus;
-use App\Domain\Episode\InvalidEpisodeTransition;
+use App\Domain\Episode\InvalidEpisodeTransitionException;
 
 beforeEach(function () {
     $this->episode = fn (EpisodeStatus $status, string $body = '本文', ?DateTimeImmutable $publishedAt = null) => new Episode(
@@ -31,15 +31,15 @@ describe('publish', function () {
             ->and($draft->status)->toBe(EpisodeStatus::Draft);
     });
 
-    it('公開済みの話なら InvalidEpisodeTransition を投げる', function () {
+    it('公開済みの話なら InvalidEpisodeTransitionException を投げる', function () {
         $published = ($this->episode)(EpisodeStatus::Published, publishedAt: new DateTimeImmutable('2026-10-01'));
 
-        expect(fn () => $published->publish(new DateTimeImmutable))->toThrow(InvalidEpisodeTransition::class);
+        expect(fn () => $published->publish(new DateTimeImmutable))->toThrow(InvalidEpisodeTransitionException::class);
     });
 
-    it('本文が空白だけなら EmptyEpisodeBody を投げる', function (string $body) {
+    it('本文が空白だけなら EmptyEpisodeBodyException を投げる', function (string $body) {
         expect(fn () => ($this->episode)(EpisodeStatus::Draft, $body)->publish(new DateTimeImmutable))
-            ->toThrow(EmptyEpisodeBody::class);
+            ->toThrow(EmptyEpisodeBodyException::class);
     })->with([
         '空文字' => '',
         '半角空白と改行' => " \n\t\r\n",
@@ -54,10 +54,10 @@ describe('publish', function () {
 });
 
 describe('assertBodyAcceptable', function () {
-    it('公開済みの話の本文を空白だけにするなら EmptyEpisodeBody を投げる', function () {
+    it('公開済みの話の本文を空白だけにするなら EmptyEpisodeBodyException を投げる', function () {
         $published = ($this->episode)(EpisodeStatus::Published, publishedAt: new DateTimeImmutable('2026-10-01'));
 
-        expect(fn () => $published->assertBodyAcceptable("　\n"))->toThrow(EmptyEpisodeBody::class);
+        expect(fn () => $published->assertBodyAcceptable("　\n"))->toThrow(EmptyEpisodeBodyException::class);
     });
 
     it('公開済みの話でも空白のほかの文字があれば受け入れる', function () {
@@ -82,8 +82,8 @@ describe('unpublish', function () {
             ->and($published->status)->toBe(EpisodeStatus::Published);
     });
 
-    it('下書きなら InvalidEpisodeTransition を投げる', function () {
-        expect(fn () => ($this->episode)(EpisodeStatus::Draft)->unpublish())->toThrow(InvalidEpisodeTransition::class);
+    it('下書きなら InvalidEpisodeTransitionException を投げる', function () {
+        expect(fn () => ($this->episode)(EpisodeStatus::Draft)->unpublish())->toThrow(InvalidEpisodeTransitionException::class);
     });
 });
 

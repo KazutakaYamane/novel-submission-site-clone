@@ -3,12 +3,12 @@
 namespace App\UseCases\Work;
 
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 
 final readonly class ListMyWorksUseCase
 {
     public function __construct(
-        private WorkRepository $works,
+        private WorkRepositoryInterface $works,
     ) {}
 
     /**

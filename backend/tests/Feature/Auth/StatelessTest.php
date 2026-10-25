@@ -1,6 +1,6 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
+use App\Infrastructure\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Hash;
 
 // ブラウザからの直接アクセスと同じ Origin を付けても、セッション cookie と XSRF-TOKEN を発行しないことを確かめる
@@ -19,7 +19,7 @@ it('会員登録の応答に cookie を付けない', function () {
 });
 
 it('ログイン、/api/me、ログアウトの応答に cookie を付けない', function () {
-    User::factory()->create(['email' => 'taro@example.com', 'password' => Hash::make('password123')]);
+    UserModel::factory()->create(['email' => 'taro@example.com', 'password' => Hash::make('password123')]);
 
     $login = $this->postJson('/api/auth/login', ['email' => 'taro@example.com', 'password' => 'password123'])
         ->assertOk();

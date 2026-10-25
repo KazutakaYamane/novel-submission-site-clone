@@ -1,12 +1,12 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = UserModel::factory()->create();
     $this->withToken($this->user->createToken('web')->plainTextToken);
 });
 
@@ -158,22 +158,22 @@ it('PATCH で tags を送ると、タグを全部置き換える', function () {
 
 it('PATCH でタグだけを変えると updated_at を変える', function () {
     $id = $this->postJson('/api/my/works', taggedWorkPayload(['異世界']))->json('data.id');
-    $updatedAt = Work::findOrFail($id)->updated_at;
+    $updatedAt = WorkModel::findOrFail($id)->updated_at;
     $this->travel(1)->days();
 
     $this->patchJson("/api/my/works/{$id}", ['tags' => ['料理']])->assertOk();
 
-    expect(Work::findOrFail($id)->updated_at)->toBeGreaterThan($updatedAt);
+    expect(WorkModel::findOrFail($id)->updated_at)->toBeGreaterThan($updatedAt);
 });
 
 it('PATCH で今と同じタグを送っても updated_at を変えない', function () {
     $id = $this->postJson('/api/my/works', taggedWorkPayload(['異世界']))->json('data.id');
-    $updatedAt = Work::findOrFail($id)->updated_at;
+    $updatedAt = WorkModel::findOrFail($id)->updated_at;
     $this->travel(1)->days();
 
     $this->patchJson("/api/my/works/{$id}", ['tags' => ['異世界']])->assertOk();
 
-    expect(Work::findOrFail($id)->updated_at)->toEqual($updatedAt);
+    expect(WorkModel::findOrFail($id)->updated_at)->toEqual($updatedAt);
 });
 
 it('PATCH で空の配列を送ると、タグを全部外す', function () {

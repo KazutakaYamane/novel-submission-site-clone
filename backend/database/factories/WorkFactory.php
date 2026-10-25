@@ -3,12 +3,12 @@
 namespace Database\Factories;
 
 use App\Domain\Work\Genre;
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Work>
+ * @extends Factory<WorkModel>
  */
 class WorkFactory extends Factory
 {
@@ -18,7 +18,7 @@ class WorkFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
+            'user_id' => UserModel::factory(),
             'title' => fake()->realText(30),
             'catchphrase' => null,
             'introduction' => fake()->realText(200),

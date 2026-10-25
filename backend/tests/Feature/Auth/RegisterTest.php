@@ -1,6 +1,6 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
+use App\Infrastructure\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -59,7 +59,7 @@ it('email の形式が不正なら 422 で email のエラーを返し、ユー�
 });
 
 it('登録済みの email なら 422 で email のエラーを返し、トークンを発行しない', function () {
-    User::factory()->create(['email' => 'taro@example.com']);
+    UserModel::factory()->create(['email' => 'taro@example.com']);
 
     $this->postJson('/api/auth/register', registerPayload())
         ->assertUnprocessable()
@@ -77,7 +77,7 @@ it('password が 8 文字未満なら 422 で password のエラーを返す', f
 it('password は平文ではなくハッシュで保存する', function () {
     $this->postJson('/api/auth/register', registerPayload())->assertCreated();
 
-    $stored = User::where('email', 'taro@example.com')->firstOrFail()->getAuthPassword();
+    $stored = UserModel::where('email', 'taro@example.com')->firstOrFail()->getAuthPassword();
 
     expect($stored)->not->toBe('password123')
         ->and(Hash::check('password123', $stored))->toBeTrue();
@@ -97,7 +97,7 @@ it('422 のメッセージは日本語の項目名で返す', function () {
 });
 
 it('登録済みの email なら日本語で重複を伝える', function () {
-    User::factory()->create(['email' => 'taro@example.com']);
+    UserModel::factory()->create(['email' => 'taro@example.com']);
 
     $this->postJson('/api/auth/register', registerPayload())
         ->assertJsonPath('errors.email', ['このメールアドレスは既に使われています']);

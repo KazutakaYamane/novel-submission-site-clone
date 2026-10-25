@@ -2,10 +2,10 @@
 
 namespace App\Infrastructure\Hashing;
 
-use App\Domain\Shared\PasswordHasher;
+use App\Domain\Shared\PasswordHasherInterface;
 use Illuminate\Support\Facades\Hash;
 
-final class LaravelPasswordHasher implements PasswordHasher
+final class LaravelPasswordHasher implements PasswordHasherInterface
 {
     public function hash(string $plain): string
     {

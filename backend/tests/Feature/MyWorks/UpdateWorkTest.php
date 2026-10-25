@@ -1,12 +1,12 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->work = Work::factory()->state(['user_id' => $this->user->id])->create([
+    $this->user = UserModel::factory()->create();
+    $this->work = WorkModel::factory()->state(['user_id' => $this->user->id])->create([
         'title' => '元のタイトル',
         'catchphrase' => '元のキャッチコピー',
         'introduction' => '元のあらすじ',
@@ -58,7 +58,7 @@ it('変える項目が無ければ updated_at を変えない', function (array 
 ]);
 
 it('user_id・published_at・last_episode_published_at を送っても変えない', function () {
-    $other = User::factory()->create();
+    $other = UserModel::factory()->create();
 
     $this->withToken($this->user->createToken('web')->plainTextToken)
         ->patchJson("/api/my/works/{$this->work->id}", [
@@ -98,7 +98,7 @@ it('定義外の値や上限を超える文字数なら 422 を返す', function
 ]);
 
 it('他人の未公開の作品なら 404 を返し、変えない', function () {
-    $work = Work::factory()->create(['title' => '他人の作品']);
+    $work = WorkModel::factory()->create(['title' => '他人の作品']);
 
     $this->withToken($this->user->createToken('web')->plainTextToken)
         ->patchJson("/api/my/works/{$work->id}", ['title' => '書き換え'])
@@ -108,7 +108,7 @@ it('他人の未公開の作品なら 404 を返し、変えない', function ()
 });
 
 it('他人の公開済みの作品なら 403 を返し、変えない', function () {
-    $work = Work::factory()->published()->create(['title' => '他人の作品']);
+    $work = WorkModel::factory()->published()->create(['title' => '他人の作品']);
 
     $this->withToken($this->user->createToken('web')->plainTextToken)
         ->patchJson("/api/my/works/{$work->id}", ['title' => '書き換え'])

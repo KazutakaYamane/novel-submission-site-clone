@@ -2,11 +2,11 @@
 
 namespace App\UseCases\Auth;
 
-use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\AuthenticatedUser;
-use App\Domain\Auth\InvalidCredentials;
-use App\Domain\Shared\PasswordHasher;
-use App\Domain\User\UserRepository;
+use App\Domain\Auth\InvalidCredentialsException;
+use App\Domain\Shared\PasswordHasherInterface;
+use App\Domain\User\UserRepositoryInterface;
 
 final readonly class LoginUseCase
 {
@@ -15,13 +15,13 @@ final readonly class LoginUseCase
     private const DUMMY_HASH = '$2y$12$I21MTA0xJ5H/9SIGeOoI.OAcE.63NHLjHC9SuqZfsDgk/YxxUEIDe';
 
     public function __construct(
-        private UserRepository $users,
-        private PasswordHasher $hasher,
-        private AccessTokens $tokens,
+        private UserRepositoryInterface $users,
+        private PasswordHasherInterface $hasher,
+        private AccessTokensInterface $tokens,
     ) {}
 
     /**
-     * @throws InvalidCredentials
+     * @throws InvalidCredentialsException
      */
     public function __invoke(string $email, string $password): AuthenticatedUser
     {
@@ -29,11 +29,11 @@ final readonly class LoginUseCase
         $matches = $this->hasher->check($password, $credentials->hashedPassword ?? self::DUMMY_HASH);
 
         if ($credentials === null || ! $matches) {
-            throw new InvalidCredentials;
+            throw new InvalidCredentialsException;
         }
 
         // 照合とこの取得の間にユーザーが消えた場合も、資格情報の誤りとして扱う
-        $user = $this->users->findById($credentials->id) ?? throw new InvalidCredentials;
+        $user = $this->users->findById($credentials->id) ?? throw new InvalidCredentialsException;
 
         return new AuthenticatedUser($user, $this->tokens->issue($user->id));
     }

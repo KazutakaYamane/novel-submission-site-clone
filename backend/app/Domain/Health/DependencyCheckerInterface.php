@@ -2,7 +2,7 @@
 
 namespace App\Domain\Health;
 
-interface DependencyChecker
+interface DependencyCheckerInterface
 {
     public function database(): CheckResult;
 

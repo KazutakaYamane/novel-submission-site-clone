@@ -2,11 +2,11 @@
 
 namespace App\Infrastructure\Clock;
 
-use App\Domain\Shared\Clock;
+use App\Domain\Shared\ClockInterface;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Date;
 
-final class LaravelClock implements Clock
+final class LaravelClock implements ClockInterface
 {
     public function now(): DateTimeImmutable
     {

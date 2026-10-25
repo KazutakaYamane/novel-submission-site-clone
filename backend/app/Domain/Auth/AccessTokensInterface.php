@@ -2,7 +2,7 @@
 
 namespace App\Domain\Auth;
 
-interface AccessTokens
+interface AccessTokensInterface
 {
     public function issue(string $userId): IssuedToken;
 

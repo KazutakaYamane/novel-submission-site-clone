@@ -2,14 +2,14 @@
 
 namespace App\Providers;
 
-use App\Domain\Auth\AccessTokens;
-use App\Domain\Episode\EpisodeRepository;
-use App\Domain\Health\DependencyChecker;
-use App\Domain\Shared\Clock;
-use App\Domain\Shared\PasswordHasher;
-use App\Domain\Shared\Transaction;
-use App\Domain\User\UserRepository;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Auth\AccessTokensInterface;
+use App\Domain\Episode\EpisodeRepositoryInterface;
+use App\Domain\Health\DependencyCheckerInterface;
+use App\Domain\Shared\ClockInterface;
+use App\Domain\Shared\PasswordHasherInterface;
+use App\Domain\Shared\TransactionInterface;
+use App\Domain\User\UserRepositoryInterface;
+use App\Domain\Work\WorkRepositoryInterface;
 use App\Infrastructure\Clock\LaravelClock;
 use App\Infrastructure\Database\DatabaseTransaction;
 use App\Infrastructure\Eloquent\EloquentServiceProvider;
@@ -31,14 +31,14 @@ class AppServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     public array $bindings = [
-        UserRepository::class => EloquentUserRepository::class,
-        WorkRepository::class => EloquentWorkRepository::class,
-        EpisodeRepository::class => EloquentEpisodeRepository::class,
-        PasswordHasher::class => LaravelPasswordHasher::class,
-        DependencyChecker::class => LaravelDependencyChecker::class,
-        AccessTokens::class => SanctumAccessTokens::class,
-        Transaction::class => DatabaseTransaction::class,
-        Clock::class => LaravelClock::class,
+        UserRepositoryInterface::class => EloquentUserRepository::class,
+        WorkRepositoryInterface::class => EloquentWorkRepository::class,
+        EpisodeRepositoryInterface::class => EloquentEpisodeRepository::class,
+        PasswordHasherInterface::class => LaravelPasswordHasher::class,
+        DependencyCheckerInterface::class => LaravelDependencyChecker::class,
+        AccessTokensInterface::class => SanctumAccessTokens::class,
+        TransactionInterface::class => DatabaseTransaction::class,
+        ClockInterface::class => LaravelClock::class,
     ];
 
     public function register(): void

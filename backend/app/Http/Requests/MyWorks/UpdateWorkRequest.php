@@ -4,14 +4,14 @@ namespace App\Http\Requests\MyWorks;
 
 use App\Domain\Work\Genre;
 use App\Domain\Work\RatingFlag;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\Rule;
 
 /**
- * @phpstan-import-type WorkChanges from WorkRepository
+ * @phpstan-import-type WorkChanges from WorkRepositoryInterface
  */
 class UpdateWorkRequest extends FormRequest
 {

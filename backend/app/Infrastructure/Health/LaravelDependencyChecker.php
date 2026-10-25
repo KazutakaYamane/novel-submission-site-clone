@@ -3,12 +3,12 @@
 namespace App\Infrastructure\Health;
 
 use App\Domain\Health\CheckResult;
-use App\Domain\Health\DependencyChecker;
+use App\Domain\Health\DependencyCheckerInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Throwable;
 
-final class LaravelDependencyChecker implements DependencyChecker
+final class LaravelDependencyChecker implements DependencyCheckerInterface
 {
     public function database(): CheckResult
     {

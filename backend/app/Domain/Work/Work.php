@@ -26,8 +26,8 @@ final readonly class Work
     ) {}
 
     /**
-     * @throws WorkNotFound
-     * @throws WorkAccessDenied
+     * @throws WorkNotFoundException
+     * @throws WorkAccessDeniedException
      */
     public function assertEditableBy(string $userId): void
     {
@@ -36,7 +36,7 @@ final readonly class Work
         }
 
         // 未公開の作品は、他人に存在を知られないよう存在しないときと同じに扱う
-        throw $this->publishedAt === null ? new WorkNotFound : new WorkAccessDenied;
+        throw $this->publishedAt === null ? new WorkNotFoundException : new WorkAccessDeniedException;
     }
 
     public function recordEpisodePublished(DateTimeImmutable $at): self

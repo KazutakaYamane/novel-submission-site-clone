@@ -2,7 +2,7 @@
 
 namespace App\Domain\User;
 
-interface UserRepository
+interface UserRepositoryInterface
 {
     public function findById(string $id): ?User;
 
@@ -11,7 +11,7 @@ interface UserRepository
     public function existsByEmail(string $email): bool;
 
     /**
-     * @throws EmailAlreadyTaken
+     * @throws EmailAlreadyTakenException
      */
     public function create(string $name, string $email, string $hashedPassword): User;
 }

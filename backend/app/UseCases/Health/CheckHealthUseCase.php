@@ -3,11 +3,11 @@
 namespace App\UseCases\Health;
 
 use App\Domain\Health\CheckResult;
-use App\Domain\Health\DependencyChecker;
+use App\Domain\Health\DependencyCheckerInterface;
 
 final readonly class CheckHealthUseCase
 {
-    public function __construct(private DependencyChecker $checker) {}
+    public function __construct(private DependencyCheckerInterface $checker) {}
 
     /**
      * @return array{database: CheckResult, redis: CheckResult}

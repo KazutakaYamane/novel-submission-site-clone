@@ -1,15 +1,15 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = UserModel::factory()->create();
 });
 
 it('自分の作品を返す', function () {
-    $work = Work::factory()->state(['user_id' => $this->user->id])->create([
+    $work = WorkModel::factory()->state(['user_id' => $this->user->id])->create([
         'title' => '図書委員の異世界日誌',
         'catchphrase' => '貸出期限は守ってください',
         'genre' => 'fantasy',
@@ -39,7 +39,7 @@ it('自分の作品を返す', function () {
 });
 
 it('他人の未公開の作品なら、存在を隠して 404 を返す', function () {
-    $work = Work::factory()->create();
+    $work = WorkModel::factory()->create();
 
     $this->withToken($this->user->createToken('web')->plainTextToken)
         ->getJson("/api/my/works/{$work->id}")
@@ -47,7 +47,7 @@ it('他人の未公開の作品なら、存在を隠して 404 を返す', funct
 });
 
 it('他人の公開済みの作品なら 403 を返す', function () {
-    $work = Work::factory()->published()->create();
+    $work = WorkModel::factory()->published()->create();
 
     $this->withToken($this->user->createToken('web')->plainTextToken)
         ->getJson("/api/my/works/{$work->id}")
@@ -67,7 +67,7 @@ it('UUID でない ID なら 404 を返す', function () {
 });
 
 it('未ログインなら 401 を返す', function () {
-    $work = Work::factory()->state(['user_id' => $this->user->id])->create();
+    $work = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
 
     $this->getJson("/api/my/works/{$work->id}")->assertUnauthorized();
 });

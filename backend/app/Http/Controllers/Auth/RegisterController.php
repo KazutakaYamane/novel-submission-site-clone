@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Domain\User\EmailAlreadyTaken;
+use App\Domain\User\EmailAlreadyTakenException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\UserResource;
@@ -21,7 +21,7 @@ class RegisterController extends Controller
                 $request->string('email')->toString(),
                 $request->string('password')->toString(),
             );
-        } catch (EmailAlreadyTaken) {
+        } catch (EmailAlreadyTakenException) {
             throw ValidationException::withMessages([
                 'email' => __('validation.unique', ['attribute' => __('validation.attributes.email')]),
             ]);

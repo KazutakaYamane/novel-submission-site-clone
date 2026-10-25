@@ -1,10 +1,10 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
+use App\Infrastructure\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Hash;
 
 it('ログアウトすると 204 を返し、使ったトークンだけが無効になる', function () {
-    User::factory()->create(['email' => 'taro@example.com', 'password' => Hash::make('password123')]);
+    UserModel::factory()->create(['email' => 'taro@example.com', 'password' => Hash::make('password123')]);
     $credentials = ['email' => 'taro@example.com', 'password' => 'password123'];
     $loggedOut = $this->postJson('/api/auth/login', $credentials)->json('token');
     $other = $this->postJson('/api/auth/login', $credentials)->json('token');

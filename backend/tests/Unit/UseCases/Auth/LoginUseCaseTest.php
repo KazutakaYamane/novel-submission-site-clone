@@ -1,16 +1,16 @@
 <?php
 
-use App\Domain\Auth\AccessTokens;
-use App\Domain\Auth\InvalidCredentials;
+use App\Domain\Auth\AccessTokensInterface;
+use App\Domain\Auth\InvalidCredentialsException;
 use App\Domain\Auth\IssuedToken;
-use App\Domain\Shared\PasswordHasher;
+use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
-use App\Domain\User\UserRepository;
+use App\Domain\User\UserRepositoryInterface;
 use App\UseCases\Auth\LoginUseCase;
 
 beforeEach(function () {
-    $this->users = new class implements UserRepository
+    $this->users = new class implements UserRepositoryInterface
     {
         /** @var array<string, array{user: User, hashedPassword: string}> */
         public array $rows = [];
@@ -49,7 +49,7 @@ beforeEach(function () {
         }
     };
 
-    $this->hasher = new class implements PasswordHasher
+    $this->hasher = new class implements PasswordHasherInterface
     {
         /** @var list<string> check に渡されたハッシュ */
         public array $checked = [];
@@ -67,7 +67,7 @@ beforeEach(function () {
         }
     };
 
-    $this->tokens = new class implements AccessTokens
+    $this->tokens = new class implements AccessTokensInterface
     {
         /** @var array<string, string> 平文トークン => ユーザー ID */
         public array $issued = [];
@@ -97,15 +97,15 @@ it('正しい資格情報ならトークンを発行して、ユーザーと一�
         ->and($this->tokens->issued)->toBe([$authenticated->token->token => $authenticated->user->id]);
 });
 
-it('パスワードが誤っていれば InvalidCredentials を投げ、トークンを発行しない', function () {
+it('パスワードが誤っていれば InvalidCredentialsException を投げ、トークンを発行しない', function () {
     expect(fn () => ($this->loginUseCase)('taro@example.com', 'wrong-password'))
-        ->toThrow(InvalidCredentials::class)
+        ->toThrow(InvalidCredentialsException::class)
         ->and($this->tokens->issued)->toBeEmpty();
 });
 
-it('未登録のメールアドレスでもパスワードを照合してから InvalidCredentials を投げる', function () {
+it('未登録のメールアドレスでもパスワードを照合してから InvalidCredentialsException を投げる', function () {
     expect(fn () => ($this->loginUseCase)('nobody@example.com', 'password123'))
-        ->toThrow(InvalidCredentials::class)
+        ->toThrow(InvalidCredentialsException::class)
         ->and($this->hasher->checked)->toHaveCount(1)
         ->and($this->tokens->issued)->toBeEmpty();
 });
