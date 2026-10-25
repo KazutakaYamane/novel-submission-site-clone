@@ -4,7 +4,7 @@ namespace App\Infrastructure\Sanctum;
 
 use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\IssuedToken;
-use App\Infrastructure\Eloquent\Models\User;
+use App\Infrastructure\Eloquent\Models\UserModel;
 use Laravel\Sanctum\PersonalAccessToken;
 
 final class SanctumAccessTokens implements AccessTokensInterface
@@ -13,7 +13,7 @@ final class SanctumAccessTokens implements AccessTokensInterface
     {
         // Sanctum は created_at + expiration で期限切れを判定するので、応答で返す期限も同じ値から計算する
         $expiresAt = now()->addMinutes(config()->integer('sanctum.expiration'))->toDateTimeImmutable();
-        $token = User::findOrFail($userId)->createToken('web', ['*'], $expiresAt);
+        $token = UserModel::findOrFail($userId)->createToken('web', ['*'], $expiresAt);
 
         return new IssuedToken($token->plainTextToken, $expiresAt);
     }

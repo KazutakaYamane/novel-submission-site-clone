@@ -1,10 +1,10 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
+use App\Infrastructure\Eloquent\Models\UserModel;
 use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
-    User::factory()->create([
+    UserModel::factory()->create([
         'name' => '山田太郎',
         'email' => 'taro@example.com',
         'password' => Hash::make('password123'),

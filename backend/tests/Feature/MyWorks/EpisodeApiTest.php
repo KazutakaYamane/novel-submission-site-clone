@@ -1,15 +1,15 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\Episode;
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\EpisodeModel;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = UserModel::factory()->create();
     $this->token = $this->user->createToken('web')->plainTextToken;
-    $this->work = Work::factory()->state(['user_id' => $this->user->id])->create();
+    $this->work = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
 });
 
 describe('作成', function () {
@@ -37,8 +37,8 @@ describe('作成', function () {
     });
 
     it('position は作品ごとに 1 から振る', function () {
-        $other = Work::factory()->state(['user_id' => $this->user->id])->create();
-        $create = fn (Work $work) => $this->withToken($this->token)
+        $other = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
+        $create = fn (WorkModel $work) => $this->withToken($this->token)
             ->postJson("/api/my/works/{$work->id}/episodes", ['title' => '話', 'body' => '本文'])
             ->assertCreated()
             ->json('data.position');
@@ -54,7 +54,7 @@ describe('作成', function () {
             ->assertJsonPath('data.body', '')
             ->json('data.id');
 
-        expect(Episode::find($id)->body)->toBe('');
+        expect(EpisodeModel::find($id)->body)->toBe('');
     })->with([
         '空文字' => [['body' => '']],
         'null' => [['body' => null]],
@@ -67,7 +67,7 @@ describe('作成', function () {
             ->assertUnprocessable()
             ->assertOnlyJsonValidationErrors([$field]);
 
-        expect(Episode::count())->toBe(0);
+        expect(EpisodeModel::count())->toBe(0);
     })->with([
         'タイトルが無い' => [['body' => '本文'], 'title'],
         'タイトルが空' => [['title' => '', 'body' => '本文'], 'title'],
@@ -99,13 +99,13 @@ describe('作成', function () {
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes", ['title' => '第一話', 'body' => str_repeat('a', 6990474)])
             ->assertCreated();
-        expect(strlen(Episode::sole()->body))->toBe(6990474);
+        expect(strlen(EpisodeModel::sole()->body))->toBe(6990474);
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes", ['title' => '第二話', 'body' => str_repeat('a', 6990475)])
             ->assertUnprocessable()
             ->assertJsonPath('errors.body.0', '本文は6990474バイト以内で入力してください');
-        expect(Episode::count())->toBe(1);
+        expect(EpisodeModel::count())->toBe(1);
     });
 
     it('タイトルの前後の空白を削る', function () {
@@ -125,15 +125,15 @@ describe('作成', function () {
             ->assertJsonPath('data.body', $body)
             ->json('data.id');
 
-        expect(Episode::find($id)->body)->toBe($body);
+        expect(EpisodeModel::find($id)->body)->toBe($body);
     });
 });
 
 describe('一覧', function () {
     it('本文を含めず、position の順に返す', function () {
-        $second = Episode::factory()->state(['work_id' => $this->work->id])->create(['position' => 2, 'title' => '第二話']);
-        $first = Episode::factory()->state(['work_id' => $this->work->id])->create(['position' => 1, 'title' => '第一話']);
-        Episode::factory()->create();
+        $second = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create(['position' => 2, 'title' => '第二話']);
+        $first = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create(['position' => 1, 'title' => '第一話']);
+        EpisodeModel::factory()->create();
 
         $this->withToken($this->token)
             ->getJson("/api/my/works/{$this->work->id}/episodes")
@@ -147,7 +147,7 @@ describe('一覧', function () {
 
 describe('取得', function () {
     it('本文を含めて返す', function () {
-        $episode = Episode::factory()->state(['work_id' => $this->work->id])->create(['title' => '第一話', 'body' => "一行目\n二行目"]);
+        $episode = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create(['title' => '第一話', 'body' => "一行目\n二行目"]);
 
         $this->withToken($this->token)
             ->getJson("/api/my/works/{$this->work->id}/episodes/{$episode->id}")
@@ -166,7 +166,7 @@ describe('取得', function () {
 
 describe('更新', function () {
     beforeEach(function () {
-        $this->episode = Episode::factory()->state(['work_id' => $this->work->id])->create(['title' => '元のタイトル', 'body' => '元の本文']);
+        $this->episode = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create(['title' => '元のタイトル', 'body' => '元の本文']);
     });
 
     it('送った項目だけを変え、ほかの項目は変えない', function () {
@@ -209,7 +209,7 @@ describe('更新', function () {
     })->with(['空文字' => '', 'null' => null]);
 
     it('status・position・work_id・published_at を送っても変えない', function () {
-        $other = Work::factory()->state(['user_id' => $this->user->id])->create();
+        $other = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
 
         $this->withToken($this->token)
             ->patchJson("/api/my/works/{$this->work->id}/episodes/{$this->episode->id}", [
@@ -266,24 +266,24 @@ describe('他人の作品', function () {
     ];
 
     it('公開済みの作品なら 403 を返し、話を変えない', function (Closure $request) {
-        $work = Work::factory()->published()->create();
-        $episode = Episode::factory()->state(['work_id' => $work->id])->create(['title' => '他人の話']);
+        $work = WorkModel::factory()->published()->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $work->id])->create(['title' => '他人の話']);
         [$method, $uri, $payload] = $request($work->id, $episode->id);
 
         $this->withToken($this->token)->{$method}($uri, $payload)->assertForbidden();
 
-        expect(Episode::count())->toBe(1)
+        expect(EpisodeModel::count())->toBe(1)
             ->and($episode->fresh()->title)->toBe('他人の話');
     })->with($requests);
 
     it('未公開の作品なら、存在を隠して 404 を返し、話を変えない', function (Closure $request) {
-        $work = Work::factory()->create();
-        $episode = Episode::factory()->state(['work_id' => $work->id])->create(['title' => '他人の話']);
+        $work = WorkModel::factory()->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $work->id])->create(['title' => '他人の話']);
         [$method, $uri, $payload] = $request($work->id, $episode->id);
 
         $this->withToken($this->token)->{$method}($uri, $payload)->assertNotFound();
 
-        expect(Episode::count())->toBe(1)
+        expect(EpisodeModel::count())->toBe(1)
             ->and($episode->fresh()->title)->toBe('他人の話');
     })->with($requests);
 });
@@ -295,8 +295,8 @@ describe('見つからない話', function () {
     ];
 
     it('自分の別の作品の話 ID なら 404 を返し、変えない', function (Closure $request) {
-        $other = Work::factory()->state(['user_id' => $this->user->id])->create();
-        $episode = Episode::factory()->state(['work_id' => $other->id])->create(['title' => '別の作品の話']);
+        $other = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $other->id])->create(['title' => '別の作品の話']);
         [$method, $uri, $payload] = $request($this->work->id, $episode->id);
 
         $this->withToken($this->token)->{$method}($uri, $payload)->assertNotFound();
@@ -318,16 +318,16 @@ describe('見つからない話', function () {
             ->postJson('/api/my/works/'.Str::uuid().'/episodes', ['title' => '第一話', 'body' => '本文'])
             ->assertNotFound();
 
-        expect(Episode::count())->toBe(0);
+        expect(EpisodeModel::count())->toBe(0);
     });
 });
 
 it('未ログインなら 401 を返す', function (string $method, Closure $uri) {
-    $episode = Episode::factory()->state(['work_id' => $this->work->id])->create();
+    $episode = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create();
 
     $this->{$method}($uri($this->work->id, $episode->id), ['title' => '書き換え'])->assertUnauthorized();
 
-    expect(Episode::count())->toBe(1);
+    expect(EpisodeModel::count())->toBe(1);
 })->with([
     '作成' => ['postJson', fn (string $workId) => "/api/my/works/{$workId}/episodes"],
     '一覧' => ['getJson', fn (string $workId) => "/api/my/works/{$workId}/episodes"],

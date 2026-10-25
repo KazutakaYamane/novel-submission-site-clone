@@ -1,16 +1,16 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\Episode;
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\EpisodeModel;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = UserModel::factory()->create();
     $this->token = $this->user->createToken('web')->plainTextToken;
-    $this->work = Work::factory()->state(['user_id' => $this->user->id])->create();
-    $this->publishedEpisode = fn (Work $work, string $publishedAt) => Episode::factory()
+    $this->work = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
+    $this->publishedEpisode = fn (WorkModel $work, string $publishedAt) => EpisodeModel::factory()
         ->state(['work_id' => $work->id, 'status' => 'published', 'published_at' => $publishedAt])
         ->create();
     $this->travelTo(Carbon::parse('2026-10-22 12:00:00'));
@@ -18,7 +18,7 @@ beforeEach(function () {
 
 describe('公開', function () {
     it('下書きを公開して公開日時を記録し、未公開の作品も同じ時刻で公開する', function () {
-        $episode = Episode::factory()->state(['work_id' => $this->work->id])->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes/{$episode->id}/publish")
@@ -43,7 +43,7 @@ describe('公開', function () {
     it('2 話目の公開では作品の公開日時を変えず、最後に話を公開した日時だけを変える', function () {
         $this->work->forceFill(['published_at' => '2026-10-01 09:00:00', 'last_episode_published_at' => '2026-10-01 09:00:00'])->save();
         ($this->publishedEpisode)($this->work, '2026-10-01 09:00:00');
-        $second = Episode::factory()->state(['work_id' => $this->work->id])->create();
+        $second = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes/{$second->id}/publish")
@@ -57,7 +57,7 @@ describe('公開', function () {
     });
 
     it('本文が空白だけなら 422 を返し、公開しない', function (string $body) {
-        $episode = Episode::factory()->state(['work_id' => $this->work->id, 'body' => $body])->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $this->work->id, 'body' => $body])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes/{$episode->id}/publish")
@@ -91,8 +91,8 @@ describe('非公開化', function () {
         ($this->publishedEpisode)($this->work, '2026-10-01 09:00:00');
         ($this->publishedEpisode)($this->work, '2026-10-05 09:00:00');
         $latest = ($this->publishedEpisode)($this->work, '2026-10-10 09:00:00');
-        Episode::factory()->state(['work_id' => $this->work->id])->create();
-        ($this->publishedEpisode)(Work::factory()->state(['user_id' => $this->user->id])->published()->create(), '2026-10-20 09:00:00');
+        EpisodeModel::factory()->state(['work_id' => $this->work->id])->create();
+        ($this->publishedEpisode)(WorkModel::factory()->state(['user_id' => $this->user->id])->published()->create(), '2026-10-20 09:00:00');
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes/{$latest->id}/unpublish")
@@ -126,7 +126,7 @@ describe('非公開化', function () {
     });
 
     it('下書きの話なら 422 を返す', function () {
-        $episode = Episode::factory()->state(['work_id' => $this->work->id])->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes/{$episode->id}/unpublish")
@@ -173,8 +173,8 @@ describe('他人の作品', function () {
     $actions = ['公開' => ['publish', 'draft'], '非公開化' => ['unpublish', 'published']];
 
     it('公開済みの作品なら 403 を返し、話を変えない', function (string $action, string $status) {
-        $work = Work::factory()->published()->create();
-        $episode = Episode::factory()->state(['work_id' => $work->id, 'status' => $status])->create();
+        $work = WorkModel::factory()->published()->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $work->id, 'status' => $status])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$work->id}/episodes/{$episode->id}/{$action}")
@@ -184,8 +184,8 @@ describe('他人の作品', function () {
     })->with($actions);
 
     it('未公開の作品なら、存在を隠して 404 を返し、話を変えない', function (string $action, string $status) {
-        $work = Work::factory()->create();
-        $episode = Episode::factory()->state(['work_id' => $work->id, 'status' => $status])->create();
+        $work = WorkModel::factory()->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $work->id, 'status' => $status])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$work->id}/episodes/{$episode->id}/{$action}")
@@ -197,8 +197,8 @@ describe('他人の作品', function () {
 
 describe('見つからない話', function () {
     it('自分の別の作品の話 ID なら 404 を返し、変えない', function (string $action, string $status) {
-        $other = Work::factory()->state(['user_id' => $this->user->id])->create();
-        $episode = Episode::factory()->state(['work_id' => $other->id, 'status' => $status])->create();
+        $other = WorkModel::factory()->state(['user_id' => $this->user->id])->create();
+        $episode = EpisodeModel::factory()->state(['work_id' => $other->id, 'status' => $status])->create();
 
         $this->withToken($this->token)
             ->postJson("/api/my/works/{$this->work->id}/episodes/{$episode->id}/{$action}")
@@ -218,7 +218,7 @@ describe('見つからない話', function () {
 });
 
 it('未ログインなら 401 を返し、変えない', function (string $action) {
-    $episode = Episode::factory()->state(['work_id' => $this->work->id])->create();
+    $episode = EpisodeModel::factory()->state(['work_id' => $this->work->id])->create();
 
     $this->postJson("/api/my/works/{$this->work->id}/episodes/{$episode->id}/{$action}")->assertUnauthorized();
 

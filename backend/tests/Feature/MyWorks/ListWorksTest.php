@@ -1,13 +1,13 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 
 it('自分の作品だけを作成日時の新しい順に返す', function () {
-    $user = User::factory()->create();
-    $old = Work::factory()->state(['user_id' => $user->id])->create(['created_at' => now()->subDays(2)]);
-    $new = Work::factory()->state(['user_id' => $user->id])->create(['created_at' => now()->subDay()]);
-    Work::factory()->create();
+    $user = UserModel::factory()->create();
+    $old = WorkModel::factory()->state(['user_id' => $user->id])->create(['created_at' => now()->subDays(2)]);
+    $new = WorkModel::factory()->state(['user_id' => $user->id])->create(['created_at' => now()->subDay()]);
+    WorkModel::factory()->create();
 
     $this->withToken($user->createToken('web')->plainTextToken)
         ->getJson('/api/my/works')
@@ -20,7 +20,7 @@ it('自分の作品だけを作成日時の新しい順に返す', function () {
 // created_at は秒単位なので、同じ秒に作った作品の順は id で決める
 it('同じ時刻に作った作品は、後に作った方を先に返す', function () {
     $this->freezeSecond();
-    $user = User::factory()->create();
+    $user = UserModel::factory()->create();
     $this->withToken($user->createToken('web')->plainTextToken);
 
     $ids = collect(range(1, 5))->map(fn (int $i) => $this->postJson('/api/my/works', [
@@ -35,7 +35,7 @@ it('同じ時刻に作った作品は、後に作った方を先に返す', func
 });
 
 it('作品が無ければ空の配列を返す', function () {
-    $user = User::factory()->create();
+    $user = UserModel::factory()->create();
 
     $this->withToken($user->createToken('web')->plainTextToken)
         ->getJson('/api/my/works')

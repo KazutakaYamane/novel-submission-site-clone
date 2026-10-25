@@ -1,11 +1,11 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
-use App\Infrastructure\Eloquent\Models\Work;
+use App\Infrastructure\Eloquent\Models\UserModel;
+use App\Infrastructure\Eloquent\Models\WorkModel;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    $this->user = UserModel::factory()->create();
     $this->withToken($this->user->createToken('web')->plainTextToken);
 });
 
@@ -31,7 +31,7 @@ it('必須の項目だけで作成すると 201 を返し、既定値で保存�
         ->assertJsonPath('data.published_at', null)
         ->assertJsonPath('data.last_episode_published_at', null);
 
-    $work = Work::sole();
+    $work = WorkModel::sole();
     expect(Str::isUuid($response->json('data.id')))->toBeTrue()
         ->and($work->id)->toBe($response->json('data.id'))
         ->and($work->user_id)->toBe($this->user->id)
@@ -60,14 +60,14 @@ it('任意の項目も送ると、その値で保存する', function () {
         ->assertJsonPath('data.status', 'completed')
         ->assertJsonPath('data.rating_flags', ['violence', 'cruelty']);
 
-    $work = Work::sole();
+    $work = WorkModel::sole();
     expect($work->catchphrase)->toBe('貸出期限は守ってください')
         ->and($work->status)->toBe('completed')
         ->and($work->rating_flags)->toBe(['violence', 'cruelty']);
 });
 
 it('入力で user_id や published_at を送っても使わない', function () {
-    $other = User::factory()->create();
+    $other = UserModel::factory()->create();
 
     $this->postJson('/api/my/works', workPayload([
         'user_id' => $other->id,
@@ -75,7 +75,7 @@ it('入力で user_id や published_at を送っても使わない', function ()
         'last_episode_published_at' => '2026-01-01T00:00:00+09:00',
     ]))->assertCreated();
 
-    $work = Work::sole();
+    $work = WorkModel::sole();
     expect($work->user_id)->toBe($this->user->id)
         ->and($work->published_at)->toBeNull()
         ->and($work->last_episode_published_at)->toBeNull();

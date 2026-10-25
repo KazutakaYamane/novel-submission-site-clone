@@ -6,7 +6,7 @@ use App\Domain\User\EmailAlreadyTakenException;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
 use App\Domain\User\UserRepositoryInterface;
-use App\Infrastructure\Eloquent\Models\User as UserModel;
+use App\Infrastructure\Eloquent\Models\UserModel;
 use Illuminate\Database\UniqueConstraintViolationException;
 
 final class EloquentUserRepository implements UserRepositoryInterface

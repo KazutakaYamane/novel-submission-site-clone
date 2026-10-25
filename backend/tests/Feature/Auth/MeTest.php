@@ -1,9 +1,9 @@
 <?php
 
-use App\Infrastructure\Eloquent\Models\User;
+use App\Infrastructure\Eloquent\Models\UserModel;
 
 it('有効なトークンなら自分のユーザーを返す', function () {
-    $user = User::factory()->create();
+    $user = UserModel::factory()->create();
 
     $this->withToken($user->createToken('web')->plainTextToken)
         ->getJson('/api/me')
@@ -26,7 +26,7 @@ it('発行していないトークンなら 401 を返す', function () {
 });
 
 it('期限切れのトークンなら 401 を返す', function () {
-    $user = User::factory()->create();
+    $user = UserModel::factory()->create();
     $token = $user->createToken('web', ['*'], now()->subMinute());
 
     $this->withToken($token->plainTextToken)
