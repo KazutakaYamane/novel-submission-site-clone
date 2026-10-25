@@ -3,17 +3,17 @@
 use App\Domain\Episode\EmptyEpisodeBody;
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFound;
-use App\Domain\Episode\EpisodeRepository;
+use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Episode\EpisodeSummary;
 use App\Domain\Episode\InvalidEpisodeTransition;
-use App\Domain\Shared\Clock;
-use App\Domain\Shared\Transaction;
+use App\Domain\Shared\ClockInterface;
+use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\Genre;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkAccessDenied;
 use App\Domain\Work\WorkNotFound;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use App\UseCases\Episode\CreateEpisodeDraftUseCase;
 use App\UseCases\Episode\GetMyEpisodeUseCase;
@@ -26,7 +26,7 @@ use Tests\Doubles\InMemoryWorkRepository;
 beforeEach(function () {
     $this->works = new InMemoryWorkRepository;
 
-    $this->episodes = new class($this->works) implements EpisodeRepository
+    $this->episodes = new class($this->works) implements EpisodeRepositoryInterface
     {
         /** @var array<string, Episode> */
         public array $rows = [];
@@ -34,7 +34,7 @@ beforeEach(function () {
         private int $sequence = 0;
 
         // 本物の episodes.work_id の外部キーと同じく、無い作品には話を足せない
-        public function __construct(private WorkRepository $works) {}
+        public function __construct(private WorkRepositoryInterface $works) {}
 
         public function appendDraft(string $workId, string $title, string $body): ?Episode
         {
@@ -136,7 +136,7 @@ beforeEach(function () {
         }
     };
 
-    $this->transaction = new class([$this->works, $this->episodes]) implements Transaction
+    $this->transaction = new class([$this->works, $this->episodes]) implements TransactionInterface
     {
         /** @param  list<object{rows: array<string, mixed>}>  $repositories */
         public function __construct(private array $repositories) {}
@@ -156,7 +156,7 @@ beforeEach(function () {
         }
     };
 
-    $this->clock = new class implements Clock
+    $this->clock = new class implements ClockInterface
     {
         public DateTimeImmutable $now;
 

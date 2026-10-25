@@ -5,11 +5,11 @@ namespace App\Infrastructure\Eloquent\Repositories;
 use App\Domain\User\EmailAlreadyTaken;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
-use App\Domain\User\UserRepository;
+use App\Domain\User\UserRepositoryInterface;
 use App\Infrastructure\Eloquent\Models\User as UserModel;
 use Illuminate\Database\UniqueConstraintViolationException;
 
-final class EloquentUserRepository implements UserRepository
+final class EloquentUserRepository implements UserRepositoryInterface
 {
     public function findById(string $id): ?User
     {

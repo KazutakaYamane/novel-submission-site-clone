@@ -1,17 +1,17 @@
 <?php
 
-use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\IssuedToken;
-use App\Domain\Shared\PasswordHasher;
-use App\Domain\Shared\Transaction;
+use App\Domain\Shared\PasswordHasherInterface;
+use App\Domain\Shared\TransactionInterface;
 use App\Domain\User\EmailAlreadyTaken;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
-use App\Domain\User\UserRepository;
+use App\Domain\User\UserRepositoryInterface;
 use App\UseCases\Auth\RegisterUserUseCase;
 
 beforeEach(function () {
-    $this->users = new class implements UserRepository
+    $this->users = new class implements UserRepositoryInterface
     {
         /** @var array<string, array{user: User, hashedPassword: string}> */
         public array $rows = [];
@@ -50,7 +50,7 @@ beforeEach(function () {
         }
     };
 
-    $hasher = new class implements PasswordHasher
+    $hasher = new class implements PasswordHasherInterface
     {
         public function hash(string $plain): string
         {
@@ -63,7 +63,7 @@ beforeEach(function () {
         }
     };
 
-    $this->tokens = new class implements AccessTokens
+    $this->tokens = new class implements AccessTokensInterface
     {
         /** @var array<string, string> 平文トークン => ユーザー ID */
         public array $issued = [];
@@ -83,7 +83,7 @@ beforeEach(function () {
     };
 
     // メモリ上の double には巻き戻す DB がないので、処理をそのまま実行する
-    $transaction = new class implements Transaction
+    $transaction = new class implements TransactionInterface
     {
         public function run(callable $callback): mixed
         {

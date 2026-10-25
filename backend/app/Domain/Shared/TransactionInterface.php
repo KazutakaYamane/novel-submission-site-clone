@@ -2,7 +2,7 @@
 
 namespace App\Domain\Shared;
 
-interface Transaction
+interface TransactionInterface
 {
     /**
      * @template T

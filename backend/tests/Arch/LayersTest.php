@@ -33,3 +33,9 @@ arch('コントローラーは __invoke だけを公開する')
     ->expect('App\Http\Controllers')
     ->classes()
     ->not->toHavePublicMethodsBesides(['__construct', '__invoke']);
+
+// entity と見分けられるよう、Domain の interface は名前で示す
+arch('Domain の interface の名前は Interface で終わる')
+    ->expect('App\Domain')
+    ->interfaces()
+    ->toHaveSuffix('Interface');

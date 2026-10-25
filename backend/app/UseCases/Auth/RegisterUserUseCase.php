@@ -2,20 +2,20 @@
 
 namespace App\UseCases\Auth;
 
-use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\AuthenticatedUser;
-use App\Domain\Shared\PasswordHasher;
-use App\Domain\Shared\Transaction;
+use App\Domain\Shared\PasswordHasherInterface;
+use App\Domain\Shared\TransactionInterface;
 use App\Domain\User\EmailAlreadyTaken;
-use App\Domain\User\UserRepository;
+use App\Domain\User\UserRepositoryInterface;
 
 final readonly class RegisterUserUseCase
 {
     public function __construct(
-        private UserRepository $users,
-        private PasswordHasher $hasher,
-        private AccessTokens $tokens,
-        private Transaction $transaction,
+        private UserRepositoryInterface $users,
+        private PasswordHasherInterface $hasher,
+        private AccessTokensInterface $tokens,
+        private TransactionInterface $transaction,
     ) {}
 
     /**

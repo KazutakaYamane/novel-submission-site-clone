@@ -13,7 +13,7 @@ namespace App\Domain\Work;
  *     tags?: list<string>,
  * }
  */
-interface WorkRepository
+interface WorkRepositoryInterface
 {
     /**
      * @param  list<RatingFlag>  $ratingFlags

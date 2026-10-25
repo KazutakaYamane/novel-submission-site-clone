@@ -17,7 +17,7 @@ app/
   Http/                     Controllers/<Feature>/, Requests/<Feature>/, Resources/
   UseCases/<Feature>/       one class per use case, e.g. UseCases/Auth/RegisterUserUseCase.php
   Domain/<Aggregate>/       entities, repository interfaces, domain exceptions, e.g. Domain/User/
-  Domain/Shared/            interfaces used across aggregates, e.g. PasswordHasher
+  Domain/Shared/            interfaces used across aggregates, e.g. PasswordHasherInterface
   Infrastructure/Eloquent/  Models/ and Repositories/ (Eloquent<Name>Repository)
   Infrastructure/<Concern>/ other implementations of Domain interfaces, e.g. Hashing/
 ```

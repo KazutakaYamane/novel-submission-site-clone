@@ -2,12 +2,12 @@
 
 namespace App\Infrastructure\Sanctum;
 
-use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\IssuedToken;
 use App\Infrastructure\Eloquent\Models\User;
 use Laravel\Sanctum\PersonalAccessToken;
 
-final class SanctumAccessTokens implements AccessTokens
+final class SanctumAccessTokens implements AccessTokensInterface
 {
     public function issue(string $userId): IssuedToken
     {

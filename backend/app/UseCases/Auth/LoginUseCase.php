@@ -2,11 +2,11 @@
 
 namespace App\UseCases\Auth;
 
-use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\AuthenticatedUser;
 use App\Domain\Auth\InvalidCredentials;
-use App\Domain\Shared\PasswordHasher;
-use App\Domain\User\UserRepository;
+use App\Domain\Shared\PasswordHasherInterface;
+use App\Domain\User\UserRepositoryInterface;
 
 final readonly class LoginUseCase
 {
@@ -15,9 +15,9 @@ final readonly class LoginUseCase
     private const DUMMY_HASH = '$2y$12$I21MTA0xJ5H/9SIGeOoI.OAcE.63NHLjHC9SuqZfsDgk/YxxUEIDe';
 
     public function __construct(
-        private UserRepository $users,
-        private PasswordHasher $hasher,
-        private AccessTokens $tokens,
+        private UserRepositoryInterface $users,
+        private PasswordHasherInterface $hasher,
+        private AccessTokensInterface $tokens,
     ) {}
 
     /**

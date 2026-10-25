@@ -5,21 +5,21 @@ namespace App\UseCases\Episode;
 use App\Domain\Episode\EmptyEpisodeBody;
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFound;
-use App\Domain\Episode\EpisodeRepository;
-use App\Domain\Shared\Transaction;
+use App\Domain\Episode\EpisodeRepositoryInterface;
+use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\WorkAccessDenied;
 use App\Domain\Work\WorkNotFound;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 
 /**
- * @phpstan-import-type EpisodeChanges from EpisodeRepository
+ * @phpstan-import-type EpisodeChanges from EpisodeRepositoryInterface
  */
 final readonly class UpdateMyEpisodeUseCase
 {
     public function __construct(
-        private WorkRepository $works,
-        private EpisodeRepository $episodes,
-        private Transaction $transaction,
+        private WorkRepositoryInterface $works,
+        private EpisodeRepositoryInterface $episodes,
+        private TransactionInterface $transaction,
     ) {}
 
     /**

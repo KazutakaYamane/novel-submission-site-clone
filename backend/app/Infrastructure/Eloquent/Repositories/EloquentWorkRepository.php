@@ -5,16 +5,16 @@ namespace App\Infrastructure\Eloquent\Repositories;
 use App\Domain\Work\Genre;
 use App\Domain\Work\RatingFlag;
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use App\Infrastructure\Eloquent\Models\Tag;
 use App\Infrastructure\Eloquent\Models\Work as WorkModel;
 use Illuminate\Support\Facades\DB;
 
 /**
- * @phpstan-import-type WorkChanges from WorkRepository
+ * @phpstan-import-type WorkChanges from WorkRepositoryInterface
  */
-final class EloquentWorkRepository implements WorkRepository
+final class EloquentWorkRepository implements WorkRepositoryInterface
 {
     public function create(
         string $userId,

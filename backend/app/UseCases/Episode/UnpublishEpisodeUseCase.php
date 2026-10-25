@@ -4,19 +4,19 @@ namespace App\UseCases\Episode;
 
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFound;
-use App\Domain\Episode\EpisodeRepository;
+use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Episode\InvalidEpisodeTransition;
-use App\Domain\Shared\Transaction;
+use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\WorkAccessDenied;
 use App\Domain\Work\WorkNotFound;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 
 final readonly class UnpublishEpisodeUseCase
 {
     public function __construct(
-        private WorkRepository $works,
-        private EpisodeRepository $episodes,
-        private Transaction $transaction,
+        private WorkRepositoryInterface $works,
+        private EpisodeRepositoryInterface $episodes,
+        private TransactionInterface $transaction,
     ) {}
 
     /**

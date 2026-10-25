@@ -2,14 +2,14 @@
 
 namespace App\Http\Requests\MyWorks;
 
-use App\Domain\Episode\EpisodeRepository;
+use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Http\Rules\MaxBytes;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 
 /**
- * @phpstan-import-type EpisodeChanges from EpisodeRepository
+ * @phpstan-import-type EpisodeChanges from EpisodeRepositoryInterface
  */
 class UpdateEpisodeRequest extends FormRequest
 {

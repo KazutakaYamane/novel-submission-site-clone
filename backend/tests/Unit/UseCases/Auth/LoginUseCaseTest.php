@@ -1,16 +1,16 @@
 <?php
 
-use App\Domain\Auth\AccessTokens;
+use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\InvalidCredentials;
 use App\Domain\Auth\IssuedToken;
-use App\Domain\Shared\PasswordHasher;
+use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
-use App\Domain\User\UserRepository;
+use App\Domain\User\UserRepositoryInterface;
 use App\UseCases\Auth\LoginUseCase;
 
 beforeEach(function () {
-    $this->users = new class implements UserRepository
+    $this->users = new class implements UserRepositoryInterface
     {
         /** @var array<string, array{user: User, hashedPassword: string}> */
         public array $rows = [];
@@ -49,7 +49,7 @@ beforeEach(function () {
         }
     };
 
-    $this->hasher = new class implements PasswordHasher
+    $this->hasher = new class implements PasswordHasherInterface
     {
         /** @var list<string> check に渡されたハッシュ */
         public array $checked = [];
@@ -67,7 +67,7 @@ beforeEach(function () {
         }
     };
 
-    $this->tokens = new class implements AccessTokens
+    $this->tokens = new class implements AccessTokensInterface
     {
         /** @var array<string, string> 平文トークン => ユーザー ID */
         public array $issued = [];

@@ -3,7 +3,7 @@
 namespace App\Infrastructure\Eloquent\Repositories;
 
 use App\Domain\Episode\Episode;
-use App\Domain\Episode\EpisodeRepository;
+use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Episode\EpisodeSummary;
 use App\Infrastructure\Eloquent\Models\Episode as EpisodeModel;
@@ -11,7 +11,7 @@ use App\Infrastructure\Eloquent\Models\Work as WorkModel;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 
-final class EloquentEpisodeRepository implements EpisodeRepository
+final class EloquentEpisodeRepository implements EpisodeRepositoryInterface
 {
     public function appendDraft(string $workId, string $title, string $body): ?Episode
     {

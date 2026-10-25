@@ -5,7 +5,7 @@ namespace App\Domain\Episode;
 use DateTimeImmutable;
 
 /**
- * @phpstan-import-type EpisodeChanges from EpisodeRepository
+ * @phpstan-import-type EpisodeChanges from EpisodeRepositoryInterface
  */
 final readonly class Episode
 {

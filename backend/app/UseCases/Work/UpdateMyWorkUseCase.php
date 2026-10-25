@@ -5,15 +5,15 @@ namespace App\UseCases\Work;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkAccessDenied;
 use App\Domain\Work\WorkNotFound;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 
 /**
- * @phpstan-import-type WorkChanges from WorkRepository
+ * @phpstan-import-type WorkChanges from WorkRepositoryInterface
  */
 final readonly class UpdateMyWorkUseCase
 {
     public function __construct(
-        private WorkRepository $works,
+        private WorkRepositoryInterface $works,
     ) {}
 
     /**

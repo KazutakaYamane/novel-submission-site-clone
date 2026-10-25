@@ -3,16 +3,16 @@
 namespace App\UseCases\Episode;
 
 use App\Domain\Episode\Episode;
-use App\Domain\Episode\EpisodeRepository;
+use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Work\WorkAccessDenied;
 use App\Domain\Work\WorkNotFound;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 
 final readonly class CreateEpisodeDraftUseCase
 {
     public function __construct(
-        private WorkRepository $works,
-        private EpisodeRepository $episodes,
+        private WorkRepositoryInterface $works,
+        private EpisodeRepositoryInterface $episodes,
     ) {}
 
     /**

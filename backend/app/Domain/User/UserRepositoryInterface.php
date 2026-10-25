@@ -2,7 +2,7 @@
 
 namespace App\Domain\User;
 
-interface UserRepository
+interface UserRepositoryInterface
 {
     public function findById(string $id): ?User;
 

@@ -4,11 +4,11 @@ namespace Tests\Doubles;
 
 use App\Domain\Work\Genre;
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkRepository;
+use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use DateTimeImmutable;
 
-final class InMemoryWorkRepository implements WorkRepository
+final class InMemoryWorkRepository implements WorkRepositoryInterface
 {
     /** @var array<string, Work> */
     public array $rows = [];
