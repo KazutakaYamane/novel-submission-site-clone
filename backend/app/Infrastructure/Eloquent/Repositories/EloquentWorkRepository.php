@@ -51,6 +51,13 @@ final class EloquentWorkRepository implements WorkRepository
         return $model === null ? null : self::toEntity($model);
     }
 
+    public function findByIdForUpdate(string $id): ?Work
+    {
+        $model = WorkModel::with('tags')->lockForUpdate()->find($id);
+
+        return $model === null ? null : self::toEntity($model);
+    }
+
     public function listByUser(string $userId): array
     {
         return WorkModel::with('tags')
@@ -81,6 +88,14 @@ final class EloquentWorkRepository implements WorkRepository
 
             return self::toEntity($model->load('tags'));
         });
+    }
+
+    public function savePublication(Work $work): void
+    {
+        WorkModel::whereKey($work->id)->update([
+            'published_at' => $work->publishedAt,
+            'last_episode_published_at' => $work->lastEpisodePublishedAt,
+        ]);
     }
 
     /**

@@ -1,10 +1,14 @@
 <?php
 
+use App\Domain\Episode\EmptyEpisodeBody;
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFound;
 use App\Domain\Episode\EpisodeRepository;
 use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Episode\EpisodeSummary;
+use App\Domain\Episode\InvalidEpisodeTransition;
+use App\Domain\Shared\Clock;
+use App\Domain\Shared\Transaction;
 use App\Domain\Work\Genre;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkAccessDenied;
@@ -14,104 +18,13 @@ use App\Domain\Work\WorkStatus;
 use App\UseCases\Episode\CreateEpisodeDraftUseCase;
 use App\UseCases\Episode\GetMyEpisodeUseCase;
 use App\UseCases\Episode\ListMyEpisodesUseCase;
+use App\UseCases\Episode\PublishEpisodeUseCase;
+use App\UseCases\Episode\UnpublishEpisodeUseCase;
 use App\UseCases\Episode\UpdateMyEpisodeUseCase;
+use Tests\Doubles\InMemoryWorkRepository;
 
 beforeEach(function () {
-    $this->works = new class implements WorkRepository
-    {
-        /** @var array<string, Work> */
-        public array $rows = [];
-
-        /** @var array<string, string> 小文字にした名前 => 最初に登録された表記。本物の tags テーブルと同じく作品の間で共有する */
-        private array $tagNames = [];
-
-        private int $sequence = 0;
-
-        public function create(
-            string $userId,
-            string $title,
-            ?string $catchphrase,
-            string $introduction,
-            Genre $genre,
-            WorkStatus $status,
-            array $ratingFlags,
-            array $tags,
-        ): Work {
-            $work = new Work(
-                // addWork で入れた行の id と重ならないよう、接頭辞を分ける
-                id: 'created-'.++$this->sequence,
-                userId: $userId,
-                title: $title,
-                catchphrase: $catchphrase,
-                introduction: $introduction,
-                genre: $genre,
-                status: $status,
-                ratingFlags: $ratingFlags,
-                tags: $this->storeTags($tags),
-                publishedAt: null,
-                lastEpisodePublishedAt: null,
-                createdAt: new DateTimeImmutable,
-            );
-            $this->rows[$work->id] = $work;
-
-            return $work;
-        }
-
-        public function findById(string $id): ?Work
-        {
-            return $this->rows[$id] ?? null;
-        }
-
-        public function listByUser(string $userId): array
-        {
-            $works = array_values(array_filter($this->rows, fn (Work $work) => $work->userId === $userId));
-            // 本物は同じ時刻なら UUIDv7 の id の降順。ここでは連番の id で代える
-            usort($works, fn (Work $a, Work $b) => [$b->createdAt, $b->id] <=> [$a->createdAt, $a->id]);
-
-            return $works;
-        }
-
-        public function update(string $id, array $changes): ?Work
-        {
-            $stored = $this->rows[$id] ?? null;
-            if ($stored === null) {
-                return null;
-            }
-
-            return $this->rows[$id] = new Work(
-                id: $stored->id,
-                userId: $stored->userId,
-                title: $changes['title'] ?? $stored->title,
-                catchphrase: array_key_exists('catchphrase', $changes) ? $changes['catchphrase'] : $stored->catchphrase,
-                introduction: $changes['introduction'] ?? $stored->introduction,
-                genre: $changes['genre'] ?? $stored->genre,
-                status: $changes['status'] ?? $stored->status,
-                ratingFlags: $changes['ratingFlags'] ?? $stored->ratingFlags,
-                tags: array_key_exists('tags', $changes) ? $this->storeTags($changes['tags']) : $stored->tags,
-                publishedAt: $stored->publishedAt,
-                lastEpisodePublishedAt: $stored->lastEpisodePublishedAt,
-                createdAt: $stored->createdAt,
-            );
-        }
-
-        /**
-         * @param  list<string>  $names
-         * @return list<string>
-         */
-        private function storeTags(array $names): array
-        {
-            $tags = [];
-            foreach ($names as $name) {
-                $key = mb_strtolower($name);
-                $this->tagNames[$key] ??= $name;
-                $tags[$key] = $this->tagNames[$key];
-            }
-            // 本物は utf8mb4_bin の normalized_name で並べる。バイト順は UTF-8 のコードポイント順と同じ
-            ksort($tags, SORT_STRING);
-
-            return array_values($tags);
-        }
-    };
+    $this->works = new InMemoryWorkRepository;
 
     $this->episodes = new class($this->works) implements EpisodeRepository
     {
@@ -153,6 +66,11 @@ beforeEach(function () {
             return $episode?->workId === $workId ? $episode : null;
         }
 
+        public function findInWorkForUpdate(string $workId, string $episodeId): ?Episode
+        {
+            return $this->findInWork($workId, $episodeId);
+        }
+
         public function listByWork(string $workId): array
         {
             $episodes = array_values(array_filter($this->rows, fn (Episode $episode) => $episode->workId === $workId));
@@ -167,14 +85,15 @@ beforeEach(function () {
             ), $episodes);
         }
 
-        public function update(string $workId, string $episodeId, array $changes): ?Episode
+        public function update(Episode $episode, array $changes): Episode
         {
-            $stored = $this->findInWork($workId, $episodeId);
+            // 本物の UPDATE と同じく、行が無ければ何も書かない
+            $stored = $this->rows[$episode->id] ?? null;
             if ($stored === null) {
-                return null;
+                return $episode->withChanges($changes);
             }
 
-            return $this->rows[$episodeId] = new Episode(
+            return $this->rows[$episode->id] = new Episode(
                 id: $stored->id,
                 workId: $stored->workId,
                 title: $changes['title'] ?? $stored->title,
@@ -183,6 +102,72 @@ beforeEach(function () {
                 status: $stored->status,
                 publishedAt: $stored->publishedAt,
             );
+        }
+
+        public function savePublication(Episode $episode): void
+        {
+            $stored = $this->rows[$episode->id] ?? null;
+            if ($stored === null) {
+                return;
+            }
+
+            $this->rows[$episode->id] = new Episode(
+                id: $stored->id,
+                workId: $stored->workId,
+                title: $stored->title,
+                body: $stored->body,
+                position: $stored->position,
+                status: $episode->status,
+                publishedAt: $episode->publishedAt,
+            );
+        }
+
+        public function latestPublishedAt(string $workId): ?DateTimeImmutable
+        {
+            $dates = array_map(
+                fn (Episode $episode) => $episode->publishedAt,
+                array_filter(
+                    $this->rows,
+                    fn (Episode $episode) => $episode->workId === $workId && $episode->status === EpisodeStatus::Published,
+                ),
+            );
+
+            return $dates === [] ? null : max($dates);
+        }
+    };
+
+    $this->transaction = new class([$this->works, $this->episodes]) implements Transaction
+    {
+        /** @param  list<object{rows: array<string, mixed>}>  $repositories */
+        public function __construct(private array $repositories) {}
+
+        public function run(callable $callback): mixed
+        {
+            // 本物と同じく、例外で抜けたら書き込みを取り消す
+            $snapshots = array_map(fn (object $repository) => $repository->rows, $this->repositories);
+            try {
+                return $callback();
+            } catch (Throwable $e) {
+                foreach ($this->repositories as $i => $repository) {
+                    $repository->rows = $snapshots[$i];
+                }
+                throw $e;
+            }
+        }
+    };
+
+    $this->clock = new class implements Clock
+    {
+        public DateTimeImmutable $now;
+
+        public function __construct()
+        {
+            $this->now = new DateTimeImmutable('2026-10-22 12:00:00');
+        }
+
+        public function now(): DateTimeImmutable
+        {
+            return $this->now;
         }
     };
 
@@ -203,15 +188,15 @@ beforeEach(function () {
         );
     };
 
-    $this->addEpisode = function (string $id, string $workId, int $position): Episode {
+    $this->addEpisode = function (string $id, string $workId, int $position, ?DateTimeImmutable $publishedAt = null, string $body = '元の本文'): Episode {
         return $this->episodes->rows[$id] = new Episode(
             id: $id,
             workId: $workId,
             title: "第{$position}話",
-            body: '元の本文',
+            body: $body,
             position: $position,
-            status: EpisodeStatus::Draft,
-            publishedAt: null,
+            status: $publishedAt === null ? EpisodeStatus::Draft : EpisodeStatus::Published,
+            publishedAt: $publishedAt,
         );
     };
 });
@@ -309,7 +294,7 @@ describe('UpdateMyEpisodeUseCase', function () {
     it('渡した項目だけを変えて保存し、変えた話を返す', function () {
         ($this->addWork)('work-1', 'user-1');
         ($this->addEpisode)('episode-a', 'work-1', 1);
-        $useCase = new UpdateMyEpisodeUseCase($this->works, $this->episodes);
+        $useCase = new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction);
 
         $updated = $useCase('user-1', 'work-1', 'episode-a', ['title' => '新しいタイトル']);
 
@@ -323,18 +308,164 @@ describe('UpdateMyEpisodeUseCase', function () {
         ($this->addWork)('work-1', 'user-2', $publishedAt);
         $episode = ($this->addEpisode)('episode-a', 'work-1', 1);
 
-        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes))('user-1', 'work-1', 'episode-a', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-a', ['title' => '書き換え']))
             ->toThrow($exception)
             ->and($this->episodes->rows['episode-a'])->toBe($episode);
     })->with('他人の作品');
+
+    it('公開済みの話の本文を空白だけにするなら EmptyEpisodeBody を投げ、変えない', function () {
+        ($this->addWork)('work-1', 'user-1', new DateTimeImmutable('2026-10-01'));
+        $episode = ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-a', ['title' => '書き換え', 'body' => "　\n"]))
+            ->toThrow(EmptyEpisodeBody::class)
+            ->and($this->episodes->rows['episode-a'])->toBe($episode);
+    });
 
     it('別の作品の話なら EpisodeNotFound を投げ、変えない', function () {
         ($this->addWork)('work-1', 'user-1');
         ($this->addWork)('work-2', 'user-1');
         $episode = ($this->addEpisode)('episode-other', 'work-2', 1);
 
-        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes))('user-1', 'work-1', 'episode-other', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-other', ['title' => '書き換え']))
             ->toThrow(EpisodeNotFound::class)
             ->and($this->episodes->rows['episode-other'])->toBe($episode);
     });
+});
+
+describe('PublishEpisodeUseCase', function () {
+    beforeEach(function () {
+        $this->publish = new PublishEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->clock);
+    });
+
+    it('下書きを公開し、未公開の作品も同じ時刻で公開する', function () {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addEpisode)('episode-a', 'work-1', 1);
+
+        $episode = ($this->publish)('user-1', 'work-1', 'episode-a');
+
+        expect($this->episodes->rows['episode-a'])->toEqual($episode)
+            ->and($episode->status)->toBe(EpisodeStatus::Published)
+            ->and($episode->publishedAt)->toBe($this->clock->now)
+            ->and($this->works->rows['work-1']->publishedAt)->toBe($this->clock->now)
+            ->and($this->works->rows['work-1']->lastEpisodePublishedAt)->toBe($this->clock->now);
+    });
+
+    it('公開済みの作品なら、作品の公開日時を変えずに最後に話を公開した日時だけを変える', function () {
+        $workPublishedAt = new DateTimeImmutable('2026-10-01');
+        ($this->addWork)('work-1', 'user-1', $workPublishedAt);
+        ($this->addEpisode)('episode-a', 'work-1', 1, $workPublishedAt);
+        ($this->addEpisode)('episode-b', 'work-1', 2);
+
+        ($this->publish)('user-1', 'work-1', 'episode-b');
+
+        expect($this->works->rows['work-1']->publishedAt)->toBe($workPublishedAt)
+            ->and($this->works->rows['work-1']->lastEpisodePublishedAt)->toBe($this->clock->now);
+    });
+
+    it('公開できない話なら例外を投げ、話も作品も変えない', function (?DateTimeImmutable $publishedAt, string $body, string $exception) {
+        $work = ($this->addWork)('work-1', 'user-1');
+        $episode = ($this->addEpisode)('episode-a', 'work-1', 1, $publishedAt, $body);
+
+        expect(fn () => ($this->publish)('user-1', 'work-1', 'episode-a'))->toThrow($exception)
+            ->and($this->episodes->rows['episode-a'])->toBe($episode)
+            ->and($this->works->rows['work-1'])->toBe($work);
+    })->with([
+        '本文が全角空白と改行だけ' => [null, "　\n", EmptyEpisodeBody::class],
+        'すでに公開済み' => [new DateTimeImmutable('2026-10-01'), '本文', InvalidEpisodeTransition::class],
+    ]);
+
+    it('他人の作品なら例外を投げ、公開しない', function (?DateTimeImmutable $publishedAt, string $exception) {
+        ($this->addWork)('work-1', 'user-2', $publishedAt);
+        $episode = ($this->addEpisode)('episode-a', 'work-1', 1);
+
+        expect(fn () => ($this->publish)('user-1', 'work-1', 'episode-a'))->toThrow($exception)
+            ->and($this->episodes->rows['episode-a'])->toBe($episode);
+    })->with('他人の作品');
+
+    it('他人の作品なら、作品の行をロックしない', function (?DateTimeImmutable $publishedAt, string $exception) {
+        ($this->addWork)('work-1', 'user-2', $publishedAt);
+        ($this->addEpisode)('episode-a', 'work-1', 1, null);
+
+        expect(fn () => ($this->publish)('user-1', 'work-1', 'episode-a'))->toThrow($exception)
+            ->and($this->works->lockedIds)->toBe([]);
+    })->with('他人の作品');
+
+    it('別の作品の話か存在しない話なら EpisodeNotFound を投げる', function (string $episodeId) {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addWork)('work-2', 'user-1');
+        $episode = ($this->addEpisode)('episode-other', 'work-2', 1);
+
+        expect(fn () => ($this->publish)('user-1', 'work-1', $episodeId))->toThrow(EpisodeNotFound::class)
+            ->and($this->episodes->rows['episode-other'])->toBe($episode);
+    })->with(['別の作品の話' => 'episode-other', '存在しない話' => 'episode-missing']);
+});
+
+describe('UnpublishEpisodeUseCase', function () {
+    beforeEach(function () {
+        $this->unpublish = new UnpublishEpisodeUseCase($this->works, $this->episodes, $this->transaction);
+    });
+
+    it('下書きに戻し、最後に話を公開した日時を残りの公開済みの話の最大値にする', function () {
+        $workPublishedAt = new DateTimeImmutable('2026-10-01');
+        ($this->addWork)('work-1', 'user-1', $workPublishedAt);
+        ($this->addWork)('work-2', 'user-1', $workPublishedAt);
+        ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+        ($this->addEpisode)('episode-b', 'work-1', 2, new DateTimeImmutable('2026-10-05'));
+        ($this->addEpisode)('episode-c', 'work-1', 3, new DateTimeImmutable('2026-10-10'));
+        ($this->addEpisode)('episode-other', 'work-2', 1, new DateTimeImmutable('2026-10-20'));
+
+        $episode = ($this->unpublish)('user-1', 'work-1', 'episode-c');
+
+        expect($this->episodes->rows['episode-c'])->toEqual($episode)
+            ->and($episode->status)->toBe(EpisodeStatus::Draft)
+            ->and($episode->publishedAt)->toBeNull()
+            ->and($this->works->rows['work-1']->lastEpisodePublishedAt)->toEqual(new DateTimeImmutable('2026-10-05'))
+            ->and($this->works->rows['work-1']->publishedAt)->toBe($workPublishedAt);
+    });
+
+    it('公開済みの話が残らなければ、最後に話を公開した日時を null にし、作品の公開日時は残す', function () {
+        $workPublishedAt = new DateTimeImmutable('2026-10-01');
+        ($this->addWork)('work-1', 'user-1', $workPublishedAt);
+        ($this->addEpisode)('episode-a', 'work-1', 1, $workPublishedAt);
+
+        ($this->unpublish)('user-1', 'work-1', 'episode-a');
+
+        expect($this->works->rows['work-1']->lastEpisodePublishedAt)->toBeNull()
+            ->and($this->works->rows['work-1']->publishedAt)->toBe($workPublishedAt);
+    });
+
+    it('下書きなら InvalidEpisodeTransition を投げ、変えない', function () {
+        $work = ($this->addWork)('work-1', 'user-1');
+        $episode = ($this->addEpisode)('episode-a', 'work-1', 1);
+
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', 'episode-a'))->toThrow(InvalidEpisodeTransition::class)
+            ->and($this->episodes->rows['episode-a'])->toBe($episode)
+            ->and($this->works->rows['work-1'])->toBe($work);
+    });
+
+    it('他人の作品なら例外を投げ、非公開にしない', function (?DateTimeImmutable $publishedAt, string $exception) {
+        ($this->addWork)('work-1', 'user-2', $publishedAt);
+        $episode = ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', 'episode-a'))->toThrow($exception)
+            ->and($this->episodes->rows['episode-a'])->toBe($episode);
+    })->with('他人の作品');
+
+    it('他人の作品なら、作品の行をロックしない', function (?DateTimeImmutable $publishedAt, string $exception) {
+        ($this->addWork)('work-1', 'user-2', $publishedAt);
+        ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', 'episode-a'))->toThrow($exception)
+            ->and($this->works->lockedIds)->toBe([]);
+    })->with('他人の作品');
+
+    it('別の作品の話か存在しない話なら EpisodeNotFound を投げる', function (string $episodeId) {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addWork)('work-2', 'user-1');
+        $episode = ($this->addEpisode)('episode-other', 'work-2', 1, new DateTimeImmutable('2026-10-01'));
+
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', $episodeId))->toThrow(EpisodeNotFound::class)
+            ->and($this->episodes->rows['episode-other'])->toBe($episode);
+    })->with(['別の作品の話' => 'episode-other', '存在しない話' => 'episode-missing']);
 });
