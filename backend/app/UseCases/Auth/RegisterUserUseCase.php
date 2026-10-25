@@ -6,7 +6,7 @@ use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\AuthenticatedUser;
 use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\Shared\TransactionInterface;
-use App\Domain\User\EmailAlreadyTaken;
+use App\Domain\User\EmailAlreadyTakenException;
 use App\Domain\User\UserRepositoryInterface;
 
 final readonly class RegisterUserUseCase
@@ -19,12 +19,12 @@ final readonly class RegisterUserUseCase
     ) {}
 
     /**
-     * @throws EmailAlreadyTaken
+     * @throws EmailAlreadyTakenException
      */
     public function __invoke(string $name, string $email, string $password): AuthenticatedUser
     {
         if ($this->users->existsByEmail($email)) {
-            throw new EmailAlreadyTaken;
+            throw new EmailAlreadyTakenException;
         }
 
         return $this->transaction->run(function () use ($name, $email, $password) {

@@ -1,18 +1,18 @@
 <?php
 
-use App\Domain\Episode\EmptyEpisodeBody;
+use App\Domain\Episode\EmptyEpisodeBodyException;
 use App\Domain\Episode\Episode;
-use App\Domain\Episode\EpisodeNotFound;
+use App\Domain\Episode\EpisodeNotFoundException;
 use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Episode\EpisodeSummary;
-use App\Domain\Episode\InvalidEpisodeTransition;
+use App\Domain\Episode\InvalidEpisodeTransitionException;
 use App\Domain\Shared\ClockInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\Genre;
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use App\UseCases\Episode\CreateEpisodeDraftUseCase;
@@ -202,8 +202,8 @@ beforeEach(function () {
 });
 
 dataset('他人の作品', [
-    '公開済みなら WorkAccessDenied' => [new DateTimeImmutable('2026-10-01'), WorkAccessDenied::class],
-    '未公開なら、存在を隠して WorkNotFound' => [null, WorkNotFound::class],
+    '公開済みなら WorkAccessDeniedException' => [new DateTimeImmutable('2026-10-01'), WorkAccessDeniedException::class],
+    '未公開なら、存在を隠して WorkNotFoundException' => [null, WorkNotFoundException::class],
 ]);
 
 describe('CreateEpisodeDraftUseCase', function () {
@@ -230,9 +230,9 @@ describe('CreateEpisodeDraftUseCase', function () {
             ->and($this->episodes->rows)->toBe([]);
     })->with('他人の作品');
 
-    it('存在しない作品なら WorkNotFound を投げる', function () {
+    it('存在しない作品なら WorkNotFoundException を投げる', function () {
         expect(fn () => (new CreateEpisodeDraftUseCase($this->works, $this->episodes))('user-1', 'work-1', '第一話', '本文'))
-            ->toThrow(WorkNotFound::class);
+            ->toThrow(WorkNotFoundException::class);
     });
 });
 
@@ -275,18 +275,18 @@ describe('GetMyEpisodeUseCase', function () {
             ->and(fn () => $useCase('user-1', 'work-1', 'episode-missing'))->toThrow($exception);
     })->with('他人の作品');
 
-    it('別の作品の話か存在しない話なら EpisodeNotFound を投げる', function (string $episodeId) {
+    it('別の作品の話か存在しない話なら EpisodeNotFoundException を投げる', function (string $episodeId) {
         ($this->addWork)('work-1', 'user-1');
         ($this->addWork)('work-2', 'user-1');
         ($this->addEpisode)('episode-other', 'work-2', 1);
 
         expect(fn () => (new GetMyEpisodeUseCase($this->works, $this->episodes))('user-1', 'work-1', $episodeId))
-            ->toThrow(EpisodeNotFound::class);
+            ->toThrow(EpisodeNotFoundException::class);
     })->with(['別の作品の話' => 'episode-other', '存在しない話' => 'episode-missing']);
 
-    it('存在しない作品なら WorkNotFound を投げる', function () {
+    it('存在しない作品なら WorkNotFoundException を投げる', function () {
         expect(fn () => (new GetMyEpisodeUseCase($this->works, $this->episodes))('user-1', 'work-1', 'episode-a'))
-            ->toThrow(WorkNotFound::class);
+            ->toThrow(WorkNotFoundException::class);
     });
 });
 
@@ -313,22 +313,22 @@ describe('UpdateMyEpisodeUseCase', function () {
             ->and($this->episodes->rows['episode-a'])->toBe($episode);
     })->with('他人の作品');
 
-    it('公開済みの話の本文を空白だけにするなら EmptyEpisodeBody を投げ、変えない', function () {
+    it('公開済みの話の本文を空白だけにするなら EmptyEpisodeBodyException を投げ、変えない', function () {
         ($this->addWork)('work-1', 'user-1', new DateTimeImmutable('2026-10-01'));
         $episode = ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
 
         expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-a', ['title' => '書き換え', 'body' => "　\n"]))
-            ->toThrow(EmptyEpisodeBody::class)
+            ->toThrow(EmptyEpisodeBodyException::class)
             ->and($this->episodes->rows['episode-a'])->toBe($episode);
     });
 
-    it('別の作品の話なら EpisodeNotFound を投げ、変えない', function () {
+    it('別の作品の話なら EpisodeNotFoundException を投げ、変えない', function () {
         ($this->addWork)('work-1', 'user-1');
         ($this->addWork)('work-2', 'user-1');
         $episode = ($this->addEpisode)('episode-other', 'work-2', 1);
 
         expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-other', ['title' => '書き換え']))
-            ->toThrow(EpisodeNotFound::class)
+            ->toThrow(EpisodeNotFoundException::class)
             ->and($this->episodes->rows['episode-other'])->toBe($episode);
     });
 });
@@ -371,8 +371,8 @@ describe('PublishEpisodeUseCase', function () {
             ->and($this->episodes->rows['episode-a'])->toBe($episode)
             ->and($this->works->rows['work-1'])->toBe($work);
     })->with([
-        '本文が全角空白と改行だけ' => [null, "　\n", EmptyEpisodeBody::class],
-        'すでに公開済み' => [new DateTimeImmutable('2026-10-01'), '本文', InvalidEpisodeTransition::class],
+        '本文が全角空白と改行だけ' => [null, "　\n", EmptyEpisodeBodyException::class],
+        'すでに公開済み' => [new DateTimeImmutable('2026-10-01'), '本文', InvalidEpisodeTransitionException::class],
     ]);
 
     it('他人の作品なら例外を投げ、公開しない', function (?DateTimeImmutable $publishedAt, string $exception) {
@@ -391,12 +391,12 @@ describe('PublishEpisodeUseCase', function () {
             ->and($this->works->lockedIds)->toBe([]);
     })->with('他人の作品');
 
-    it('別の作品の話か存在しない話なら EpisodeNotFound を投げる', function (string $episodeId) {
+    it('別の作品の話か存在しない話なら EpisodeNotFoundException を投げる', function (string $episodeId) {
         ($this->addWork)('work-1', 'user-1');
         ($this->addWork)('work-2', 'user-1');
         $episode = ($this->addEpisode)('episode-other', 'work-2', 1);
 
-        expect(fn () => ($this->publish)('user-1', 'work-1', $episodeId))->toThrow(EpisodeNotFound::class)
+        expect(fn () => ($this->publish)('user-1', 'work-1', $episodeId))->toThrow(EpisodeNotFoundException::class)
             ->and($this->episodes->rows['episode-other'])->toBe($episode);
     })->with(['別の作品の話' => 'episode-other', '存在しない話' => 'episode-missing']);
 });
@@ -435,11 +435,11 @@ describe('UnpublishEpisodeUseCase', function () {
             ->and($this->works->rows['work-1']->publishedAt)->toBe($workPublishedAt);
     });
 
-    it('下書きなら InvalidEpisodeTransition を投げ、変えない', function () {
+    it('下書きなら InvalidEpisodeTransitionException を投げ、変えない', function () {
         $work = ($this->addWork)('work-1', 'user-1');
         $episode = ($this->addEpisode)('episode-a', 'work-1', 1);
 
-        expect(fn () => ($this->unpublish)('user-1', 'work-1', 'episode-a'))->toThrow(InvalidEpisodeTransition::class)
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', 'episode-a'))->toThrow(InvalidEpisodeTransitionException::class)
             ->and($this->episodes->rows['episode-a'])->toBe($episode)
             ->and($this->works->rows['work-1'])->toBe($work);
     });
@@ -460,12 +460,12 @@ describe('UnpublishEpisodeUseCase', function () {
             ->and($this->works->lockedIds)->toBe([]);
     })->with('他人の作品');
 
-    it('別の作品の話か存在しない話なら EpisodeNotFound を投げる', function (string $episodeId) {
+    it('別の作品の話か存在しない話なら EpisodeNotFoundException を投げる', function (string $episodeId) {
         ($this->addWork)('work-1', 'user-1');
         ($this->addWork)('work-2', 'user-1');
         $episode = ($this->addEpisode)('episode-other', 'work-2', 1, new DateTimeImmutable('2026-10-01'));
 
-        expect(fn () => ($this->unpublish)('user-1', 'work-1', $episodeId))->toThrow(EpisodeNotFound::class)
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', $episodeId))->toThrow(EpisodeNotFoundException::class)
             ->and($this->episodes->rows['episode-other'])->toBe($episode);
     })->with(['別の作品の話' => 'episode-other', '存在しない話' => 'episode-missing']);
 });

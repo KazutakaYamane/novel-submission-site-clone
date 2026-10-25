@@ -20,28 +20,28 @@ final readonly class Episode
     ) {}
 
     /**
-     * @throws InvalidEpisodeTransition
-     * @throws EmptyEpisodeBody
+     * @throws InvalidEpisodeTransitionException
+     * @throws EmptyEpisodeBodyException
      */
     public function publish(DateTimeImmutable $at): self
     {
         if ($this->status !== EpisodeStatus::Draft) {
-            throw new InvalidEpisodeTransition;
+            throw new InvalidEpisodeTransitionException;
         }
         if (self::isBlank($this->body)) {
-            throw new EmptyEpisodeBody;
+            throw new EmptyEpisodeBodyException;
         }
 
         return clone ($this, ['status' => EpisodeStatus::Published, 'publishedAt' => $at]);
     }
 
     /**
-     * @throws InvalidEpisodeTransition
+     * @throws InvalidEpisodeTransitionException
      */
     public function unpublish(): self
     {
         if ($this->status !== EpisodeStatus::Published) {
-            throw new InvalidEpisodeTransition;
+            throw new InvalidEpisodeTransitionException;
         }
 
         return clone ($this, ['status' => EpisodeStatus::Draft, 'publishedAt' => null]);
@@ -50,12 +50,12 @@ final readonly class Episode
     /**
      * 公開済みの話は、本文を空にして読めない状態にさせない
      *
-     * @throws EmptyEpisodeBody
+     * @throws EmptyEpisodeBodyException
      */
     public function assertBodyAcceptable(string $body): void
     {
         if ($this->status === EpisodeStatus::Published && self::isBlank($body)) {
-            throw new EmptyEpisodeBody;
+            throw new EmptyEpisodeBodyException;
         }
     }
 

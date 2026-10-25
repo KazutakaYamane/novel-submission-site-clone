@@ -4,7 +4,7 @@ use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\IssuedToken;
 use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\Shared\TransactionInterface;
-use App\Domain\User\EmailAlreadyTaken;
+use App\Domain\User\EmailAlreadyTakenException;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
 use App\Domain\User\UserRepositoryInterface;
@@ -107,11 +107,11 @@ it('保存したユーザーのトークンを発行して、ユーザーと一�
         ->and($this->tokens->issued)->toBe([$authenticated->token->token => $authenticated->user->id]);
 });
 
-it('登録済みのメールアドレスなら EmailAlreadyTaken を投げ、保存もトークンの発行もしない', function () {
+it('登録済みのメールアドレスなら EmailAlreadyTakenException を投げ、保存もトークンの発行もしない', function () {
     ($this->registerUserUseCase)('山田太郎', 'taro@example.com', 'password123');
 
     expect(fn () => ($this->registerUserUseCase)('別の人', 'taro@example.com', 'password456'))
-        ->toThrow(EmailAlreadyTaken::class)
+        ->toThrow(EmailAlreadyTakenException::class)
         ->and($this->users->rows)->toHaveCount(1)
         ->and($this->tokens->issued)->toHaveCount(1);
 });

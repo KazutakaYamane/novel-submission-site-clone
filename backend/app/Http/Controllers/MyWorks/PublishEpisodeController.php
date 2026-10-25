@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\MyWorks;
 
-use App\Domain\Episode\EmptyEpisodeBody;
-use App\Domain\Episode\EpisodeNotFound;
-use App\Domain\Episode\InvalidEpisodeTransition;
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Episode\EmptyEpisodeBodyException;
+use App\Domain\Episode\EpisodeNotFoundException;
+use App\Domain\Episode\InvalidEpisodeTransitionException;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EpisodeResource;
 use App\UseCases\Episode\PublishEpisodeUseCase;
@@ -22,13 +22,13 @@ class PublishEpisodeController extends Controller
     {
         try {
             return new EpisodeResource($publishEpisodeUseCase((string) Auth::id(), $work, $episode));
-        } catch (WorkNotFound|EpisodeNotFound) {
+        } catch (WorkNotFoundException|EpisodeNotFoundException) {
             abort(404);
-        } catch (WorkAccessDenied) {
+        } catch (WorkAccessDeniedException) {
             abort(403);
-        } catch (EmptyEpisodeBody) {
+        } catch (EmptyEpisodeBodyException) {
             throw ValidationException::withMessages(['body' => '本文が空の話は公開できません。']);
-        } catch (InvalidEpisodeTransition) {
+        } catch (InvalidEpisodeTransitionException) {
             throw ValidationException::withMessages(['status' => 'すでに公開されている話です。']);
         }
     }

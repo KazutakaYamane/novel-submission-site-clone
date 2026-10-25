@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\MyWorks;
 
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EpisodeSummaryResource;
 use App\UseCases\Episode\ListMyEpisodesUseCase;
@@ -16,9 +16,9 @@ class ListEpisodesController extends Controller
     {
         try {
             return EpisodeSummaryResource::collection($listMyEpisodesUseCase((string) Auth::id(), $work));
-        } catch (WorkNotFound) {
+        } catch (WorkNotFoundException) {
             abort(404);
-        } catch (WorkAccessDenied) {
+        } catch (WorkAccessDeniedException) {
             abort(403);
         }
     }

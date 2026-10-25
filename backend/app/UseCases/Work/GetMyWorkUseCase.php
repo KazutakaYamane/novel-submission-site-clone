@@ -3,8 +3,8 @@
 namespace App\UseCases\Work;
 
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Domain\Work\WorkRepositoryInterface;
 
 final readonly class GetMyWorkUseCase
@@ -14,12 +14,12 @@ final readonly class GetMyWorkUseCase
     ) {}
 
     /**
-     * @throws WorkNotFound
-     * @throws WorkAccessDenied
+     * @throws WorkNotFoundException
+     * @throws WorkAccessDeniedException
      */
     public function __invoke(string $userId, string $workId): Work
     {
-        $work = $this->works->findById($workId) ?? throw new WorkNotFound;
+        $work = $this->works->findById($workId) ?? throw new WorkNotFoundException;
         $work->assertEditableBy($userId);
 
         return $work;

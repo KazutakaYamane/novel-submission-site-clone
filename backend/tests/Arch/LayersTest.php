@@ -39,3 +39,9 @@ arch('Domain の interface の名前は Interface で終わる')
     ->expect('App\Domain')
     ->interfaces()
     ->toHaveSuffix('Interface');
+
+arch('Domain の例外の名前は Exception で終わる')
+    ->expect('App\Domain')
+    ->classes()
+    ->extending(DomainException::class)
+    ->toHaveSuffix('Exception');

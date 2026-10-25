@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\MyWorks;
 
-use App\Domain\Episode\EmptyEpisodeBody;
-use App\Domain\Episode\EpisodeNotFound;
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Episode\EmptyEpisodeBodyException;
+use App\Domain\Episode\EpisodeNotFoundException;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MyWorks\UpdateEpisodeRequest;
 use App\Http\Resources\EpisodeResource;
@@ -19,11 +19,11 @@ class UpdateEpisodeController extends Controller
     {
         try {
             return new EpisodeResource($updateMyEpisodeUseCase((string) Auth::id(), $work, $episode, $request->changes()));
-        } catch (WorkNotFound|EpisodeNotFound) {
+        } catch (WorkNotFoundException|EpisodeNotFoundException) {
             abort(404);
-        } catch (WorkAccessDenied) {
+        } catch (WorkAccessDeniedException) {
             abort(403);
-        } catch (EmptyEpisodeBody) {
+        } catch (EmptyEpisodeBodyException) {
             throw ValidationException::withMessages(['body' => '公開中の話の本文は空にできません。']);
         }
     }

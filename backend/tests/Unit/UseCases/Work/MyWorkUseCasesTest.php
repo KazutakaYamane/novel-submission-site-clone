@@ -3,8 +3,8 @@
 use App\Domain\Work\Genre;
 use App\Domain\Work\RatingFlag;
 use App\Domain\Work\Work;
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Domain\Work\WorkStatus;
 use App\UseCases\Work\CreateWorkUseCase;
 use App\UseCases\Work\GetMyWorkUseCase;
@@ -93,23 +93,23 @@ describe('GetMyWorkUseCase', function () {
         expect((new GetMyWorkUseCase($this->works))('user-1', 'work-1'))->toBe($work);
     });
 
-    it('他人の公開済みの作品なら WorkAccessDenied を投げる', function () {
+    it('他人の公開済みの作品なら WorkAccessDeniedException を投げる', function () {
         ($this->addWork)('work-1', 'user-2', publishedAt: new DateTimeImmutable('2026-10-01'));
 
         expect(fn () => (new GetMyWorkUseCase($this->works))('user-1', 'work-1'))
-            ->toThrow(WorkAccessDenied::class);
+            ->toThrow(WorkAccessDeniedException::class);
     });
 
-    it('他人の未公開の作品なら、存在を隠して WorkNotFound を投げる', function () {
+    it('他人の未公開の作品なら、存在を隠して WorkNotFoundException を投げる', function () {
         ($this->addWork)('work-1', 'user-2', publishedAt: null);
 
         expect(fn () => (new GetMyWorkUseCase($this->works))('user-1', 'work-1'))
-            ->toThrow(WorkNotFound::class);
+            ->toThrow(WorkNotFoundException::class);
     });
 
-    it('存在しない作品なら WorkNotFound を投げる', function () {
+    it('存在しない作品なら WorkNotFoundException を投げる', function () {
         expect(fn () => (new GetMyWorkUseCase($this->works))('user-1', 'work-1'))
-            ->toThrow(WorkNotFound::class);
+            ->toThrow(WorkNotFoundException::class);
     });
 });
 
@@ -141,24 +141,24 @@ describe('UpdateMyWorkUseCase', function () {
             ->and($this->works->rows['work-1']->tags)->toEqualCanonicalizing(['図書館', '料理']);
     });
 
-    it('他人の公開済みの作品なら WorkAccessDenied を投げ、変えない', function () {
+    it('他人の公開済みの作品なら WorkAccessDeniedException を投げ、変えない', function () {
         $work = ($this->addWork)('work-1', 'user-2', publishedAt: new DateTimeImmutable('2026-10-01'));
 
         expect(fn () => (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', ['title' => '書き換え']))
-            ->toThrow(WorkAccessDenied::class)
+            ->toThrow(WorkAccessDeniedException::class)
             ->and($this->works->rows['work-1'])->toBe($work);
     });
 
-    it('他人の未公開の作品なら WorkNotFound を投げ、変えない', function () {
+    it('他人の未公開の作品なら WorkNotFoundException を投げ、変えない', function () {
         $work = ($this->addWork)('work-1', 'user-2', publishedAt: null);
 
         expect(fn () => (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', ['title' => '書き換え']))
-            ->toThrow(WorkNotFound::class)
+            ->toThrow(WorkNotFoundException::class)
             ->and($this->works->rows['work-1'])->toBe($work);
     });
 
-    it('存在しない作品なら WorkNotFound を投げる', function () {
+    it('存在しない作品なら WorkNotFoundException を投げる', function () {
         expect(fn () => (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', ['title' => '書き換え']))
-            ->toThrow(WorkNotFound::class);
+            ->toThrow(WorkNotFoundException::class);
     });
 });

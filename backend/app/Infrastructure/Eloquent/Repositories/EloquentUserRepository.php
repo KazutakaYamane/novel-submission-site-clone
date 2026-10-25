@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Eloquent\Repositories;
 
-use App\Domain\User\EmailAlreadyTaken;
+use App\Domain\User\EmailAlreadyTakenException;
 use App\Domain\User\User;
 use App\Domain\User\UserCredentials;
 use App\Domain\User\UserRepositoryInterface;
@@ -40,7 +40,7 @@ final class EloquentUserRepository implements UserRepositoryInterface
             ]);
         } catch (UniqueConstraintViolationException $e) {
             // existsByEmail の確認と INSERT の間に同じメールで登録されたとき
-            throw new EmailAlreadyTaken(previous: $e);
+            throw new EmailAlreadyTakenException(previous: $e);
         }
 
         return self::toEntity($model);

@@ -11,7 +11,7 @@ interface UserRepositoryInterface
     public function existsByEmail(string $email): bool;
 
     /**
-     * @throws EmailAlreadyTaken
+     * @throws EmailAlreadyTakenException
      */
     public function create(string $name, string $email, string $hashedPassword): User;
 }

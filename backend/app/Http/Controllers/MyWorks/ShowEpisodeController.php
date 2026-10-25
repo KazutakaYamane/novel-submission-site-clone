@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\MyWorks;
 
-use App\Domain\Episode\EpisodeNotFound;
-use App\Domain\Work\WorkAccessDenied;
-use App\Domain\Work\WorkNotFound;
+use App\Domain\Episode\EpisodeNotFoundException;
+use App\Domain\Work\WorkAccessDeniedException;
+use App\Domain\Work\WorkNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\EpisodeResource;
 use App\UseCases\Episode\GetMyEpisodeUseCase;
@@ -16,9 +16,9 @@ class ShowEpisodeController extends Controller
     {
         try {
             return new EpisodeResource($getMyEpisodeUseCase((string) Auth::id(), $work, $episode));
-        } catch (WorkNotFound|EpisodeNotFound) {
+        } catch (WorkNotFoundException|EpisodeNotFoundException) {
             abort(404);
-        } catch (WorkAccessDenied) {
+        } catch (WorkAccessDeniedException) {
             abort(403);
         }
     }
