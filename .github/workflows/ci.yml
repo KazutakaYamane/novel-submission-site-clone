@@ -1,0 +1,78 @@
+name: ci
+
+# master への push では deploy.yml が workflow_call で呼ぶので、push は付けない
+on:
+  pull_request:
+    branches: [master]
+  workflow_call:
+
+# 各ジョブで permissions を contents: read に絞る。deploy.yml から呼ばれると
+# 呼び出し元の id-token: write を引き継ぎ、テストのコードが AWS のロールを引き受けられてしまう
+jobs:
+  backend:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: start containers
+        id: setup
+        run: |
+          # bind mount した backend/ に composer の post-autoload-dump が書き込むため、コンテナの www-data をランナーのユーザーに合わせる
+          printf 'UID=%s\nGID=%s\n' "$(id -u)" "$(id -g)" > .env
+          docker compose up -d app
+          docker compose exec -T app composer install --no-interaction --no-progress
+          docker compose exec -T app sh -c 'cp .env.example .env && php artisan key:generate --no-interaction'
+      # 1 つ落ちても残りのチェックを実行し、違反をまとめて出す
+      - name: pest
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T app ./vendor/bin/pest
+      - name: phpstan
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T app ./vendor/bin/phpstan analyse --no-progress
+      - name: pint
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T app ./vendor/bin/pint --test
+
+  frontend:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: start containers
+        id: setup
+        run: |
+          docker compose up -d web
+          # web は起動時に npm ci してから next dev を起動するので、Ready が出るまで node_modules が揃わない
+          timeout 600 sh -c 'until docker compose logs web | grep -q "Ready in"; do sleep 3; done' \
+            || { docker compose logs web; exit 1; }
+      - name: lint
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T web npm run lint
+      - name: typecheck
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T web npm run typecheck
+      - name: test
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T web npm run test
+      - name: build
+        if: ${{ !cancelled() && steps.setup.outcome == 'success' }}
+        run: docker compose exec -T web npm run build
+
+  api-types:
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: start containers
+        run: |
+          printf 'UID=%s\nGID=%s\n' "$(id -u)" "$(id -g)" > .env
+          docker compose up -d app web
+          docker compose exec -T app composer install --no-interaction --no-progress
+          docker compose exec -T app sh -c 'cp .env.example .env && php artisan key:generate --no-interaction'
+          timeout 600 sh -c 'until docker compose logs web | grep -q "Ready in"; do sleep 3; done' \
+            || { docker compose logs web; exit 1; }
+      - name: check generated files
+        run: scripts/generate-api-types.sh --check

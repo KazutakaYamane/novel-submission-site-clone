@@ -49,6 +49,10 @@ jobs:
               - 'frontend/**'
               - 'docker/node/**'
 
+  # PR の CI はマージ前の状態しか検査しないので、master の SHA でも通ってからイメージを作る
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   # prod の destroy 中は ECS クラスタが無い。その間もイメージの push は通し、デプロイだけ飛ばす
   guard:
     runs-on: ubuntu-24.04-arm
@@ -71,7 +75,7 @@ jobs:
           fi
 
   build-laravel:
-    needs: changes
+    needs: [changes, ci]
     if: needs.changes.outputs.laravel == 'true'
     # ECS タスクが ARM64 のため、ネイティブ ARM ランナーでビルドして QEMU を避ける
     runs-on: ubuntu-24.04-arm
@@ -121,7 +125,7 @@ jobs:
           cache-to: type=gha,scope=laravel-nginx,mode=max
 
   build-nextjs:
-    needs: changes
+    needs: [changes, ci]
     if: needs.changes.outputs.nextjs == 'true'
     runs-on: ubuntu-24.04-arm
     steps:
