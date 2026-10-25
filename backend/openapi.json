@@ -413,6 +413,83 @@
                 }
             }
         },
+        "/my/works/{work}/episodes/{episode}/publish": {
+            "post": {
+                "operationId": "myWorks.publishEpisode",
+                "tags": [
+                    "PublishEpisode"
+                ],
+                "parameters": [
+                    {
+                        "name": "work",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "episode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`EpisodeResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/EpisodeResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                ""
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/auth/register": {
             "post": {
                 "operationId": "auth.register",
@@ -762,6 +839,83 @@
                     }
                 }
             }
+        },
+        "/my/works/{work}/episodes/{episode}/unpublish": {
+            "post": {
+                "operationId": "myWorks.unpublishEpisode",
+                "tags": [
+                    "UnpublishEpisode"
+                ],
+                "parameters": [
+                    {
+                        "name": "work",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "episode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`EpisodeResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/EpisodeResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "An error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Error overview.",
+                                            "examples": [
+                                                ""
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -795,6 +949,13 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "public_path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Laravel \u306f\u30d5\u30ed\u30f3\u30c8\u306e\u30aa\u30ea\u30b8\u30f3\u3092\u77e5\u3089\u306a\u3044\u306e\u3067\u3001URL \u3067\u306f\u306a\u304f Next.js \u4e0a\u306e\u30d1\u30b9\u3092\u8fd4\u3059"
                     }
                 },
                 "required": [
@@ -803,7 +964,8 @@
                     "body",
                     "position",
                     "status",
-                    "published_at"
+                    "published_at",
+                    "public_path"
                 ],
                 "title": "EpisodeResource"
             },

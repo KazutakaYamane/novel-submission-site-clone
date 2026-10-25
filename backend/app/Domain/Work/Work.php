@@ -38,4 +38,18 @@ final readonly class Work
         // 未公開の作品は、他人に存在を知られないよう存在しないときと同じに扱う
         throw $this->publishedAt === null ? new WorkNotFound : new WorkAccessDenied;
     }
+
+    public function recordEpisodePublished(DateTimeImmutable $at): self
+    {
+        return clone ($this, [
+            'publishedAt' => $this->publishedAt ?? $at,
+            // タスクごとに時計がずれるので、後から書く時刻が記録済みより前のことがある。公開済みの話の最大値に揃える
+            'lastEpisodePublishedAt' => $this->lastEpisodePublishedAt === null ? $at : max($this->lastEpisodePublishedAt, $at),
+        ]);
+    }
+
+    public function withLastEpisodePublishedAt(?DateTimeImmutable $at): self
+    {
+        return clone ($this, ['lastEpisodePublishedAt' => $at]);
+    }
 }

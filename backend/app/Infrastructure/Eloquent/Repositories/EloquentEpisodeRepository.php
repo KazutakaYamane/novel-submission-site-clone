@@ -8,6 +8,7 @@ use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Episode\EpisodeSummary;
 use App\Infrastructure\Eloquent\Models\Episode as EpisodeModel;
 use App\Infrastructure\Eloquent\Models\Work as WorkModel;
+use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 
 final class EloquentEpisodeRepository implements EpisodeRepository
@@ -39,6 +40,13 @@ final class EloquentEpisodeRepository implements EpisodeRepository
         return $model === null ? null : self::toEntity($model);
     }
 
+    public function findInWorkForUpdate(string $workId, string $episodeId): ?Episode
+    {
+        $model = EpisodeModel::where('work_id', $workId)->lockForUpdate()->find($episodeId);
+
+        return $model === null ? null : self::toEntity($model);
+    }
+
     public function listByWork(string $workId): array
     {
         return EpisodeModel::where('work_id', $workId)
@@ -55,17 +63,30 @@ final class EloquentEpisodeRepository implements EpisodeRepository
             ->all();
     }
 
-    public function update(string $workId, string $episodeId, array $changes): ?Episode
+    public function update(Episode $episode, array $changes): Episode
     {
-        $model = EpisodeModel::where('work_id', $workId)->find($episodeId);
-        if ($model === null) {
-            return null;
-        }
+        // 渡した列だけを UPDATE し、同時に別の項目を変えたリクエストの値を上書きしない
+        EpisodeModel::whereKey($episode->id)->update($changes);
 
-        // save() は値が変わった列だけを UPDATE するので、同時に別の項目を変えたリクエストの値を上書きしない
-        $model->fill($changes)->save();
+        return $episode->withChanges($changes);
+    }
 
-        return self::toEntity($model);
+    public function savePublication(Episode $episode): void
+    {
+        EpisodeModel::whereKey($episode->id)->update([
+            'status' => $episode->status->value,
+            'published_at' => $episode->publishedAt,
+        ]);
+    }
+
+    public function latestPublishedAt(string $workId): ?DateTimeImmutable
+    {
+        return EpisodeModel::where('work_id', $workId)
+            ->where('status', EpisodeStatus::Published->value)
+            ->latest('published_at')
+            ->first(['published_at'])
+            ?->published_at
+            ?->toDateTimeImmutable();
     }
 
     private static function toEntity(EpisodeModel $model): Episode

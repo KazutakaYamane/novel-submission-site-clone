@@ -100,6 +100,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/my/works/{work}/episodes/{episode}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["myWorks.publishEpisode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -148,6 +164,22 @@ export interface paths {
         patch: operations["myWorks.updateWork"];
         trace?: never;
     };
+    "/my/works/{work}/episodes/{episode}/unpublish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["myWorks.unpublishEpisode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -160,6 +192,8 @@ export interface components {
             position: number;
             status: components["schemas"]["EpisodeStatus"];
             published_at: string | null;
+            /** @description Laravel はフロントのオリジンを知らないので、URL ではなく Next.js 上のパスを返す */
+            public_path: string | null;
         };
         /**
          * EpisodeStatus
@@ -549,6 +583,49 @@ export interface operations {
             401: components["responses"]["AuthenticationException"];
         };
     };
+    "myWorks.publishEpisode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+                episode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `EpisodeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EpisodeResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
     "auth.register": {
         parameters: {
             query?: never;
@@ -731,6 +808,49 @@ export interface operations {
                 content: {
                     "application/json": {
                         data: components["schemas"]["WorkResource"];
+                    };
+                };
+            };
+            401: components["responses"]["AuthenticationException"];
+            /** @description An error */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @description Error overview.
+                         * @example
+                         */
+                        message: string;
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "myWorks.unpublishEpisode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+                episode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `EpisodeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["EpisodeResource"];
                     };
                 };
             };

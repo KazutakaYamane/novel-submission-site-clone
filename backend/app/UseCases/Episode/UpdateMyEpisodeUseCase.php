@@ -2,9 +2,11 @@
 
 namespace App\UseCases\Episode;
 
+use App\Domain\Episode\EmptyEpisodeBody;
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFound;
 use App\Domain\Episode\EpisodeRepository;
+use App\Domain\Shared\Transaction;
 use App\Domain\Work\WorkAccessDenied;
 use App\Domain\Work\WorkNotFound;
 use App\Domain\Work\WorkRepository;
@@ -17,6 +19,7 @@ final readonly class UpdateMyEpisodeUseCase
     public function __construct(
         private WorkRepository $works,
         private EpisodeRepository $episodes,
+        private Transaction $transaction,
     ) {}
 
     /**
@@ -25,6 +28,7 @@ final readonly class UpdateMyEpisodeUseCase
      * @throws WorkNotFound
      * @throws WorkAccessDenied
      * @throws EpisodeNotFound
+     * @throws EmptyEpisodeBody
      */
     public function __invoke(string $userId, string $workId, string $episodeId, array $changes): Episode
     {
@@ -32,6 +36,14 @@ final readonly class UpdateMyEpisodeUseCase
         $work = $this->works->findById($workId) ?? throw new WorkNotFound;
         $work->assertEditableBy($userId);
 
-        return $this->episodes->update($workId, $episodeId, $changes) ?? throw new EpisodeNotFound;
+        return $this->transaction->run(function () use ($workId, $episodeId, $changes) {
+            // 状態を確かめてから書き込むまでに公開されないよう、話の行をロックして読む
+            $episode = $this->episodes->findInWorkForUpdate($workId, $episodeId) ?? throw new EpisodeNotFound;
+            if (array_key_exists('body', $changes)) {
+                $episode->assertBodyAcceptable($changes['body']);
+            }
+
+            return $this->episodes->update($episode, $changes);
+        });
     }
 }

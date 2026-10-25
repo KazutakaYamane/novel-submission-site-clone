@@ -5,10 +5,12 @@ namespace App\Providers;
 use App\Domain\Auth\AccessTokens;
 use App\Domain\Episode\EpisodeRepository;
 use App\Domain\Health\DependencyChecker;
+use App\Domain\Shared\Clock;
 use App\Domain\Shared\PasswordHasher;
 use App\Domain\Shared\Transaction;
 use App\Domain\User\UserRepository;
 use App\Domain\Work\WorkRepository;
+use App\Infrastructure\Clock\LaravelClock;
 use App\Infrastructure\Database\DatabaseTransaction;
 use App\Infrastructure\Eloquent\EloquentServiceProvider;
 use App\Infrastructure\Eloquent\Repositories\EloquentEpisodeRepository;
@@ -36,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         DependencyChecker::class => LaravelDependencyChecker::class,
         AccessTokens::class => SanctumAccessTokens::class,
         Transaction::class => DatabaseTransaction::class,
+        Clock::class => LaravelClock::class,
     ];
 
     public function register(): void

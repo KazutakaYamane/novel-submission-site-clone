@@ -159,6 +159,7 @@ describe('取得', function () {
                 'position' => 1,
                 'status' => 'draft',
                 'published_at' => null,
+                'public_path' => null,
             ]]);
     });
 });

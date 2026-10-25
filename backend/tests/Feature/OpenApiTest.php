@@ -122,3 +122,20 @@ it('話の status を値の一覧を持つ型にし、一覧の話には本文�
         ->and($schemas['EpisodeResource']['properties'])->toHaveKey('body')
         ->and($schemas['EpisodeSummaryResource']['properties'])->not->toHaveKey('body');
 });
+
+it('話の公開・非公開化の API を Bearer の security scheme と 422 の応答付きで含む', function (string $path) {
+    $operation = $this->document['paths'][$path]['post'];
+
+    expect($operation['security'] ?? $this->document['security'] ?? [])->toBe([['http' => []]])
+        ->and($operation['responses'])->toHaveKey('422');
+})->with([
+    '/my/works/{work}/episodes/{episode}/publish',
+    '/my/works/{work}/episodes/{episode}/unpublish',
+]);
+
+it('話の応答に public_path を文字列か null として含む', function () {
+    $schema = $this->document['components']['schemas']['EpisodeResource'];
+
+    expect($schema['properties']['public_path']['type'])->toBe(['string', 'null'])
+        ->and($schema['required'])->toContain('public_path');
+});
