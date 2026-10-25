@@ -148,6 +148,38 @@ export interface paths {
         patch: operations["myWorks.updateEpisode"];
         trace?: never;
     };
+    "/works/{work}/episodes/{episode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicWorks.showPublicEpisode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/works/{work}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicWorks.showPublicWork"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/my/works/{work}": {
         parameters: {
             query?: never;
@@ -218,6 +250,53 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        /** PublicEpisodeResource */
+        PublicEpisodeResource: {
+            id: string;
+            title: string;
+            body: string;
+            position: number;
+            published_at: string | null;
+            work: {
+                id: string;
+                title: string;
+                author: {
+                    name: string;
+                };
+            };
+            previous: {
+                id: string;
+                title: string;
+            } | null;
+            next: {
+                id: string;
+                title: string;
+            } | null;
+        };
+        /** PublicEpisodeSummaryResource */
+        PublicEpisodeSummaryResource: {
+            id: string;
+            title: string;
+            position: number;
+            published_at: string | null;
+        };
+        /** PublicWorkResource */
+        PublicWorkResource: {
+            id: string;
+            title: string;
+            catchphrase: string | null;
+            introduction: string;
+            genre: components["schemas"]["Genre"];
+            status: components["schemas"]["WorkStatus"];
+            rating_flags: components["schemas"]["RatingFlag"][];
+            tags: string[];
+            published_at: string | null;
+            last_episode_published_at: string | null;
+            author: {
+                name: string;
+            };
+            episodes: components["schemas"]["PublicEpisodeSummaryResource"][];
         };
         /**
          * RatingFlag
@@ -308,8 +387,8 @@ export interface components {
                 };
             };
         };
-        /** @description Unauthenticated */
-        AuthenticationException: {
+        /** @description Not found */
+        ModelNotFoundException: {
             headers: {
                 [name: string]: unknown;
             };
@@ -320,8 +399,8 @@ export interface components {
                 };
             };
         };
-        /** @description Not found */
-        ModelNotFoundException: {
+        /** @description Unauthenticated */
+        AuthenticationException: {
             headers: {
                 [name: string]: unknown;
             };
@@ -742,6 +821,57 @@ export interface operations {
             };
             404: components["responses"]["ModelNotFoundException"];
             422: components["responses"]["ValidationException"];
+        };
+    };
+    "publicWorks.showPublicEpisode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+                episode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `PublicEpisodeResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PublicEpisodeResource"];
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
+        };
+    };
+    "publicWorks.showPublicWork": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                work: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `PublicWorkResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PublicWorkResource"];
+                    };
+                };
+            };
+            404: components["responses"]["ModelNotFoundException"];
         };
     };
     "myWorks.showWork": {

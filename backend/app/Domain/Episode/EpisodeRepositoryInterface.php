@@ -37,6 +37,23 @@ interface EpisodeRepositoryInterface
     public function listByWork(string $workId): array;
 
     /**
+     * @return list<EpisodeSummary> 公開済みの話だけを position の順に
+     */
+    public function listPublishedInWork(string $workId): array;
+
+    /**
+     * @return Episode|null 話が無いか、別の作品の話か、公開済みでなければ null
+     */
+    public function findPublishedInWork(string $workId, string $episodeId): ?Episode;
+
+    /**
+     * 間にある公開済みでない話は飛ばす
+     *
+     * @return array{previous: EpisodeSummary|null, next: EpisodeSummary|null} position の直前と直後の公開済みの話
+     */
+    public function findPublishedNeighbors(string $workId, int $position): array;
+
+    /**
      * 渡した項目だけを書き換える
      *
      * @param  EpisodeChanges  $changes

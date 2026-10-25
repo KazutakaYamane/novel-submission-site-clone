@@ -51,6 +51,13 @@ final class EloquentWorkRepository implements WorkRepositoryInterface
         return $model === null ? null : self::toEntity($model);
     }
 
+    public function findPublished(string $id): ?Work
+    {
+        $model = WorkModel::with('tags')->published()->find($id);
+
+        return $model === null ? null : self::toEntity($model);
+    }
+
     public function findByIdForUpdate(string $id): ?Work
     {
         $model = WorkModel::with('tags')->lockForUpdate()->find($id);

@@ -56,6 +56,13 @@ final class InMemoryWorkRepository implements WorkRepositoryInterface
         return $this->rows[$id] ?? null;
     }
 
+    public function findPublished(string $id): ?Work
+    {
+        $work = $this->findById($id);
+
+        return $work?->publishedAt === null ? null : $work;
+    }
+
     public function findByIdForUpdate(string $id): ?Work
     {
         $work = $this->findById($id);

@@ -698,6 +698,98 @@
                 }
             }
         },
+        "/works/{work}/episodes/{episode}": {
+            "get": {
+                "operationId": "publicWorks.showPublicEpisode",
+                "tags": [
+                    "ShowPublicEpisode"
+                ],
+                "parameters": [
+                    {
+                        "name": "work",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "episode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PublicEpisodeResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PublicEpisodeResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                },
+                "security": []
+            }
+        },
+        "/works/{work}": {
+            "get": {
+                "operationId": "publicWorks.showPublicWork",
+                "tags": [
+                    "ShowPublicWork"
+                ],
+                "parameters": [
+                    {
+                        "name": "work",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PublicWorkResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PublicWorkResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    }
+                },
+                "security": []
+            }
+        },
         "/my/works/{work}": {
             "get": {
                 "operationId": "myWorks.showWork",
@@ -1045,6 +1137,212 @@
                 ],
                 "title": "LoginRequest"
             },
+            "PublicEpisodeResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "position": {
+                        "type": "integer"
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "work": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            },
+                            "author": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "title",
+                            "author"
+                        ]
+                    },
+                    "previous": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "title"
+                        ]
+                    },
+                    "next": {
+                        "type": [
+                            "object",
+                            "null"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "title"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "body",
+                    "position",
+                    "published_at",
+                    "work",
+                    "previous",
+                    "next"
+                ],
+                "title": "PublicEpisodeResource"
+            },
+            "PublicEpisodeSummaryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "position": {
+                        "type": "integer"
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "position",
+                    "published_at"
+                ],
+                "title": "PublicEpisodeSummaryResource"
+            },
+            "PublicWorkResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "catchphrase": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "introduction": {
+                        "type": "string"
+                    },
+                    "genre": {
+                        "$ref": "#/components/schemas/Genre"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/WorkStatus"
+                    },
+                    "rating_flags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RatingFlag"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_episode_published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ]
+                    },
+                    "episodes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PublicEpisodeSummaryResource"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "catchphrase",
+                    "introduction",
+                    "genre",
+                    "status",
+                    "rating_flags",
+                    "tags",
+                    "published_at",
+                    "last_episode_published_at",
+                    "author",
+                    "episodes"
+                ],
+                "title": "PublicWorkResource"
+            },
             "RatingFlag": {
                 "type": "string",
                 "enum": [
@@ -1333,8 +1631,8 @@
                     }
                 }
             },
-            "AuthenticationException": {
-                "description": "Unauthenticated",
+            "ModelNotFoundException": {
+                "description": "Not found",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -1352,8 +1650,8 @@
                     }
                 }
             },
-            "ModelNotFoundException": {
-                "description": "Not found",
+            "AuthenticationException": {
+                "description": "Unauthenticated",
                 "content": {
                     "application/json": {
                         "schema": {

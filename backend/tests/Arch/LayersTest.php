@@ -54,3 +54,17 @@ arch('Eloquent の Model の名前は Model で終わる')
     ->classes()
     ->extending(Model::class)
     ->toHaveSuffix('Model');
+
+// 自前のクラス同士で名前が重なると、use に別名が要り、スタックトレースや Scramble のタグでも見分けにくい。
+// Laravel のクラスとの重なりは別名で避けてよいので、App の中だけを比べる
+it('App のクラスの短い名前は重ならない', function () {
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__.'/../../app', FilesystemIterator::SKIP_DOTS));
+    $paths = [];
+    foreach ($files as $file) {
+        if ($file->getExtension() === 'php') {
+            $paths[$file->getBasename('.php')][] = $file->getPathname();
+        }
+    }
+
+    expect(array_filter($paths, fn (array $same) => count($same) > 1))->toBe([]);
+});
