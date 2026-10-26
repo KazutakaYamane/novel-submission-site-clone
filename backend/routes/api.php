@@ -15,12 +15,17 @@ use App\Http\Controllers\MyWorks\StoreWorkController;
 use App\Http\Controllers\MyWorks\UnpublishEpisodeController;
 use App\Http\Controllers\MyWorks\UpdateEpisodeController;
 use App\Http\Controllers\MyWorks\UpdateWorkController;
+use App\Http\Controllers\PublicWorks\ShowPublicEpisodeController;
+use App\Http\Controllers\PublicWorks\ShowPublicWorkController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class);
 
 Route::post('/auth/register', RegisterController::class);
 Route::post('/auth/login', LoginController::class)->middleware('throttle:login');
+
+Route::get('/works/{work}', ShowPublicWorkController::class)->whereUuid('work');
+Route::get('/works/{work}/episodes/{episode}', ShowPublicEpisodeController::class)->whereUuid(['work', 'episode']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', LogoutController::class);

@@ -139,3 +139,32 @@ it('話の応答に public_path を文字列か null として含む', function 
     expect($schema['properties']['public_path']['type'])->toBe(['string', 'null'])
         ->and($schema['required'])->toContain('public_path');
 });
+
+it('公開済みの作品・話の API を security scheme なしで含む', function (string $path) {
+    $operation = $this->document['paths'][$path]['get'];
+
+    expect($operation['security'] ?? $this->document['security'] ?? [])->toBe([])
+        ->and($operation['responses'])->toHaveKey('404');
+})->with([
+    '/works/{work}',
+    '/works/{work}/episodes/{episode}',
+]);
+
+it('公開済みの作品の応答に作者名と目次を含み、目次の話には status を含めない', function () {
+    $properties = $this->document['components']['schemas']['PublicWorkResource']['properties'];
+
+    expect($properties['author']['properties']['name']['type'])->toBe('string')
+        ->and($properties['episodes']['type'])->toBe('array')
+        ->and($properties['episodes']['items']['$ref'])->toBe('#/components/schemas/PublicEpisodeSummaryResource')
+        ->and(array_keys($this->document['components']['schemas']['PublicEpisodeSummaryResource']['properties']))
+        ->toBe(['id', 'title', 'position', 'published_at']);
+});
+
+it('公開済みの話の応答の前後の話を、id と title を持つ型か null にする', function (string $key) {
+    $schema = $this->document['components']['schemas']['PublicEpisodeResource'];
+    $neighbor = $schema['properties'][$key];
+
+    expect($schema['required'])->toContain($key)
+        ->and($neighbor['type'])->toBe(['object', 'null'])
+        ->and(array_keys($neighbor['properties']))->toBe(['id', 'title']);
+})->with(['previous', 'next']);

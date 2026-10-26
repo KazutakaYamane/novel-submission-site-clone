@@ -29,6 +29,7 @@ Dependencies point `Http → UseCases → Domain ← Infrastructure`. `tests/Arc
 - Eloquent and `DB` appear only in `App\Infrastructure`, `Database\*` (factories, seeders), and tests.
 - `App\Infrastructure` is referenced only from `App\Providers` (bindings), `Database\*`, and tests.
 - UseCase class names end with `UseCase`. UseCases and controllers expose only `__construct` and `__invoke`.
+- Short class names are unique within `app/`, even across features (`MyWorks/ShowWorkController` and `PublicWorks/ShowPublicWorkController`). Aliasing a Laravel class with `as` is fine.
 
 ## Per layer
 
@@ -61,6 +62,6 @@ Not available because of the layering: route model binding, Policies, `Auth::use
 ## Tests
 
 - `tests/Feature/<Feature>/`: HTTP through the real stack with `RefreshDatabase` (set in `tests/Pest.php`). Write one test per scenario step and exception in the spec; assert status code, JSON, and DB state.
-- `tests/Unit/UseCases/<Feature>/`: UseCases with in-memory doubles of Domain interfaces, defined as anonymous classes in `beforeEach`.
+- `tests/Unit/UseCases/<Feature>/`: UseCases with in-memory doubles of Domain interfaces, defined as anonymous classes in `beforeEach`. Put a double shared by more than one test file in `tests/Doubles/`.
 - Doubles follow the test-double rule in the root `AGENTS.md`.
 - `tests/Arch/`: layer rules. Add a rule here when a new convention can be checked mechanically.

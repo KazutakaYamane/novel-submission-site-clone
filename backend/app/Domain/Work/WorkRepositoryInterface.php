@@ -33,6 +33,11 @@ interface WorkRepositoryInterface
     public function findById(string $id): ?Work;
 
     /**
+     * @return Work|null 作品が無いか、未公開なら null
+     */
+    public function findPublished(string $id): ?Work;
+
+    /**
      * findById と同じ作品を返し、トランザクションが終わるまで作品の行をロックする
      */
     public function findByIdForUpdate(string $id): ?Work;
