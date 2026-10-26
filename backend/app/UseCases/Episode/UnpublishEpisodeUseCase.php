@@ -6,6 +6,7 @@ use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFoundException;
 use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Episode\InvalidEpisodeTransitionException;
+use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\WorkAccessDeniedException;
 use App\Domain\Work\WorkNotFoundException;
@@ -17,6 +18,7 @@ final readonly class UnpublishEpisodeUseCase
         private WorkRepositoryInterface $works,
         private EpisodeRepositoryInterface $episodes,
         private TransactionInterface $transaction,
+        private PublicPageCacheInterface $pageCache,
     ) {}
 
     /**
@@ -31,7 +33,7 @@ final readonly class UnpublishEpisodeUseCase
         $work = $this->works->findById($workId) ?? throw new WorkNotFoundException;
         $work->assertEditableBy($userId);
 
-        return $this->transaction->run(function () use ($workId, $episodeId) {
+        $unpublished = $this->transaction->run(function () use ($workId, $episodeId) {
             // 同じ作品の公開と同時に走っても、公開された話を含めて最大値を求めるよう作品の行で直列にする
             $work = $this->works->findByIdForUpdate($workId) ?? throw new WorkNotFoundException;
             $episode = $this->episodes->findInWorkForUpdate($workId, $episodeId) ?? throw new EpisodeNotFoundException;
@@ -43,5 +45,9 @@ final readonly class UnpublishEpisodeUseCase
 
             return $unpublished;
         });
+
+        $this->pageCache->forgetEpisode($workId, $episodeId);
+
+        return $unpublished;
     }
 }

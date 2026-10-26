@@ -71,6 +71,9 @@ services:
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
       # Xdebug
       PHP_IDE_CONFIG: "serverName=novel-submission-site-clone"
+      # 公開ページのキャッシュ破棄を頼む先(web の /api/revalidate)
+      NEXT_REVALIDATE_URL: http://web:3000
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-local-revalidate-secret}
     depends_on:
       db:
         condition: service_healthy
@@ -78,6 +81,18 @@ services:
         condition: service_started
     networks: [app]
     restart: unless-stopped
+
+  # ---------- キューの worker ----------
+  # app と同じイメージ・環境変数で、Redis のキューのジョブを処理する。
+  # queue:listen はジョブごとにコードを読み直すので、コードを変えても worker を作り直さずに済む
+  worker:
+    extends: app
+    command: ["php", "artisan", "queue:listen"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   # ---------- MySQL ----------
   db:
@@ -152,6 +167,8 @@ services:
       # SSR 用の 8080 を呼ぶ(本番は Service Connect の http://api:8080)。
       INTERNAL_API_URL: "http://nginx:8080"
       REDIS_URL: "redis://redis:6379"
+      # Laravel の worker から /api/revalidate への呼び出しを確かめる値。app と同じにする
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-local-revalidate-secret}
     volumes:
       - ./frontend:/app:delegated
       - node_modules:/app/node_modules

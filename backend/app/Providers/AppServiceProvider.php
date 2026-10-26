@@ -7,6 +7,7 @@ use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Health\DependencyCheckerInterface;
 use App\Domain\Shared\ClockInterface;
 use App\Domain\Shared\PasswordHasherInterface;
+use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\User\UserRepositoryInterface;
 use App\Domain\Work\WorkRepositoryInterface;
@@ -18,6 +19,7 @@ use App\Infrastructure\Eloquent\Repositories\EloquentUserRepository;
 use App\Infrastructure\Eloquent\Repositories\EloquentWorkRepository;
 use App\Infrastructure\Hashing\LaravelPasswordHasher;
 use App\Infrastructure\Health\LaravelDependencyChecker;
+use App\Infrastructure\PageCache\NextPublicPageCache;
 use App\Infrastructure\Sanctum\SanctumAccessTokens;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -39,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
         AccessTokensInterface::class => SanctumAccessTokens::class,
         TransactionInterface::class => DatabaseTransaction::class,
         ClockInterface::class => LaravelClock::class,
+        PublicPageCacheInterface::class => NextPublicPageCache::class,
     ];
 
     public function register(): void
