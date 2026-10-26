@@ -175,6 +175,10 @@ services:
       - next_cache:/app/.next
     ports:
       - "${NEXT_PORT:-3000}:3000"
+    # Next.js のキャッシュと、Redis に繋ぐ結合テストが使う
+    depends_on:
+      redis:
+        condition: service_started
     networks: [app]
     restart: unless-stopped
 
