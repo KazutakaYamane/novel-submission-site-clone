@@ -1,3 +1,4 @@
+import path from "node:path";
 import { expect, it } from "vitest";
 import nextConfig from "./next.config";
 
@@ -11,4 +12,12 @@ it("Server Action は上限ちょうどの話の本文を含むフォームを�
 
   expect(limit).toBeTypeOf("number");
   expect(limit as number).toBeGreaterThanOrEqual(EPISODE_BODY_MAX_BYTES + FORM_OVERHEAD_BYTES);
+});
+
+it('"use cache" の結果を Redis に置くハンドラを cacheHandlers.default に設定している', () => {
+  expect(nextConfig.cacheHandlers?.default).toBe(path.resolve(process.cwd(), "cache-handlers/default.mjs"));
+});
+
+it("事前描画したページを Redis に置くハンドラを cacheHandler に設定している", () => {
+  expect(nextConfig.cacheHandler).toBe(path.resolve(process.cwd(), "cache-handlers/incremental.mjs"));
 });

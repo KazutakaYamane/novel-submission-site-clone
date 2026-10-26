@@ -69,9 +69,9 @@ RUN addgroup -S nextjs && adduser -S nextjs -G nextjs
 COPY --from=build --chown=nextjs:nextjs /app/.next/standalone ./
 # 静的アセット(本線は S3 + CloudFront。ALB 直叩き・ローカル検証用に同梱)
 COPY --from=build --chown=nextjs:nextjs /app/.next/static ./.next/static
-# ISR cacheHandler。next.config.ts が process.cwd() 直下のパスを焼き込むため、
+# cacheHandler・cacheHandlers。next.config.ts が process.cwd() 直下のパスを焼き込むため、
 # WORKDIR(/app)直下に必ず置く(トレース漏れに備えて明示 COPY)
-COPY --from=build --chown=nextjs:nextjs /app/cache-handler.mjs ./cache-handler.mjs
+COPY --from=build --chown=nextjs:nextjs /app/cache-handlers/*.mjs ./cache-handlers/
 
 USER nextjs
 
