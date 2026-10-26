@@ -8,6 +8,7 @@ use App\Domain\Episode\EpisodeNotFoundException;
 use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Episode\InvalidEpisodeTransitionException;
 use App\Domain\Shared\ClockInterface;
+use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\WorkAccessDeniedException;
 use App\Domain\Work\WorkNotFoundException;
@@ -20,6 +21,7 @@ final readonly class PublishEpisodeUseCase
         private EpisodeRepositoryInterface $episodes,
         private TransactionInterface $transaction,
         private ClockInterface $clock,
+        private PublicPageCacheInterface $pageCache,
     ) {}
 
     /**
@@ -36,7 +38,7 @@ final readonly class PublishEpisodeUseCase
         $work = $this->works->findById($workId) ?? throw new WorkNotFoundException;
         $work->assertEditableBy($userId);
 
-        return $this->transaction->run(function () use ($workId, $episodeId) {
+        $published = $this->transaction->run(function () use ($workId, $episodeId) {
             // 同じ作品の公開・非公開化を作品の行で直列にし、二重公開と last_episode_published_at の書き戻し合いを防ぐ
             $work = $this->works->findByIdForUpdate($workId) ?? throw new WorkNotFoundException;
             $episode = $this->episodes->findInWorkForUpdate($workId, $episodeId) ?? throw new EpisodeNotFoundException;
@@ -48,5 +50,9 @@ final readonly class PublishEpisodeUseCase
 
             return $published;
         });
+
+        $this->pageCache->forgetEpisode($workId, $episodeId);
+
+        return $published;
     }
 }

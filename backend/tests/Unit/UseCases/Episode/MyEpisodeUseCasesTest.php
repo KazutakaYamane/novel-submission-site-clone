@@ -20,12 +20,15 @@ use App\UseCases\Episode\PublishEpisodeUseCase;
 use App\UseCases\Episode\UnpublishEpisodeUseCase;
 use App\UseCases\Episode\UpdateMyEpisodeUseCase;
 use Tests\Doubles\InMemoryEpisodeRepository;
+use Tests\Doubles\InMemoryPublicPageCache;
 use Tests\Doubles\InMemoryWorkRepository;
 
 beforeEach(function () {
     $this->works = new InMemoryWorkRepository;
 
     $this->episodes = new InMemoryEpisodeRepository($this->works);
+
+    $this->pageCache = new InMemoryPublicPageCache;
 
     $this->transaction = new class([$this->works, $this->episodes]) implements TransactionInterface
     {
@@ -185,7 +188,7 @@ describe('UpdateMyEpisodeUseCase', function () {
     it('渡した項目だけを変えて保存し、変えた話を返す', function () {
         ($this->addWork)('work-1', 'user-1');
         ($this->addEpisode)('episode-a', 'work-1', 1);
-        $useCase = new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction);
+        $useCase = new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache);
 
         $updated = $useCase('user-1', 'work-1', 'episode-a', ['title' => '新しいタイトル']);
 
@@ -199,7 +202,7 @@ describe('UpdateMyEpisodeUseCase', function () {
         ($this->addWork)('work-1', 'user-2', $publishedAt);
         $episode = ($this->addEpisode)('episode-a', 'work-1', 1);
 
-        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-a', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache))('user-1', 'work-1', 'episode-a', ['title' => '書き換え']))
             ->toThrow($exception)
             ->and($this->episodes->rows['episode-a'])->toBe($episode);
     })->with('他人の作品');
@@ -208,9 +211,36 @@ describe('UpdateMyEpisodeUseCase', function () {
         ($this->addWork)('work-1', 'user-1', new DateTimeImmutable('2026-10-01'));
         $episode = ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
 
-        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-a', ['title' => '書き換え', 'body' => "　\n"]))
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache))('user-1', 'work-1', 'episode-a', ['title' => '書き換え', 'body' => "　\n"]))
             ->toThrow(EmptyEpisodeBodyException::class)
             ->and($this->episodes->rows['episode-a'])->toBe($episode);
+    });
+
+    it('公開済みの話を変えたら、話のページの破棄を頼む', function () {
+        ($this->addWork)('work-1', 'user-1', new DateTimeImmutable('2026-10-01'));
+        ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+
+        (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache))('user-1', 'work-1', 'episode-a', ['body' => '直した本文']);
+
+        expect($this->pageCache->forgotten)->toBe([['episode', 'work-1', 'episode-a']]);
+    });
+
+    it('下書きを変えても、破棄を頼まない', function () {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addEpisode)('episode-a', 'work-1', 1);
+
+        (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache))('user-1', 'work-1', 'episode-a', ['body' => '直した本文']);
+
+        expect($this->pageCache->forgotten)->toBe([]);
+    });
+
+    it('変えられなければ、破棄を頼まない', function () {
+        ($this->addWork)('work-1', 'user-1', new DateTimeImmutable('2026-10-01'));
+        ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache))('user-1', 'work-1', 'episode-a', ['body' => '']))
+            ->toThrow(EmptyEpisodeBodyException::class)
+            ->and($this->pageCache->forgotten)->toBe([]);
     });
 
     it('別の作品の話なら EpisodeNotFoundException を投げ、変えない', function () {
@@ -218,7 +248,7 @@ describe('UpdateMyEpisodeUseCase', function () {
         ($this->addWork)('work-2', 'user-1');
         $episode = ($this->addEpisode)('episode-other', 'work-2', 1);
 
-        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction))('user-1', 'work-1', 'episode-other', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache))('user-1', 'work-1', 'episode-other', ['title' => '書き換え']))
             ->toThrow(EpisodeNotFoundException::class)
             ->and($this->episodes->rows['episode-other'])->toBe($episode);
     });
@@ -226,7 +256,7 @@ describe('UpdateMyEpisodeUseCase', function () {
 
 describe('PublishEpisodeUseCase', function () {
     beforeEach(function () {
-        $this->publish = new PublishEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->clock);
+        $this->publish = new PublishEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->clock, $this->pageCache);
     });
 
     it('下書きを公開し、未公開の作品も同じ時刻で公開する', function () {
@@ -252,6 +282,23 @@ describe('PublishEpisodeUseCase', function () {
 
         expect($this->works->rows['work-1']->publishedAt)->toBe($workPublishedAt)
             ->and($this->works->rows['work-1']->lastEpisodePublishedAt)->toBe($this->clock->now);
+    });
+
+    it('公開したら、話のページの破棄を頼む', function () {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addEpisode)('episode-a', 'work-1', 1);
+
+        ($this->publish)('user-1', 'work-1', 'episode-a');
+
+        expect($this->pageCache->forgotten)->toBe([['episode', 'work-1', 'episode-a']]);
+    });
+
+    it('公開できなければ、破棄を頼まない', function () {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addEpisode)('episode-a', 'work-1', 1, body: '');
+
+        expect(fn () => ($this->publish)('user-1', 'work-1', 'episode-a'))->toThrow(EmptyEpisodeBodyException::class)
+            ->and($this->pageCache->forgotten)->toBe([]);
     });
 
     it('公開できない話なら例外を投げ、話も作品も変えない', function (?DateTimeImmutable $publishedAt, string $body, string $exception) {
@@ -294,7 +341,7 @@ describe('PublishEpisodeUseCase', function () {
 
 describe('UnpublishEpisodeUseCase', function () {
     beforeEach(function () {
-        $this->unpublish = new UnpublishEpisodeUseCase($this->works, $this->episodes, $this->transaction);
+        $this->unpublish = new UnpublishEpisodeUseCase($this->works, $this->episodes, $this->transaction, $this->pageCache);
     });
 
     it('下書きに戻し、最後に話を公開した日時を残りの公開済みの話の最大値にする', function () {
@@ -324,6 +371,23 @@ describe('UnpublishEpisodeUseCase', function () {
 
         expect($this->works->rows['work-1']->lastEpisodePublishedAt)->toBeNull()
             ->and($this->works->rows['work-1']->publishedAt)->toBe($workPublishedAt);
+    });
+
+    it('非公開にしたら、話のページの破棄を頼む', function () {
+        ($this->addWork)('work-1', 'user-1', new DateTimeImmutable('2026-10-01'));
+        ($this->addEpisode)('episode-a', 'work-1', 1, new DateTimeImmutable('2026-10-01'));
+
+        ($this->unpublish)('user-1', 'work-1', 'episode-a');
+
+        expect($this->pageCache->forgotten)->toBe([['episode', 'work-1', 'episode-a']]);
+    });
+
+    it('非公開にできなければ、破棄を頼まない', function () {
+        ($this->addWork)('work-1', 'user-1');
+        ($this->addEpisode)('episode-a', 'work-1', 1);
+
+        expect(fn () => ($this->unpublish)('user-1', 'work-1', 'episode-a'))->toThrow(InvalidEpisodeTransitionException::class)
+            ->and($this->pageCache->forgotten)->toBe([]);
     });
 
     it('下書きなら InvalidEpisodeTransitionException を投げ、変えない', function () {

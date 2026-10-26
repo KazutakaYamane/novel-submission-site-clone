@@ -10,10 +10,13 @@ use App\UseCases\Work\CreateWorkUseCase;
 use App\UseCases\Work\GetMyWorkUseCase;
 use App\UseCases\Work\ListMyWorksUseCase;
 use App\UseCases\Work\UpdateMyWorkUseCase;
+use Tests\Doubles\InMemoryPublicPageCache;
 use Tests\Doubles\InMemoryWorkRepository;
 
 beforeEach(function () {
     $this->works = new InMemoryWorkRepository;
+
+    $this->pageCache = new InMemoryPublicPageCache;
 
     $this->addWork = function (string $id, string $userId, ?DateTimeImmutable $publishedAt = null, string $createdAt = 'now'): Work {
         return $this->works->rows[$id] = new Work(
@@ -117,7 +120,7 @@ describe('UpdateMyWorkUseCase', function () {
     it('渡した項目だけを変えて保存し、変えた作品を返す', function () {
         ($this->addWork)('work-1', 'user-1');
 
-        $updated = (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', [
+        $updated = (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', [
             'title' => '新しいタイトル',
             'catchphrase' => null,
             'ratingFlags' => [],
@@ -134,17 +137,41 @@ describe('UpdateMyWorkUseCase', function () {
 
     it('タグを渡すと全部置き換え、渡さなければ変えない', function () {
         ($this->addWork)('work-1', 'user-1');
-        $useCase = new UpdateMyWorkUseCase($this->works);
+        $useCase = new UpdateMyWorkUseCase($this->works, $this->pageCache);
 
         expect($useCase('user-1', 'work-1', ['title' => '新しいタイトル'])->tags)->toBe(['異世界'])
             ->and($useCase('user-1', 'work-1', ['tags' => ['図書館', '料理']])->tags)->toEqualCanonicalizing(['図書館', '料理'])
             ->and($this->works->rows['work-1']->tags)->toEqualCanonicalizing(['図書館', '料理']);
     });
 
+    it('公開済みの作品を変えたら、作品のページの破棄を頼む', function () {
+        ($this->addWork)('work-1', 'user-1', publishedAt: new DateTimeImmutable('2026-10-01'));
+
+        (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', ['title' => '新しいタイトル']);
+
+        expect($this->pageCache->forgotten)->toBe([['work', 'work-1']]);
+    });
+
+    it('未公開の作品を変えても、破棄を頼まない', function () {
+        ($this->addWork)('work-1', 'user-1', publishedAt: null);
+
+        (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', ['title' => '新しいタイトル']);
+
+        expect($this->pageCache->forgotten)->toBe([]);
+    });
+
+    it('変えられなければ、破棄を頼まない', function () {
+        ($this->addWork)('work-1', 'user-2', publishedAt: new DateTimeImmutable('2026-10-01'));
+
+        expect(fn () => (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', ['title' => '書き換え']))
+            ->toThrow(WorkAccessDeniedException::class)
+            ->and($this->pageCache->forgotten)->toBe([]);
+    });
+
     it('他人の公開済みの作品なら WorkAccessDeniedException を投げ、変えない', function () {
         $work = ($this->addWork)('work-1', 'user-2', publishedAt: new DateTimeImmutable('2026-10-01'));
 
-        expect(fn () => (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', ['title' => '書き換え']))
             ->toThrow(WorkAccessDeniedException::class)
             ->and($this->works->rows['work-1'])->toBe($work);
     });
@@ -152,13 +179,13 @@ describe('UpdateMyWorkUseCase', function () {
     it('他人の未公開の作品なら WorkNotFoundException を投げ、変えない', function () {
         $work = ($this->addWork)('work-1', 'user-2', publishedAt: null);
 
-        expect(fn () => (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', ['title' => '書き換え']))
             ->toThrow(WorkNotFoundException::class)
             ->and($this->works->rows['work-1'])->toBe($work);
     });
 
     it('存在しない作品なら WorkNotFoundException を投げる', function () {
-        expect(fn () => (new UpdateMyWorkUseCase($this->works))('user-1', 'work-1', ['title' => '書き換え']))
+        expect(fn () => (new UpdateMyWorkUseCase($this->works, $this->pageCache))('user-1', 'work-1', ['title' => '書き換え']))
             ->toThrow(WorkNotFoundException::class);
     });
 });

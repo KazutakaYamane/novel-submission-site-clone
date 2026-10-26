@@ -6,6 +6,8 @@ use App\Domain\Episode\EmptyEpisodeBodyException;
 use App\Domain\Episode\Episode;
 use App\Domain\Episode\EpisodeNotFoundException;
 use App\Domain\Episode\EpisodeRepositoryInterface;
+use App\Domain\Episode\EpisodeStatus;
+use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\WorkAccessDeniedException;
 use App\Domain\Work\WorkNotFoundException;
@@ -20,6 +22,7 @@ final readonly class UpdateMyEpisodeUseCase
         private WorkRepositoryInterface $works,
         private EpisodeRepositoryInterface $episodes,
         private TransactionInterface $transaction,
+        private PublicPageCacheInterface $pageCache,
     ) {}
 
     /**
@@ -36,7 +39,7 @@ final readonly class UpdateMyEpisodeUseCase
         $work = $this->works->findById($workId) ?? throw new WorkNotFoundException;
         $work->assertEditableBy($userId);
 
-        return $this->transaction->run(function () use ($workId, $episodeId, $changes) {
+        $updated = $this->transaction->run(function () use ($workId, $episodeId, $changes) {
             // 状態を確かめてから書き込むまでに公開されないよう、話の行をロックして読む
             $episode = $this->episodes->findInWorkForUpdate($workId, $episodeId) ?? throw new EpisodeNotFoundException;
             if (array_key_exists('body', $changes)) {
@@ -45,5 +48,11 @@ final readonly class UpdateMyEpisodeUseCase
 
             return $this->episodes->update($episode, $changes);
         });
+
+        if ($updated->status === EpisodeStatus::Published) {
+            $this->pageCache->forgetEpisode($workId, $episodeId);
+        }
+
+        return $updated;
     }
 }

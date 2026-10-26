@@ -2,6 +2,7 @@
 
 namespace App\UseCases\Work;
 
+use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkAccessDeniedException;
 use App\Domain\Work\WorkNotFoundException;
@@ -14,6 +15,7 @@ final readonly class UpdateMyWorkUseCase
 {
     public function __construct(
         private WorkRepositoryInterface $works,
+        private PublicPageCacheInterface $pageCache,
     ) {}
 
     /**
@@ -28,6 +30,12 @@ final readonly class UpdateMyWorkUseCase
         $work->assertEditableBy($userId);
 
         // 確認の後に作品が消えていれば、見つからないときと同じに扱う
-        return $this->works->update($workId, $changes) ?? throw new WorkNotFoundException;
+        $updated = $this->works->update($workId, $changes) ?? throw new WorkNotFoundException;
+
+        if ($updated->publishedAt !== null) {
+            $this->pageCache->forgetWork($workId);
+        }
+
+        return $updated;
     }
 }
