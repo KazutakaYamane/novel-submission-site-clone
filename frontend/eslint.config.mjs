@@ -25,11 +25,22 @@ const eslintConfig = defineConfig([
         "error",
         { name: "fetch", message: "Laravel は lib/api/client.ts の apiFetch・apiFetchAsUser を通して呼ぶ" },
       ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "JSXOpeningElement[name.name='form']",
+          message: "フォームは components/form.tsx の Form を使う(<form action> は 422 のときも入力をリセットする)",
+        },
+      ],
     },
   },
   {
     files: ["lib/api/client.ts"],
     rules: { "no-restricted-globals": "off" },
+  },
+  {
+    files: ["components/form.tsx"],
+    rules: { "no-restricted-syntax": "off" },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([
