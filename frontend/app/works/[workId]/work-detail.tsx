@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedWork } from "@/lib/api/works";
-import { formatDate, genreLabel, ratingFlagLabels, statusLabel } from "./format";
+import { genreLabel, ratingFlagLabels, statusLabel } from "@/lib/work-attributes";
+import { formatDate } from "./format";
 
 export async function WorkDetail({ params }: { params: Promise<{ workId: string }> }) {
   const { workId } = await params;

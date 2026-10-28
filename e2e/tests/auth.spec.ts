@@ -1,14 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-// ハイドレーション前に送信すると素のフォーム送信になるため、data-hydrated を待ってから操作する
-// クライアント遷移の直後は前のページのフォームも残るので、送信ボタンでフォームを特定する
-async function waitForForm(page: Page, button: string) {
-  await expect(page.locator("form[data-hydrated]", { has: page.getByRole("button", { name: button }) })).toBeVisible();
-}
-
-function uniqueEmail(): string {
-  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
-}
+import { expect, test } from "@playwright/test";
+import { uniqueEmail, waitForForm } from "./helpers";
 
 test("登録 → ログアウト → 同じ資格情報でログインすると /my/works に名前が出る", async ({ page }) => {
   const email = uniqueEmail();

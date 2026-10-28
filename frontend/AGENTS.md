@@ -86,7 +86,9 @@ Decide in this order and stop at the first match:
 
 1. Comes from Laravel → server data. Fetch in a Server Component and pass down as props. MUST NOT [decision] copy it into client state, except as the initial value of a form or an optimistic update.
 2. Should survive reload or be shareable (search query, ranking genre/period, page number) → URL. Read `searchParams` in a Server Component inside `<Suspense>`; change it with `<Link>` or `router.push`.
-3. Input being edited → form. Use uncontrolled inputs with `<form action>`; MAY use `useState` when the UI reacts to each keystroke (the notation preview in the editor).
+3. Input being edited → form. Use uncontrolled inputs inside `Form` from `components/form.tsx`; MAY use `useState` when the UI reacts to each keystroke (the notation preview in the editor).
+   - MUST [decision] Do not write `<form>` directly. Reason: React resets uncontrolled inputs after every `<form action>` submission, even when the action returns a 422 [spec], so the author's input would be lost. `Form` cancels the submit in `onSubmit` and calls the action inside `startTransition`, which does not reset. Enforced by `npm run lint` (`no-restricted-syntax`).
+   - `Form` disables its fields until hydration. Reason: without `onSubmit`, a submission is a plain GET that puts the input in the URL.
 4. Visible only in one component tree (open/closed, drag state in reorder) → `useState` / `useReducer` in the nearest common Client Component.
 5. Needed by distant Client Components → React context with a provider placed as low as possible. MUST NOT [decision] add a global store library (Redux, Zustand, Jotai). Reason: items 1–4 cover every current screen.
 
@@ -203,17 +205,18 @@ export async function CheerSection({ params }: { params: Promise<{ episodeId: st
 // app/works/[workId]/episodes/[episodeId]/cheer-button.tsx
 "use client";
 import { useActionState } from "react";
+import { Form } from "@/components/form";
 import { toggleCheer } from "./actions";
 
 export function CheerButton(props: { episodeId: string; count: number; cheered: boolean }) {
   const [state, action, pending] = useActionState(toggleCheer, { status: "idle" });
   return (
-    <form action={action}>
+    <Form action={action}>
       <input type="hidden" name="episodeId" value={props.episodeId} />
       <input type="hidden" name="cheered" value={String(props.cheered)} />
       <button disabled={pending}>{props.cheered ? "応援済み" : "応援する"} {props.count}</button>
       {state.status === "error" && <p role="alert">{state.message}</p>}
-    </form>
+    </Form>
   );
 }
 ```
