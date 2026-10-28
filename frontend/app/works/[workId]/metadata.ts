@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { PublishedWork } from "@/lib/api/works";
-import { summarize } from "./summarize";
+import { summarize } from "@/lib/summarize";
 
 const DESCRIPTION_MAX = 120;
 
