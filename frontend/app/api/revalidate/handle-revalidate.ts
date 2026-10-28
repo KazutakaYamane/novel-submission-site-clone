@@ -1,12 +1,19 @@
 import { createHash, timingSafeEqual } from "node:crypto";
+import { isUuid } from "@/lib/uuid";
 
 type Deps = {
   secret: string | undefined;
   revalidateTag: (tag: string, profile: { expire: number }) => void;
 };
 
-// Laravel の PublicPageCache の実装と取り決めたタグ。ID は Laravel が作る小文字の UUID
-const ALLOWED_TAG = /^(top|ranking|(work|episode):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+// Laravel の PublicPageCache の実装と取り決めたタグ
+const ID_TAG = /^(?:work|episode):(.*)$/;
+
+function isAllowedTag(tag: string): boolean {
+  if (tag === "top" || tag === "ranking") return true;
+  const id = ID_TAG.exec(tag)?.[1];
+  return id !== undefined && isUuid(id);
+}
 
 export async function handleRevalidate(request: Request, { secret, revalidateTag }: Deps): Promise<Response> {
   if (!isAuthorized(request.headers.get("Authorization"), secret)) {
@@ -43,5 +50,5 @@ function parseTags(text: string): string[] | null {
   if (typeof body !== "object" || body === null || !("tags" in body)) return null;
   const { tags } = body;
   if (!Array.isArray(tags) || tags.length === 0) return null;
-  return tags.every((tag) => typeof tag === "string" && ALLOWED_TAG.test(tag)) ? tags : null;
+  return tags.every((tag) => typeof tag === "string" && isAllowedTag(tag)) ? tags : null;
 }
