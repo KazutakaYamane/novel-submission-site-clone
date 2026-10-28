@@ -167,6 +167,8 @@ services:
       # SSR 用の 8080 を呼ぶ(本番は Service Connect の http://api:8080)。
       INTERNAL_API_URL: "http://nginx:8080"
       REDIS_URL: "redis://redis:6379"
+      # og:url などの絶対 URL の基点(本番は公開ドメイン)
+      SITE_URL: "http://localhost:${NEXT_PORT:-3000}"
       # Laravel の worker から /api/revalidate への呼び出しを確かめる値。app と同じにする
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-local-revalidate-secret}
     volumes:

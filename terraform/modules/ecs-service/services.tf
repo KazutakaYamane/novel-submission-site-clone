@@ -44,6 +44,8 @@ module "web_service" {
         { name = "HOSTNAME", value = "0.0.0.0" },
         { name = "PORT", value = "3000" },
         { name = "REDIS_URL", value = var.redis_url },
+        # og:url などの絶対 URL の基点
+        { name = "SITE_URL", value = "https://${var.domain_name}" },
       ]
 
       readonlyRootFilesystem = false # Next.js はキャッシュ等の書き込みがある
