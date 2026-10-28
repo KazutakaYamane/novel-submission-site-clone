@@ -71,8 +71,9 @@ services:
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
       # Xdebug
       PHP_IDE_CONFIG: "serverName=novel-submission-site-clone"
-      # 公開ページのキャッシュ破棄を頼む先(web の /api/revalidate)
-      NEXT_REVALIDATE_URL: http://web:3000
+      # 公開ページのキャッシュ破棄を頼む先(web の /api/revalidate)。
+      # scripts/e2e-cache.sh が worker だけを web-prod に向けて作り直すため、上書きできるようにする
+      NEXT_REVALIDATE_URL: ${NEXT_REVALIDATE_URL:-http://web:3000}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-local-revalidate-secret}
     depends_on:
       db:
@@ -184,8 +185,35 @@ services:
     networks: [app]
     restart: unless-stopped
 
+  # ---------- web-prod (Next.js 本番イメージ) ----------
+  # 本番と同じイメージで、キャッシュ越しの公開の反映を E2E で確かめる(scripts/e2e-cache.sh)。
+  # dev の web とは別のコンテナなので、web の .next に触れない
+  web-prod:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+      target: prod
+    profiles: [e2e]
+    environment:
+      INTERNAL_API_URL: "http://nginx:8080"
+      REDIS_URL: "redis://redis:6379"
+      SITE_URL: "http://web-prod:3000"
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:-local-revalidate-secret}
+    healthcheck:
+      # localhost は IPv6 に解決され、0.0.0.0 で待つ Next.js に届かない。
+      # / は Laravel を呼ぶので、静的なファイルで起動だけを確かめる
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/favicon.ico"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      redis:
+        condition: service_started
+    networks: [app]
+
   # ---------- E2E (Playwright) ----------
-  # 普段は起動しない。`docker compose run --rm e2e` で実行する。
+  # 普段は起動しない。`docker compose run --rm e2e` で dev の web に対して実行する。
+  # 本番ビルドに対するキャッシュの E2E は scripts/e2e-cache.sh で実行する。
   # イメージのタグは e2e/package.json の @playwright/test と同じバージョンに揃える
   e2e:
     image: mcr.microsoft.com/playwright:v1.64.0-noble
@@ -194,14 +222,23 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     working_dir: /e2e
     environment:
-      BASE_URL: http://web:3000
       # 非 root 実行時に npm のキャッシュ先が書き込み可能になるようにする
       HOME: /tmp
     volumes:
       - ./e2e:/e2e
-    command: ["sh", "-c", "npm ci && npx playwright test"]
+    command: ["sh", "-c", "npm ci && npx playwright test --project=dev"]
     depends_on: [web]
     networks: [app]
+
+  # web-prod に対して cache.spec.ts を実行する。scripts/e2e-cache.sh から使う。
+  # 本番ビルドの token cookie は secure なので、http で開くとブラウザが保存しない。
+  # web-prod のネットワークを共有して http://127.0.0.1:3000 で開き、ブラウザに安全なオリジンとして扱わせる
+  e2e-cache:
+    extends: e2e
+    command: ["sh", "-c", "npm ci && npx playwright test --project=cache"]
+    network_mode: service:web-prod
+    networks: !reset []
+    depends_on: !override [web-prod]
 
 networks:
   app:

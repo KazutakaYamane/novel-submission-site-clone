@@ -16,7 +16,8 @@ Node runs in the container: `docker compose exec web <cmd>`
 - Type check: `npm run typecheck` (`next typegen` generates `PageProps` / `LayoutProps`, then `tsc --noEmit`)
 - Unit test: `npm run test [-- path]` (Vitest)
 - Build: `npm run build`. Run it after changing any route: missing `<Suspense>` boundaries and `server-only` violations fail only at build.
-- E2E: `docker compose run --rm e2e` (Playwright, `e2e/tests/`)
+- E2E: `docker compose run --rm e2e` (Playwright, `e2e/tests/`, against the dev server)
+- E2E through the production build's cache: `scripts/e2e-cache.sh` (`e2e/tests/cache.spec.ts` against `web-prod`). Run it after changing cached data functions, cache handlers, or `/api/revalidate`.
 
 ## Role
 
