@@ -1,31 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import { uniqueEmail, waitForForm } from "./helpers";
-
-async function signUp(page: Page, name: string) {
-  await page.goto("/signup");
-  await waitForForm(page, "登録する");
-  await page.getByLabel("名前").fill(name);
-  await page.getByLabel("メールアドレス").fill(uniqueEmail());
-  await page.getByLabel("パスワード").fill("password123");
-  await page.getByRole("button", { name: "登録する" }).click();
-  await expect(page).toHaveURL("/my/works");
-}
-
-// 作品を作り、編集画面の URL を返す
-async function createWork(page: Page, title: string): Promise<string> {
-  await page.getByRole("link", { name: "新しい作品を書く" }).click();
-  await expect(page).toHaveURL("/my/works/new");
-  await waitForForm(page, "作品を作る");
-  await page.getByLabel("タイトル").fill(title);
-  await page.getByLabel("キャッチコピー").fill("最後の星が消える夜に");
-  await page.getByLabel("あらすじ").fill("あらすじの本文");
-  await page.getByLabel("ジャンル").selectOption("sf");
-  await page.getByLabel("タグ").fill("宇宙、群像劇");
-  await page.getByLabel("暴力描写有り").check();
-  await page.getByRole("button", { name: "作品を作る" }).click();
-  await expect(page).toHaveURL(/\/my\/works\/[0-9a-f-]{36}$/);
-  return new URL(page.url()).pathname;
-}
+import { createWork, notFoundHeading, signUp, waitForForm } from "./helpers";
 
 // browser.newContext() で作ったコンテキストは Playwright が閉じないので、テストごとに閉じる
 const openedContexts: BrowserContext[] = [];
@@ -39,8 +13,6 @@ async function openAsGuest(browser: Browser): Promise<Page> {
   openedContexts.push(context);
   return context.newPage();
 }
-
-const notFoundHeading = (page: Page) => page.getByRole("heading", { name: "ページが見つかりません" });
 
 test("作品を作って話を書き、公開するとゲストに見え、非公開に戻すと見えなくなる", async ({ page, browser }) => {
   await signUp(page, "E2E 作者");

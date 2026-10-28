@@ -5,7 +5,7 @@ argument-hint: <task id, e.g. T-0019> [code-review level]
 disable-model-invocation: true
 ---
 
-Implement the task named in `$ARGUMENTS` and stop after the code review. This skill only orders the steps; the rules themselves are in `AGENTS.md`, `backend/AGENTS.md`, `frontend/AGENTS.md`, and the `interviewer-docs` skill. Follow them.
+Implement the task named in `$ARGUMENTS` and stop after handling the code review's findings. This skill only orders the steps; the rules themselves are in `AGENTS.md`, `backend/AGENTS.md`, `frontend/AGENTS.md`, and the `interviewer-docs` skill. Follow them.
 
 ## 1. Read the task
 
@@ -38,9 +38,13 @@ Do not commit or push; the user reviews the diff first.
 
 ## 4. Code review
 
-Run the `code-review` skill on the working-tree diff, passing the level from `$ARGUMENTS` if one was given. Do not apply its findings yourself.
+Run the `code-review` skill on the working-tree diff, passing the level from `$ARGUMENTS` if one was given. When it returns, verify each finding against the code, and by running it where you can, before acting on it:
+
+- Leave a finding as is if it cannot happen in this project's actual use, or if it is an edge case too unlikely to justify the change. Write down why.
+- Fix the findings that hold. Follow "Tests" in `AGENTS.md`, rerun the affected checks, and record the commands and output in 結果.
+- Append both lists to the task's 作業ログ: the findings you fixed and how, and the findings you left with the reason for each.
 
 ## 5. Report
 
-- If the review has no findings and every criterion is checked, set `status: done` and move the task file to `docs/agent_memo/done/tasks/`. Otherwise leave it in `todo/` and say what remains.
-- Tell the user: the issue URL, the branch, what changed per criterion, check results, review findings, and any `README.md` passages the change invalidated (the author rewrites them).
+- If every criterion is checked and every finding that holds is fixed, set `status: done` and move the task file to `docs/agent_memo/done/tasks/`. Otherwise leave it in `todo/` and say what remains.
+- Tell the user: the issue URL, the branch, what changed per criterion, check results, the findings you fixed (what was wrong and how you fixed it), the findings you left (with the reason for each), and any `README.md` passages the change invalidated (the author rewrites them).
