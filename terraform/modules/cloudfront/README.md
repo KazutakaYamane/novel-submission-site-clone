@@ -7,7 +7,6 @@
 | パス | オリジン | キャッシュポリシー |
 |---|---|---|
 | `default` | ALB(`origin.<domain>`) | `CachingDisabled` |
-| `/api/*` | ALB(同上) | `CachingDisabled` |
 | `/_next/static/*` | S3(OAC) | `CachingOptimized` |
 | `/_next/image*` | ALB(同上) | 自前(`url` / `w` / `q` と `Accept` をキーに含める) |
 | `/static/*` | S3(OAC) | `CachingOptimized` |

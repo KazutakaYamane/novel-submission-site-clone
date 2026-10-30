@@ -67,7 +67,7 @@ resource "aws_service_discovery_http_namespace" "this" {
 }
 
 # ---------------------------------------------------------------------------
-# ALB + Target Groups + Listener
+# ALB + Target Group + Listener
 # ---------------------------------------------------------------------------
 
 resource "aws_lb" "this" {
@@ -77,7 +77,6 @@ resource "aws_lb" "this" {
   subnets            = var.public_subnet_ids
   security_groups    = [var.alb_security_group_id]
 
-  # fastcgi_read_timeout(60s)と揃える
   idle_timeout = 60
 
   tags = { Name = "${local.name}-alb" }
@@ -102,28 +101,6 @@ resource "aws_lb_target_group" "web" {
   deregistration_delay = 30
 
   tags = { Name = "${local.name}-web-tg" }
-}
-
-resource "aws_lb_target_group" "api" {
-  name        = "${local.lb_name}-api"
-  vpc_id      = var.vpc_id
-  target_type = "ip"
-  port        = 80
-  protocol    = "HTTP"
-
-  health_check {
-    # nginx が DB 非依存で 200 を返す静的エンドポイント(docker/nginx/default.conf)
-    path                = "/health"
-    matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 3
-  }
-
-  deregistration_delay = 30
-
-  tags = { Name = "${local.name}-api-tg" }
 }
 
 resource "aws_lb_listener" "https" {
@@ -166,31 +143,6 @@ resource "aws_lb_listener_rule" "web" {
   }
 
   tags = { Name = "${local.name}-web-rule" }
-}
-
-resource "aws_lb_listener_rule" "api" {
-  listener_arn = aws_lb_listener.https.arn
-  priority     = 10
-
-  condition {
-    path_pattern {
-      values = ["/api/*"]
-    }
-  }
-
-  condition {
-    http_header {
-      http_header_name = var.origin_verify_header_name
-      values           = [var.origin_verify_header_value]
-    }
-  }
-
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
-  }
-
-  tags = { Name = "${local.name}-api-rule" }
 }
 
 # ---------------------------------------------------------------------------

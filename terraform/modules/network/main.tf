@@ -91,7 +91,7 @@ resource "aws_route_table_association" "private" {
 # Security Groups(ルール一覧は README.md)
 # ---------------------------------------------------------------------------
 
-# CloudFront を通らずに ALB へ届くと、nginx が信頼する CloudFront-Viewer-Address を偽装できる。
+# CloudFront を通らずに ALB へ届くと、Next.js が信頼する CloudFront-Viewer-Address を偽装できる。
 # ALB の ingress を CloudFront のオリジン向け IP に絞る
 data "aws_ec2_managed_prefix_list" "cloudfront_origin_facing" {
   name = "com.amazonaws.global.cloudfront.origin-facing"
@@ -157,17 +157,8 @@ resource "aws_security_group" "ecs_api" {
   tags = { Name = "${local.name}-ecs-api-sg" }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "api_from_alb" {
-  security_group_id            = aws_security_group.ecs_api.id
-  referenced_security_group_id = aws_security_group.alb.id
-  from_port                    = 80
-  to_port                      = 80
-  ip_protocol                  = "tcp"
-  description                  = "Nginx port from ALB (North-South: /api/*)"
-}
-
 # Service Connect は ingressPortOverride を使わないため、許可ポートはコンテナポート(8080)のまま。
-# 8080 には Next.js タスクからしか届かないことを前提に、nginx は 8080 でだけユーザー IP のヘッダーを信頼する
+# api への受信はこのルールだけ。nginx は 8080 に Next.js タスクからしか届かないことを前提に、ユーザー IP のヘッダーを信頼する
 resource "aws_vpc_security_group_ingress_rule" "api_from_web" {
   security_group_id            = aws_security_group.ecs_api.id
   referenced_security_group_id = aws_security_group.ecs_web.id
