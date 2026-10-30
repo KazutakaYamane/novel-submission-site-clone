@@ -20,6 +20,13 @@ resource "random_password" "origin_verify" {
   special = false
 }
 
+# Laravel が Next.js の /api/revalidate を呼ぶときの Bearer トークン。
+# /api/revalidate は CloudFront の default からも届くため、この値だけで認証する
+resource "random_password" "revalidate" {
+  length  = 32
+  special = false
+}
+
 # php artisan key:generate と同じ "base64:<32 bytes>" 形式にする。
 resource "random_id" "app_key" {
   byte_length = 32
@@ -45,4 +52,15 @@ resource "aws_secretsmanager_secret" "app_key" {
 resource "aws_secretsmanager_secret_version" "app_key" {
   secret_id     = aws_secretsmanager_secret.app_key.id
   secret_string = "base64:${random_id.app_key.b64_std}"
+}
+
+resource "aws_secretsmanager_secret" "revalidate" {
+  name                    = "${local.name}/next/revalidate-secret"
+  description             = "Shared secret for Laravel to call Next.js /api/revalidate."
+  recovery_window_in_days = var.recovery_window_in_days
+}
+
+resource "aws_secretsmanager_secret_version" "revalidate" {
+  secret_id     = aws_secretsmanager_secret.revalidate.id
+  secret_string = random_password.revalidate.result
 }

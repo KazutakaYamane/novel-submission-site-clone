@@ -14,6 +14,11 @@ Three root modules, each with its own state:
 
 **Cost operation**: prod is designed for apply/destroy cycling (RDS `skip_final_snapshot`, secrets `recovery_window=0`). Work session: `apply` prod (~30–40 min, CloudFront is the long pole) → work → `destroy` prod (~20–30 min). Destroying prod loses DB data (re-run migrations/seeders) but keeps the zone delegation and pushed images. Full-running cost ≈ $50/month; destroyed ≈ $0.50/month.
 
+**After every `apply` of prod**, run `deploy.yml` once (`gh workflow run deploy.yml --ref master`) and wait for it to finish before using the site:
+- Fresh prod: api and web call each other over Service Connect (`web → api:8080`, `api → web:3000` for `/api/revalidate`, ADR 0013), and a task can resolve only the services registered before it started. `apply` creates both services at once, so one side cannot resolve the other until the deploy replaces the tasks in api → web order. The same run's migrate step creates the schema in the new, empty RDS.
+- Existing prod: the services use `ignore_task_definition_changes = true`, so task definition changes from `apply` (containers, environment, secrets) reach the running tasks only when the deploy registers a revision from the latest one. A Service Connect change also needs the other service's tasks to restart.
+Ordinary code deploys need nothing extra.
+
 ## CI/CD
 
 Implemented in `.github/workflows/`:

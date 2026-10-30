@@ -140,6 +140,16 @@ resource "aws_vpc_security_group_ingress_rule" "web_from_alb" {
   description                  = "Next.js server port from ALB"
 }
 
+# Laravel(app・worker)が Service Connect の web:3000 で /api/revalidate を呼ぶ(ADR 0013)
+resource "aws_vpc_security_group_ingress_rule" "web_from_api" {
+  security_group_id            = aws_security_group.ecs_web.id
+  referenced_security_group_id = aws_security_group.ecs_api.id
+  from_port                    = 3000
+  to_port                      = 3000
+  ip_protocol                  = "tcp"
+  description                  = "Next.js server port from Laravel tasks (East-West: Service Connect)"
+}
+
 resource "aws_vpc_security_group_egress_rule" "web_all" {
   security_group_id = aws_security_group.ecs_web.id
   cidr_ipv4         = "0.0.0.0/0"

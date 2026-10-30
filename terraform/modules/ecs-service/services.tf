@@ -3,6 +3,30 @@
 
 locals {
   service_connect_api_name = "api" # web からは http://api:8080 で到達
+  service_connect_web_name = "web" # api(app・worker)からは http://web:3000 で到達
+
+  # app と worker は同じイメージ・同じ設定で、プロセスだけが違う
+  api_environment = [
+    { name = "APP_ENV", value = "production" },
+    { name = "APP_DEBUG", value = "false" },
+    { name = "APP_URL", value = "https://${var.domain_name}" },
+    { name = "LOG_CHANNEL", value = "stderr" },
+    { name = "DB_CONNECTION", value = "mysql" },
+    { name = "DB_HOST", value = var.db_host },
+    { name = "DB_PORT", value = "3306" },
+    { name = "DB_DATABASE", value = var.db_name },
+    { name = "DB_USERNAME", value = var.db_username },
+    { name = "REDIS_URL", value = var.redis_url },
+    { name = "CACHE_STORE", value = "redis" },
+    { name = "QUEUE_CONNECTION", value = "redis" },
+    { name = "NEXT_REVALIDATE_URL", value = "http://${local.service_connect_web_name}:3000" },
+  ]
+
+  api_secrets = [
+    { name = "APP_KEY", valueFrom = var.app_key_secret_arn },
+    { name = "DB_PASSWORD", valueFrom = var.db_password_secret_arn },
+    { name = "REVALIDATE_SECRET", valueFrom = var.revalidate_secret_arn },
+  ]
 }
 
 # ----- web: Next.js (SSR/ISR) -----
@@ -33,7 +57,7 @@ module "web_service" {
 
       portMappings = [
         {
-          name          = "web"
+          name          = local.service_connect_web_name
           containerPort = 3000
           protocol      = "tcp"
         }
@@ -48,6 +72,10 @@ module "web_service" {
         { name = "SITE_URL", value = "https://${var.domain_name}" },
       ]
 
+      secrets = [
+        { name = "REVALIDATE_SECRET", valueFrom = var.revalidate_secret_arn },
+      ]
+
       readonlyRootFilesystem = false # Next.js はキャッシュ等の書き込みがある
 
       cloudwatch_log_group_retention_in_days = var.log_retention_in_days
@@ -56,7 +84,15 @@ module "web_service" {
 
   service_connect_configuration = {
     namespace = aws_service_discovery_http_namespace.this.arn
-    # service ブロックなし = クライアント専用(api を呼ぶだけで公開はしない)
+    service = [
+      {
+        port_name = local.service_connect_web_name
+        client_alias = {
+          dns_name = local.service_connect_web_name
+          port     = 3000
+        }
+      }
+    ]
   }
 
   load_balancer = {
@@ -78,12 +114,16 @@ module "web_service" {
 
   enable_execute_command = true
 
+  task_exec_secret_arns = [
+    var.revalidate_secret_arn,
+  ]
+
   depends_on = [aws_lb_listener.https]
 
   tags = { Name = "${local.name}-web" }
 }
 
-# ----- api: Laravel (nginx + php-fpm sidecar 構成) -----
+# ----- api: Laravel (nginx + php-fpm + キューの worker) -----
 
 module "api_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
@@ -154,28 +194,27 @@ module "api_service" {
         }
       ]
 
-      environment = [
-        { name = "APP_ENV", value = "production" },
-        { name = "APP_DEBUG", value = "false" },
-        { name = "APP_URL", value = "https://${var.domain_name}" },
-        { name = "LOG_CHANNEL", value = "stderr" },
-        { name = "DB_CONNECTION", value = "mysql" },
-        { name = "DB_HOST", value = var.db_host },
-        { name = "DB_PORT", value = "3306" },
-        { name = "DB_DATABASE", value = var.db_name },
-        { name = "DB_USERNAME", value = var.db_username },
-        { name = "REDIS_URL", value = var.redis_url },
-        { name = "SESSION_DRIVER", value = "redis" },
-        { name = "CACHE_STORE", value = "redis" },
-        { name = "QUEUE_CONNECTION", value = "redis" },
-      ]
-
-      secrets = [
-        { name = "APP_KEY", valueFrom = var.app_key_secret_arn },
-        { name = "DB_PASSWORD", valueFrom = var.db_password_secret_arn },
-      ]
+      environment = local.api_environment
+      secrets     = local.api_secrets
 
       readonlyRootFilesystem = false # storage/ への書き込みがある
+
+      cloudwatch_log_group_retention_in_days = var.log_retention_in_days
+    }
+
+    # api と同じタスクに置き、月約 $50 の上限(ADR 0007)に収める。
+    # worker が止まるとキャッシュの破棄が止まるため essential にする。モジュールの既定で restartPolicy が
+    # 有効なので、300 秒以上動いた後の終了(queue:work の --memory 超過など)はコンテナだけを再起動し、
+    # 起動直後に落ち続ける場合はタスクごと入れ替える
+    worker = {
+      image     = var.api_app_image
+      essential = true
+      command   = ["php", "artisan", "queue:work"]
+
+      environment = local.api_environment
+      secrets     = local.api_secrets
+
+      readonlyRootFilesystem = false
 
       cloudwatch_log_group_retention_in_days = var.log_retention_in_days
     }
@@ -208,6 +247,7 @@ module "api_service" {
   task_exec_secret_arns = [
     var.app_key_secret_arn,
     var.db_password_secret_arn,
+    var.revalidate_secret_arn,
   ]
 
   tags = { Name = "${local.name}-api" }

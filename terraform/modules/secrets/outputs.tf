@@ -29,3 +29,8 @@ output "origin_verify_value" {
   value       = random_password.origin_verify.result
   sensitive   = true
 }
+
+output "revalidate_secret_arn" {
+  description = "Next.js の /api/revalidate の共有シークレットの ARN。api(app・worker)と web に注入する。"
+  value       = aws_secretsmanager_secret.revalidate.arn
+}
