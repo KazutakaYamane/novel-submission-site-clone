@@ -67,6 +67,7 @@ module "ecs_service" {
 
   db_password_secret_arn = module.secrets.db_password_secret_arn
   app_key_secret_arn     = module.secrets.app_key_secret_arn
+  revalidate_secret_arn  = module.secrets.revalidate_secret_arn
 
   origin_verify_header_value = module.secrets.origin_verify_value
 }

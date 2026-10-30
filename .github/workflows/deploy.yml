@@ -184,7 +184,7 @@ jobs:
                  --arg nginx "$ECR_REGISTRY/$ECR_PREFIX/laravel-nginx:$IMAGE_TAG" '
                 .taskDefinition + {tags: .tags}
                 | .containerDefinitions |= map(
-                    if .name == "app" then .image = $app
+                    if .name == "app" or .name == "worker" then .image = $app
                     elif .name == "nginx" then .image = $nginx
                     else . end)
                 | del(.taskDefinitionArn, .revision, .status, .requiresAttributes,
@@ -195,7 +195,10 @@ jobs:
           echo "arn=$arn" >> "$GITHUB_OUTPUT"
 
       # api の入れ替え前に新リビジョンで実行する。マイグレーションは旧コードが
-      # 動いたままでも通る(カラム追加などの後方互換な変更のみ)ことが前提
+      # 動いたままでも通る(カラム追加などの後方互換な変更のみ)ことが前提。
+      # この一回限りのタスクは Service Connect に入らず web:3000 を解決できないため、
+      # worker にはジョブを取らせず待たせる(app が終わると essential の停止でタスクごと止まる)。
+      # PID 1 の sleep は SIGTERM を無視し stopTimeout まで止まらないため、trap で終わらせる
       - name: migrate
         run: |
           service=$(aws ecs describe-services --cluster "$CLUSTER" --services "$API_SERVICE" \
@@ -205,7 +208,7 @@ jobs:
             --launch-type FARGATE \
             --task-definition "${{ steps.register.outputs.arn }}" \
             --network-configuration "$(echo "$service" | jq -c '{awsvpcConfiguration: .networkConfiguration.awsvpcConfiguration}')" \
-            --overrides '{"containerOverrides":[{"name":"app","command":["php","artisan","migrate","--force"]}]}' \
+            --overrides '{"containerOverrides":[{"name":"app","command":["php","artisan","migrate","--force"]},{"name":"worker","command":["sh","-c","trap '"'"'exit 0'"'"' TERM; sleep infinity & wait"]}]}' \
             --query 'tasks[0].taskArn' --output text)
           echo "task: $task_arn"
           aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task_arn"

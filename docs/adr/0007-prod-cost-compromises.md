@@ -1,6 +1,6 @@
 # 0007: 運用コストを抑えるための構成上の妥協
 
-- ステータス: 採用(一部を [0010](0010-browser-talks-only-to-nextjs.md) が置き換え)
+- ステータス: 採用(一部を [0010](0010-browser-talks-only-to-nextjs.md)・[0013](0013-laravel-calls-nextjs-via-service-connect.md) が置き換え)
 - 日付: 2026-10-07
 
 ポートフォリオとして面接官に見せるため、`prod`を常時稼働させる。稼働時の費用は月約$50に収める(`prod-persistent`のみの状態は月約$0.50)。以下の4点はこのコスト上限のために本番相当の構成から外している。
@@ -12,6 +12,7 @@
 NAT Gatewayを置かない。ECSタスクはpublic subnetで`assign_public_ip = true`とし、ECR・CloudWatch Logs・Secrets Managerへ直接インターネット経由で通信する(`modules/network/main.tf`、`modules/ecs-service/services.tf`)。インバウンドはセキュリティグループで絞る。
 - ALB: `CloudFront`のマネージドプレフィックスリスト(`cloudfront_origin_facing`)からの443番のみ
 - web(Next.js): ALBのSGからの3000番のみ
+  - 受信元をALBのSGだけにする点は superseded by [0013](0013-laravel-calls-nextjs-via-service-connect.md)
 - api(Laravel): ALBのSGからの80番と、webのSGからの8080番のみ
   - ALBのSGからの80番は superseded by [0010](0010-browser-talks-only-to-nextjs.md)
 - RDS・ElastiCache: private subnetに置き、許可元はタスクのSGのみ

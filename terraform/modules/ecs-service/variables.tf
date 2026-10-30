@@ -105,6 +105,11 @@ variable "app_key_secret_arn" {
   type        = string
 }
 
+variable "revalidate_secret_arn" {
+  description = "Next.js の /api/revalidate の共有シークレットの ARN。api(app・worker)と web に注入する。"
+  type        = string
+}
+
 variable "redis_url" {
   description = "ElastiCache の接続 URL(redis://host:port)。web / api 両タスクに注入する。"
   type        = string

@@ -6,10 +6,10 @@ VPC・サブネット・ルートテーブル・Security Group をまとめて�
 | SG | ingress | egress |
 |---|---|---|
 | `alb` | CloudFront のオリジン向け prefix list:443 | all |
-| `ecs-web` (Next.js) | alb-sg:3000 | all |
+| `ecs-web` (Next.js) | alb-sg:3000、ecs-api-sg:3000(East-West / Service Connect、`/api/revalidate`) | all |
 | `ecs-api` (Laravel) | ecs-web-sg:8080(East-West / Service Connect) | all |
 | `rds` | ecs-api-sg:3306  | なし |
-| `redis` | ecs-web-sg:6379(ISR 共有キャッシュ)、ecs-api-sg:6379(session/cache/queue) | なし |
+| `redis` | ecs-web-sg:6379(ISR 共有キャッシュ)、ecs-api-sg:6379(cache/queue) | なし |
 
 RDS / Redis は SG がステートフルなので egress ルールを持たない。
 
