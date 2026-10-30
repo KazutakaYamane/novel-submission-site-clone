@@ -109,14 +109,8 @@ module "api_service" {
       image     = var.api_nginx_image
       essential = true
 
-      # 80 は ALB 経由(ブラウザ)、8080 は Service Connect 経由(Next.js の SSR)。
-      # nginx は 8080 で受けたときだけ SSR が付けたユーザー IP を信頼する
+      # Next.js のサーバーだけが Service Connect の 8080 で呼ぶ。ALB には登録しない
       portMappings = [
-        {
-          name          = "http"
-          containerPort = 80
-          protocol      = "tcp"
-        },
         {
           name          = local.service_connect_api_name
           containerPort = 8080
@@ -133,6 +127,15 @@ module "api_service" {
       dependsOn = [
         { containerName = "app", condition = "START" },
       ]
+
+      # ALB のヘルスチェックがないため、nginx の /health(DB に依存しない)でタスクの健全性を見る
+      healthCheck = {
+        command     = ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 10
+      }
 
       readonlyRootFilesystem = false
 
@@ -191,14 +194,6 @@ module "api_service" {
     ]
   }
 
-  load_balancer = {
-    api = {
-      target_group_arn = aws_lb_target_group.api.arn
-      container_name   = "nginx"
-      container_port   = 80
-    }
-  }
-
   subnet_ids            = var.public_subnet_ids
   assign_public_ip      = true
   create_security_group = false
@@ -214,8 +209,6 @@ module "api_service" {
     var.app_key_secret_arn,
     var.db_password_secret_arn,
   ]
-
-  depends_on = [aws_lb_listener.https, aws_lb_listener_rule.api]
 
   tags = { Name = "${local.name}-api" }
 }

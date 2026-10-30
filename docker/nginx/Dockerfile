@@ -8,8 +8,7 @@
 # ------------------------------------------------------------
 FROM nginx:1.27-alpine AS base
 
-# ヘルスチェックに使う curl
-RUN apk add --no-cache curl tzdata \
+RUN apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
     && echo "Asia/Tokyo" > /etc/timezone
 
@@ -25,11 +24,12 @@ COPY docker/nginx/laravel.conf /etc/nginx/snippets/laravel.conf
 # php-fpm の宛先(compose のサービス名)。prod ステージで上書きする。
 ENV PHP_FPM_HOST=app
 
-# 本番想定: ALB のヘルスチェックは /health を叩く
+# compose 用。ECS はこの HEALTHCHECK を使わず、タスク定義の healthCheck で同じ /health を叩く。
+# wget は Alpine の BusyBox に含まれるため、ベースイメージが curl を外しても動く
 HEALTHCHECK --interval=10s --timeout=3s --retries=3 \
-    CMD curl -fsS http://127.0.0.1/health || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1:8080/health || exit 1
 
-EXPOSE 80 8080
+EXPOSE 8080
 
 # ------------------------------------------------------------
 # dev: compose が ./backend/public を read-only bind mount する(compose.yaml)

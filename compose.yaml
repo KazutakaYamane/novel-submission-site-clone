@@ -20,7 +20,7 @@ services:
       # PHP 実行自体は php-fpm 側のファイルシステムで行われる。
       - ./backend/public:/var/www/html/public:ro
     ports:
-      - "${APP_PORT:-8080}:80"
+      - "${APP_PORT:-8080}:8080"
     depends_on:
       app:
         condition: service_started

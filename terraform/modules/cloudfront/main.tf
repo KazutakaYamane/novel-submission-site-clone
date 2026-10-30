@@ -140,7 +140,7 @@ resource "aws_cloudfront_cache_policy" "next_image" {
 }
 
 # Managed-AllViewer は CloudFront-Viewer-Address を送らない。
-# nginx(API)と Next.js(SSR が X-User-IP に入れる)がユーザーの IP をこのヘッダーから取る
+# Next.js はユーザーの IP をこのヘッダーから取り、Laravel を呼ぶときに X-User-IP に入れる
 data "aws_cloudfront_origin_request_policy" "all_viewer_and_cloudfront_headers" {
   name = "Managed-AllViewerAndCloudFrontHeaders-2022-06"
 }
@@ -151,7 +151,7 @@ data "aws_cloudfront_origin_request_policy" "all_viewer_and_cloudfront_headers" 
 
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
-  comment         = "${local.name}: default,image->Next.js(ALB) / api->Laravel(ALB) / static->S3"
+  comment         = "${local.name}: default,image->Next.js(ALB) / static->S3"
   aliases         = [var.domain_name]
   is_ipv6_enabled = true
   http_version    = "http2and3"
@@ -189,20 +189,6 @@ resource "aws_cloudfront_distribution" "this" {
   # HTML はエッジに置かない。ISR のキャッシュは Next.js(ElastiCache)の1層だけにし、
   # revalidateTag を即時に効かせる。Next.js が付ける s-maxage もここで無視される
   default_cache_behavior {
-    target_origin_id       = local.origin_id_alb
-    viewer_protocol_policy = "redirect-to-https"
-
-    allowed_methods = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-    cached_methods  = ["GET", "HEAD"]
-
-    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
-    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer_and_cloudfront_headers.id
-
-    compress = true
-  }
-
-  ordered_cache_behavior {
-    path_pattern           = "/api/*"
     target_origin_id       = local.origin_id_alb
     viewer_protocol_policy = "redirect-to-https"
 
