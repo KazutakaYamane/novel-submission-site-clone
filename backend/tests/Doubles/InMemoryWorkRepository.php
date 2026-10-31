@@ -8,7 +8,7 @@ use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use DateTimeImmutable;
 
-final class InMemoryWorkRepository implements WorkRepositoryInterface
+final class InMemoryWorkRepository implements RollbackableDouble, WorkRepositoryInterface
 {
     /** @var array<string, Work> */
     public array $rows = [];
@@ -126,6 +126,19 @@ final class InMemoryWorkRepository implements WorkRepositoryInterface
             lastEpisodePublishedAt: $work->lastEpisodePublishedAt,
             createdAt: $stored->createdAt,
         );
+    }
+
+    /**
+     * @return array{rows: array<string, Work>, tagNames: array<string, string>}
+     */
+    public function snapshot(): array
+    {
+        return ['rows' => $this->rows, 'tagNames' => $this->tagNames];
+    }
+
+    public function restore(mixed $snapshot): void
+    {
+        ['rows' => $this->rows, 'tagNames' => $this->tagNames] = $snapshot;
     }
 
     /**
