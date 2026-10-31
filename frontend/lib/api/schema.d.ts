@@ -196,6 +196,22 @@ export interface paths {
         patch: operations["myWorks.updateWork"];
         trace?: never;
     };
+    "/demo/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["demo.startDemoSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/my/works/{work}/episodes/{episode}/unpublish": {
         parameters: {
             query?: never;
@@ -216,6 +232,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * DemoRole
+         * @enum {string}
+         */
+        DemoRole: "author" | "reader";
         /** EpisodeResource */
         EpisodeResource: {
             id: string;
@@ -312,6 +333,10 @@ export interface components {
              */
             email: string;
             password: string;
+        };
+        /** StartDemoSessionRequest */
+        StartDemoSessionRequest: {
+            role: components["schemas"]["DemoRole"];
         };
         /** StoreEpisodeRequest */
         StoreEpisodeRequest: {
@@ -958,6 +983,36 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "demo.startDemoSession": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartDemoSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description `UserResource` */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["UserResource"];
+                        token: string;
+                        expires_at: string;
+                        sample_work_id: string | null;
+                    };
+                };
+            };
             422: components["responses"]["ValidationException"];
         };
     };

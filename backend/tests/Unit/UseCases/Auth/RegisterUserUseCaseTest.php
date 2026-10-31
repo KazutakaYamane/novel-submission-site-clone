@@ -1,47 +1,17 @@
 <?php
 
-use App\Domain\Auth\AccessTokensInterface;
-use App\Domain\Auth\IssuedToken;
-use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\User\EmailAlreadyTakenException;
 use App\UseCases\Auth\RegisterUserUseCase;
+use Tests\Doubles\InMemoryAccessTokens;
 use Tests\Doubles\InMemoryUserRepository;
+use Tests\Doubles\PrefixPasswordHasher;
 
 beforeEach(function () {
     $this->users = new InMemoryUserRepository;
 
-    $hasher = new class implements PasswordHasherInterface
-    {
-        public function hash(string $plain): string
-        {
-            return 'hashed:'.$plain;
-        }
-
-        public function check(string $plain, string $hashed): bool
-        {
-            return $hashed === 'hashed:'.$plain;
-        }
-    };
-
-    $this->tokens = new class implements AccessTokensInterface
-    {
-        /** @var array<string, string> 平文トークン => ユーザー ID */
-        public array $issued = [];
-
-        public function issue(string $userId): IssuedToken
-        {
-            $token = 'token-'.count($this->issued);
-            $this->issued[$token] = $userId;
-
-            return new IssuedToken($token, new DateTimeImmutable('+7 days'));
-        }
-
-        public function revoke(string $plainTextToken): void
-        {
-            unset($this->issued[$plainTextToken]);
-        }
-    };
+    $hasher = new PrefixPasswordHasher;
+    $this->tokens = new InMemoryAccessTokens;
 
     // メモリ上の double には巻き戻す DB がないので、処理をそのまま実行する
     $transaction = new class implements TransactionInterface

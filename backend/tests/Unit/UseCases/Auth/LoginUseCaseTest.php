@@ -1,10 +1,9 @@
 <?php
 
-use App\Domain\Auth\AccessTokensInterface;
 use App\Domain\Auth\InvalidCredentialsException;
-use App\Domain\Auth\IssuedToken;
 use App\Domain\Shared\PasswordHasherInterface;
 use App\UseCases\Auth\LoginUseCase;
+use Tests\Doubles\InMemoryAccessTokens;
 use Tests\Doubles\InMemoryUserRepository;
 
 beforeEach(function () {
@@ -28,24 +27,7 @@ beforeEach(function () {
         }
     };
 
-    $this->tokens = new class implements AccessTokensInterface
-    {
-        /** @var array<string, string> 平文トークン => ユーザー ID */
-        public array $issued = [];
-
-        public function issue(string $userId): IssuedToken
-        {
-            $token = 'token-'.count($this->issued);
-            $this->issued[$token] = $userId;
-
-            return new IssuedToken($token, new DateTimeImmutable('+7 days'));
-        }
-
-        public function revoke(string $plainTextToken): void
-        {
-            unset($this->issued[$plainTextToken]);
-        }
-    };
+    $this->tokens = new InMemoryAccessTokens;
 
     $this->users->create('山田太郎', 'taro@example.com', 'hashed:password123');
     $this->loginUseCase = new LoginUseCase($this->users, $this->hasher, $this->tokens);

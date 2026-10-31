@@ -7,7 +7,7 @@ use App\Domain\User\UserCredentials;
 use App\Domain\User\UserRepositoryInterface;
 use DateTimeImmutable;
 
-final class InMemoryUserRepository implements UserRepositoryInterface
+final class InMemoryUserRepository implements RollbackableDouble, UserRepositoryInterface
 {
     /** @var array<string, array{user: User, hashedPassword: string}> */
     public array $rows = [];
@@ -43,5 +43,15 @@ final class InMemoryUserRepository implements UserRepositoryInterface
         $this->rows[$email] = ['user' => $user, 'hashedPassword' => $hashedPassword];
 
         return $user;
+    }
+
+    public function snapshot(): mixed
+    {
+        return $this->rows;
+    }
+
+    public function restore(mixed $snapshot): void
+    {
+        $this->rows = $snapshot;
     }
 }
