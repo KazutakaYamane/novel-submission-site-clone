@@ -9,7 +9,7 @@ use App\Domain\Episode\EpisodeSummary;
 use App\Domain\Work\WorkRepositoryInterface;
 use DateTimeImmutable;
 
-final class InMemoryEpisodeRepository implements EpisodeRepositoryInterface
+final class InMemoryEpisodeRepository implements EpisodeRepositoryInterface, RollbackableDouble
 {
     /** @var array<string, Episode> */
     public array $rows = [];
@@ -141,6 +141,19 @@ final class InMemoryEpisodeRepository implements EpisodeRepositoryInterface
         );
 
         return $dates === [] ? null : max($dates);
+    }
+
+    /**
+     * @return array<string, Episode>
+     */
+    public function snapshot(): array
+    {
+        return $this->rows;
+    }
+
+    public function restore(mixed $snapshot): void
+    {
+        $this->rows = $snapshot;
     }
 
     private static function toSummary(Episode $episode): EpisodeSummary

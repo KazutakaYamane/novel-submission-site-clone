@@ -6,8 +6,6 @@ use App\Domain\Episode\EpisodeNotFoundException;
 use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Episode\EpisodeSummary;
 use App\Domain\Episode\InvalidEpisodeTransitionException;
-use App\Domain\Shared\ClockInterface;
-use App\Domain\Shared\TransactionInterface;
 use App\Domain\Work\Genre;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkAccessDeniedException;
@@ -19,8 +17,10 @@ use App\UseCases\Episode\ListMyEpisodesUseCase;
 use App\UseCases\Episode\PublishEpisodeUseCase;
 use App\UseCases\Episode\UnpublishEpisodeUseCase;
 use App\UseCases\Episode\UpdateMyEpisodeUseCase;
+use Tests\Doubles\FixedClock;
 use Tests\Doubles\InMemoryEpisodeRepository;
 use Tests\Doubles\InMemoryPublicPageCache;
+use Tests\Doubles\InMemoryTransaction;
 use Tests\Doubles\InMemoryWorkRepository;
 
 beforeEach(function () {
@@ -30,40 +30,9 @@ beforeEach(function () {
 
     $this->pageCache = new InMemoryPublicPageCache;
 
-    $this->transaction = new class([$this->works, $this->episodes]) implements TransactionInterface
-    {
-        /** @param  list<object{rows: array<string, mixed>}>  $repositories */
-        public function __construct(private array $repositories) {}
+    $this->transaction = new InMemoryTransaction([$this->works, $this->episodes]);
 
-        public function run(callable $callback): mixed
-        {
-            // 本物と同じく、例外で抜けたら書き込みを取り消す
-            $snapshots = array_map(fn (object $repository) => $repository->rows, $this->repositories);
-            try {
-                return $callback();
-            } catch (Throwable $e) {
-                foreach ($this->repositories as $i => $repository) {
-                    $repository->rows = $snapshots[$i];
-                }
-                throw $e;
-            }
-        }
-    };
-
-    $this->clock = new class implements ClockInterface
-    {
-        public DateTimeImmutable $now;
-
-        public function __construct()
-        {
-            $this->now = new DateTimeImmutable('2026-10-22 12:00:00');
-        }
-
-        public function now(): DateTimeImmutable
-        {
-            return $this->now;
-        }
-    };
+    $this->clock = new FixedClock(new DateTimeImmutable('2026-10-22 12:00:00'));
 
     $this->addWork = function (string $id, string $userId, ?DateTimeImmutable $publishedAt = null): Work {
         return $this->works->rows[$id] = new Work(
