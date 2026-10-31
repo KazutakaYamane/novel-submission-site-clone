@@ -1,0 +1,14 @@
+{
+    "title": "はじめての連載(デモ)",
+    "catchphrase": "書き換えて、公開してみてください",
+    "introduction": "デモ作者のために用意した作品です。\n題名・あらすじ・本文は自由に書き換えられます。\nデータは毎日 4:00 に元に戻ります。",
+    "genre": "drama",
+    "status": "ongoing",
+    "rating_flags": [],
+    "tags": ["デモ"],
+    "episodes": [
+        { "title": "ルビを振る", "body_file": "episode-1.txt", "published_before": "P1D" },
+        { "title": "傍点を打つ", "body_file": "episode-2.txt", "published_before": "PT1H" },
+        { "title": "公開してみましょう", "body_file": "episode-3.txt", "published_before": null }
+    ]
+}

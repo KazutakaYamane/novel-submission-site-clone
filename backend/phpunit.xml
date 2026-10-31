@@ -37,6 +37,9 @@
         <server name="MAIL_MAILER" value="array" force="true"/>
         <env name="QUEUE_CONNECTION" value="database" force="true"/>
         <server name="QUEUE_CONNECTION" value="database" force="true"/>
+        <!-- compose の app は E2E のために上限を上げているので、本番と同じ値に戻す -->
+        <env name="DEMO_RATE_LIMIT_PER_HOUR" value="10" force="true"/>
+        <server name="DEMO_RATE_LIMIT_PER_HOUR" value="10" force="true"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

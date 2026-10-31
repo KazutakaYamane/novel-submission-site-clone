@@ -932,6 +932,63 @@
                 }
             }
         },
+        "/demo/sessions": {
+            "post": {
+                "operationId": "demo.startDemoSession",
+                "tags": [
+                    "StartDemoSession"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StartDemoSessionRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "`UserResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/UserResource"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "expires_at": {
+                                            "type": "string"
+                                        },
+                                        "sample_work_id": {
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "token",
+                                        "expires_at",
+                                        "sample_work_id"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
         "/my/works/{work}/episodes/{episode}/unpublish": {
             "post": {
                 "operationId": "myWorks.unpublishEpisode",
@@ -1018,6 +1075,14 @@
             }
         },
         "schemas": {
+            "DemoRole": {
+                "type": "string",
+                "enum": [
+                    "author",
+                    "reader"
+                ],
+                "title": "DemoRole"
+            },
             "EpisodeResource": {
                 "type": "object",
                 "properties": {
@@ -1377,6 +1442,18 @@
                     "password"
                 ],
                 "title": "RegisterRequest"
+            },
+            "StartDemoSessionRequest": {
+                "type": "object",
+                "properties": {
+                    "role": {
+                        "$ref": "#/components/schemas/DemoRole"
+                    }
+                },
+                "required": [
+                    "role"
+                ],
+                "title": "StartDemoSessionRequest"
             },
             "StoreEpisodeRequest": {
                 "type": "object",

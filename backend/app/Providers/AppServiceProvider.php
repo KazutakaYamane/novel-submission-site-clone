@@ -3,16 +3,19 @@
 namespace App\Providers;
 
 use App\Domain\Auth\AccessTokensInterface;
+use App\Domain\Demo\SampleWorkSourceInterface;
 use App\Domain\Episode\EpisodeRepositoryInterface;
 use App\Domain\Health\DependencyCheckerInterface;
 use App\Domain\Shared\ClockInterface;
 use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Shared\TransactionInterface;
+use App\Domain\Shared\UuidGeneratorInterface;
 use App\Domain\User\UserRepositoryInterface;
 use App\Domain\Work\WorkRepositoryInterface;
 use App\Infrastructure\Clock\LaravelClock;
 use App\Infrastructure\Database\DatabaseTransaction;
+use App\Infrastructure\Demo\FileSampleWorkSource;
 use App\Infrastructure\Eloquent\EloquentServiceProvider;
 use App\Infrastructure\Eloquent\Repositories\EloquentEpisodeRepository;
 use App\Infrastructure\Eloquent\Repositories\EloquentUserRepository;
@@ -21,6 +24,7 @@ use App\Infrastructure\Hashing\LaravelPasswordHasher;
 use App\Infrastructure\Health\LaravelDependencyChecker;
 use App\Infrastructure\PageCache\NextPublicPageCache;
 use App\Infrastructure\Sanctum\SanctumAccessTokens;
+use App\Infrastructure\Uuid\LaravelUuidGenerator;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -42,6 +46,8 @@ class AppServiceProvider extends ServiceProvider
         TransactionInterface::class => DatabaseTransaction::class,
         ClockInterface::class => LaravelClock::class,
         PublicPageCacheInterface::class => NextPublicPageCache::class,
+        UuidGeneratorInterface::class => LaravelUuidGenerator::class,
+        SampleWorkSourceInterface::class => FileSampleWorkSource::class,
     ];
 
     public function register(): void
@@ -58,5 +64,7 @@ class AppServiceProvider extends ServiceProvider
     {
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)
             ->by(mb_strtolower($request->string('email')->toString()).'|'.$request->ip()));
+        RateLimiter::for('demo', fn (Request $request) => Limit::perHour(config()->integer('demo.rate_limit_per_hour'))
+            ->by((string) $request->ip()));
     }
 }

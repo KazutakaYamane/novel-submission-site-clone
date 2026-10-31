@@ -75,6 +75,9 @@ services:
       # scripts/e2e-cache.sh が worker だけを web-prod に向けて作り直すため、上書きできるようにする
       NEXT_REVALIDATE_URL: ${NEXT_REVALIDATE_URL:-http://web:3000}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET:-local-revalidate-secret}
+      # E2E は同じ IP(web コンテナ)から何度もデモを始めるので、IP ごとの上限(本番の既定は 10)を上げる。
+      # Pest は phpunit.xml で本番と同じ値に戻す
+      DEMO_RATE_LIMIT_PER_HOUR: 1000
     depends_on:
       db:
         condition: service_healthy
