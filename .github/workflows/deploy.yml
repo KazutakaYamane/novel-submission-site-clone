@@ -30,21 +30,63 @@ env:
   SSM_IMAGE_TAG_PREFIX: /novel-submission-site-clone/prod/image-tag
 
 jobs:
+  # concurrency は待機中の実行を最新の 1 つしか残さないため、push 1 回分の差分で判定すると
+  # キャンセルされた実行の変更がどこでもビルドされない。最後にデプロイに成功した SHA からの差分で判定する。
+  # 基準の SHA が無い(手動実行・SSM 未作成・force push で履歴に無い)側は全部ビルドする
   changes:
     runs-on: ubuntu-24.04-arm
     outputs:
-      laravel: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.laravel == 'true' }}
-      nextjs: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.nextjs == 'true' }}
+      laravel: ${{ steps.base.outputs.laravel == '' || steps.laravel.outputs.laravel == 'true' }}
+      nextjs: ${{ steps.base.outputs.nextjs == '' || steps.nextjs.outputs.nextjs == 'true' }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v4
-        id: filter
+        if: github.event_name == 'push'
         with:
+          fetch-depth: 0
+      - uses: aws-actions/configure-aws-credentials@v6
+        if: github.event_name == 'push'
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: resolve deployed SHAs
+        id: base
+        if: github.event_name == 'push'
+        run: |
+          # 成功時も CLI が stderr に警告を出すことがあるため、値と混ぜずに受ける
+          err="$RUNNER_TEMP/ssm-error"
+          for side in laravel nextjs; do
+            if sha=$(aws ssm get-parameter --name "$SSM_IMAGE_TAG_PREFIX/$side" \
+                  --query Parameter.Value --output text 2>"$err"); then
+              if git cat-file -e "$sha^{commit}" 2>/dev/null; then
+                echo "$side=$sha" >> "$GITHUB_OUTPUT"
+              else
+                echo "::notice::$side の記録済み SHA($sha)が履歴に無いため、全部ビルドする"
+              fi
+            elif grep -q ParameterNotFound "$err"; then
+              echo "::notice::$SSM_IMAGE_TAG_PREFIX/$side が無いため、$side を全部ビルドする"
+            else
+              cat "$err"
+              exit 1
+            fi
+          done
+      - uses: dorny/paths-filter@v4
+        id: laravel
+        if: steps.base.outputs.laravel != ''
+        with:
+          base: ${{ steps.base.outputs.laravel }}
+          ref: ${{ github.sha }}
           filters: |
             laravel:
               - 'backend/**'
               - 'docker/app/**'
               - 'docker/nginx/**'
+      - uses: dorny/paths-filter@v4
+        id: nextjs
+        if: steps.base.outputs.nextjs != ''
+        with:
+          base: ${{ steps.base.outputs.nextjs }}
+          ref: ${{ github.sha }}
+          filters: |
             nextjs:
               - 'frontend/**'
               - 'docker/node/**'

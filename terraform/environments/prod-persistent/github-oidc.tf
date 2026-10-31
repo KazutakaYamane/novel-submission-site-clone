@@ -139,10 +139,11 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = [for repo in aws_ecr_repository.this : repo.arn]
   }
 
-  # デプロイに成功したイメージの SHA の記録(prod の Terraform が起動時に読む)
+  # デプロイに成功したイメージの SHA の記録(prod の Terraform が起動時に読む)。
+  # 読み取りは、次のデプロイでその SHA からの差分をビルド対象にするため
   statement {
     sid       = "SsmImageTag"
-    actions   = ["ssm:PutParameter"]
+    actions   = ["ssm:GetParameter", "ssm:PutParameter"]
     resources = ["arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.project}/${var.environment}/image-tag/*"]
   }
 
