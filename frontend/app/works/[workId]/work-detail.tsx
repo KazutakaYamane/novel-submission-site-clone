@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getPublishedWork } from "@/lib/api/works";
 import { genreLabel, ratingFlagLabels, statusLabel } from "@/lib/work-attributes";
 import { formatDate } from "./format";
+import styles from "./work-detail.module.css";
 
 export async function WorkDetail({ params }: { params: Promise<{ workId: string }> }) {
   const { workId } = await params;
@@ -35,8 +36,7 @@ export async function WorkDetail({ params }: { params: Promise<{ workId: string 
       </dl>
       <section>
         <h2>あらすじ</h2>
-        {/* 作者が入れた改行をそのまま見せる */}
-        <p style={{ whiteSpace: "pre-wrap" }}>{work.introduction}</p>
+        <p className={styles.introduction}>{work.introduction}</p>
       </section>
       <section>
         <h2>目次</h2>

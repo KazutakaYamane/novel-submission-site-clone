@@ -1,5 +1,6 @@
 "use client";
 import { startTransition, useSyncExternalStore, type ComponentProps, type FormEvent } from "react";
+import styles from "./form.module.css";
 
 const subscribe = () => () => {};
 
@@ -28,7 +29,7 @@ export function Form({ action, children, ...props }: FormProps) {
   // E2E は data-hydrated を待ってから操作する
   return (
     <form {...props} onSubmit={handleSubmit} data-hydrated={hydrated || undefined}>
-      <fieldset disabled={!hydrated} style={{ border: 0, padding: 0, margin: 0 }}>
+      <fieldset disabled={!hydrated} className={styles.fields}>
         {children}
       </fieldset>
     </form>
