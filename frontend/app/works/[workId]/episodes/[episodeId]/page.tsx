@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { getPublishedEpisode } from "@/lib/api/episodes";
 import { EpisodeBody } from "./episode-body";
 import { episodeMetadata } from "./metadata";
@@ -18,10 +19,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // page は境界を並べるだけ。params は Suspense の中で await する
 export default function EpisodePage({ params }: Props) {
   return (
-    <main>
-      <Suspense fallback={<p>読み込み中…</p>}>
-        <EpisodeBody params={params} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader />
+      <main>
+        <Suspense fallback={<p>読み込み中…</p>}>
+          <EpisodeBody params={params} />
+        </Suspense>
+      </main>
+    </>
   );
 }

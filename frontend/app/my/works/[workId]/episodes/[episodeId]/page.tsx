@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { getMyEpisode } from "@/lib/api/my-episodes";
 import { EpisodeEditor } from "./episode-editor";
 
@@ -8,11 +9,14 @@ type Props = PageProps<"/my/works/[workId]/episodes/[episodeId]">;
 
 export default function EditEpisodePage({ params }: Props) {
   return (
-    <main>
-      <Suspense fallback={<p>読み込み中…</p>}>
-        <EditEpisode params={params} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader />
+      <main>
+        <Suspense fallback={<p>読み込み中…</p>}>
+          <EditEpisode params={params} />
+        </Suspense>
+      </main>
+    </>
   );
 }
 

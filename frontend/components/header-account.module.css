@@ -1,0 +1,101 @@
+.account {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.userName {
+  max-width: 200px;
+  overflow: hidden;
+  padding: 0 var(--space-2s);
+  color: var(--color-text-weak);
+  font-size: var(--font-size-12_6);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 本家のヘッダーの「ログイン」: 12.6px、左右 16px、帯の高さいっぱい */
+.link {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--space-m);
+  border: 0;
+  background: none;
+  font-size: var(--font-size-12_6);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ログアウトのボタンは Form の form・fieldset に包まれるので、帯の高さを渡す */
+.account > form,
+.account > form > fieldset {
+  height: 100%;
+}
+
+/* 本家の「新規登録(無料)」: 高さ 34px の丸い塗り、padding 8px 12px、12.6px、字間 1px */
+.signup {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  padding: var(--space-2s) 12px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-size: var(--font-size-12_6);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.demo {
+  margin-right: var(--space-2s);
+}
+
+@media (max-width: 640px) {
+  .account {
+    gap: var(--space-2s);
+    padding-right: var(--space-2s);
+  }
+
+  .userName {
+    max-width: 120px;
+    padding: 0;
+    font-size: var(--font-size-11_5);
+  }
+
+  /* 本家のスマホの「ログイン」は 48×34 で、文字の幅とほぼ同じ */
+  .link {
+    padding: 0 1px;
+    font-size: var(--font-size-11_5);
+  }
+
+  /* 本家のスマホの「新規登録」: 高さ 22px、左右 8px、11.5px */
+  .signup {
+    height: 22px;
+    padding: 0 var(--space-2s);
+    font-size: var(--font-size-11_5);
+    letter-spacing: 0;
+  }
+
+  .pcOnly {
+    display: none;
+  }
+
+  /* 1 段目には入らないので、2 段目(高さ 45px)の幅いっぱいに置く */
+  .demo {
+    position: absolute;
+    top: var(--header-row-height);
+    right: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    height: var(--header-subnav-height);
+    margin: 0;
+    padding: 0 var(--space-1s);
+  }
+
+  .demo > form {
+    flex: 1;
+  }
+}

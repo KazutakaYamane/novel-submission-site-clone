@@ -2,6 +2,47 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
+const PAGE_HEADER = new Set(["SiteHeader"]);
+const HEADER_ELEMENTS = new Set(["SiteHeader", "SiteHeaderFrame"]);
+
+function rendersElement(node, names) {
+  return node.name.type === "JSXIdentifier" && names.has(node.name.name);
+}
+
+// frontend/AGENTS.md の「Site header」: layout はクライアントの遷移で描画し直されないので、
+// ログイン状態を含むヘッダーは各 page が描画する
+const siteHeaderPlugin = {
+  rules: {
+    "require-in-page": {
+      meta: { type: "problem", messages: { missing: "page.tsx・not-found.tsx は <SiteHeader /> を描画する" } },
+      create(context) {
+        let found = false;
+        return {
+          JSXOpeningElement(node) {
+            if (rendersElement(node, PAGE_HEADER)) found = true;
+          },
+          "Program:exit"(node) {
+            if (!found) context.report({ node, messageId: "missing" });
+          },
+        };
+      },
+    },
+    "forbid-in-layout": {
+      meta: {
+        type: "problem",
+        messages: { forbidden: "layout はクライアントの遷移で描画し直されないので、ヘッダーは各 page で描画する" },
+      },
+      create(context) {
+        return {
+          JSXOpeningElement(node) {
+            if (rendersElement(node, HEADER_ELEMENTS)) context.report({ node, messageId: "forbidden" });
+          },
+        };
+      },
+    },
+  },
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -41,6 +82,16 @@ const eslintConfig = defineConfig([
         { forbid: [{ propName: "style", message: "スタイルは同じフォルダの <name>.module.css に書く" }] },
       ],
     },
+  },
+  {
+    files: ["app/**/page.tsx", "app/**/not-found.tsx"],
+    plugins: { "site-header": siteHeaderPlugin },
+    rules: { "site-header/require-in-page": "error" },
+  },
+  {
+    files: ["app/**/layout.tsx"],
+    plugins: { "site-header": siteHeaderPlugin },
+    rules: { "site-header/forbid-in-layout": "error" },
   },
   {
     files: ["lib/api/client.ts"],

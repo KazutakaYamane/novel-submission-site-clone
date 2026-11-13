@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
-import { SITE_NAME } from "./site";
+import { SITE_NAME } from "@/lib/site";
 import { SiteFooter } from "./site-footer";
-import { SiteHeader } from "./site-header";
 import "./globals.css";
 import styles from "./layout.module.css";
 
@@ -25,7 +24,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ja" className={`${notoSans.variable} ${notoSerif.variable}`}>
       <body className={styles.body}>
-        <SiteHeader />
         <div className={styles.content}>{children}</div>
         <SiteFooter />
       </body>

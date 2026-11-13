@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { WorkForm } from "@/components/work-form";
 import { listMyEpisodes } from "@/lib/api/my-episodes";
 import { getMyWork } from "@/lib/api/my-works";
@@ -12,11 +13,14 @@ type Props = PageProps<"/my/works/[workId]">;
 
 export default function EditWorkPage({ params }: Props) {
   return (
-    <main>
-      <Suspense fallback={<p>読み込み中…</p>}>
-        <EditWork params={params} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader />
+      <main>
+        <Suspense fallback={<p>読み込み中…</p>}>
+          <EditWork params={params} />
+        </Suspense>
+      </main>
+    </>
   );
 }
 
