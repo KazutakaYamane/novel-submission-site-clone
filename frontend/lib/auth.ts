@@ -8,7 +8,7 @@ export async function readToken(): Promise<string | undefined> {
   return (await cookies()).get(TOKEN_COOKIE)?.value;
 }
 
-// ログイン・登録・ログアウトの action と、action の中で 401 を受けたときだけ呼ぶ
+// ログイン・登録・デモの開始の action だけが呼ぶ
 export async function setToken(token: string, expiresAt: string): Promise<void> {
   const maxAge = Math.max(0, Math.floor((Date.parse(expiresAt) - Date.now()) / 1000));
   (await cookies()).set(TOKEN_COOKIE, token, {

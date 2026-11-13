@@ -1,4 +1,4 @@
-import { REPOSITORY_URL, SITE_NAME } from "./site";
+import { REPOSITORY_URL, SITE_NAME } from "@/lib/site";
 import styles from "./site-footer.module.css";
 
 export function SiteFooter() {

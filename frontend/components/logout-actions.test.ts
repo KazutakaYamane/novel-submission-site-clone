@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { logoutAction } from "./actions";
+import { logoutAction } from "./logout-actions";
 
 const request = vi.hoisted(() => ({
   cookies: new Map<string, string>(),

@@ -1,0 +1,4 @@
+.message {
+  color: var(--color-text-weak);
+  font-size: var(--font-size-12_6);
+}

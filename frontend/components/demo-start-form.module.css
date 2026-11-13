@@ -1,0 +1,98 @@
+.buttons {
+  display: flex;
+  gap: var(--space-2s);
+}
+
+.button {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* 本家の「新規登録(無料)」と同じ高さ 34px の丸いボタン。新規登録より目立たないよう、枠線だけにする */
+.header {
+  position: relative;
+}
+
+.header .button {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-link);
+  font-size: var(--font-size-12_6);
+  letter-spacing: 1px;
+}
+
+/* 帯の高さに文言が入らないので、帯の下に重ねる */
+.header .alert {
+  position: absolute;
+  top: calc(100% + var(--space-2s));
+  right: 0;
+  width: max-content;
+  max-width: 320px;
+  padding: var(--space-2s) var(--space-1s);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: var(--font-size-12_6);
+  white-space: normal;
+}
+
+/* 本家の塗りのボタン(「1話目から読む」)と同じ値 */
+.page .buttons {
+  flex-wrap: wrap;
+}
+
+.page .button {
+  height: 36px;
+  padding: 0 var(--space-m);
+  border: 1px solid var(--color-primary-dark);
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.page .alert {
+  margin-top: var(--space-2s);
+}
+
+/*
+ * 641〜800px では、ロゴ・デモのボタン 2 つ・ログイン・新規登録が帯の 1 段目に入らない。
+ * 「として始める」を見た目だけ隠す。ボタンの名前は aria-label で変えない
+ */
+@media (min-width: 641px) and (max-width: 800px) {
+  .header .suffix {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .header .button {
+    flex: 1;
+    min-width: 0;
+    height: 33px;
+    padding: 0 var(--space-2s);
+    font-size: var(--font-size-11_5);
+    letter-spacing: 0;
+  }
+
+  .header .alert {
+    top: 100%;
+    right: var(--space-1s);
+    left: var(--space-1s);
+    width: auto;
+    max-width: none;
+  }
+}

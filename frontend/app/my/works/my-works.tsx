@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/api/me";
 import { listMyWorks } from "@/lib/api/my-works";
 import { redirectUnauthenticated } from "@/lib/auth";
-import { LogoutButton } from "./logout-button";
 
 export async function MyWorks() {
   // listMyWorks は 401 で自分でリダイレクトするので、ユーザーの確認を待たずに並べて呼ぶ
@@ -22,7 +21,6 @@ export async function MyWorks() {
           </li>
         ))}
       </ul>
-      <LogoutButton />
     </main>
   );
 }

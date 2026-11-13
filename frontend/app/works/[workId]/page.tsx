@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { SiteHeader } from "@/components/site-header";
 import { getPublishedWork } from "@/lib/api/works";
 import { workMetadata } from "./metadata";
 import { WorkDetail } from "./work-detail";
@@ -18,10 +19,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // page は境界を並べるだけ。params は Suspense の中で await する
 export default function WorkPage({ params }: Props) {
   return (
-    <main>
-      <Suspense fallback={<p>読み込み中…</p>}>
-        <WorkDetail params={params} />
-      </Suspense>
-    </main>
+    <>
+      <SiteHeader />
+      <main>
+        <Suspense fallback={<p>読み込み中…</p>}>
+          <WorkDetail params={params} />
+        </Suspense>
+      </main>
+    </>
   );
 }
