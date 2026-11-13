@@ -32,6 +32,14 @@ const eslintConfig = defineConfig([
           message: "フォームは components/form.tsx の Form を使う(<form action> は 422 のときも入力をリセットする)",
         },
       ],
+      "react/forbid-dom-props": [
+        "error",
+        { forbid: [{ propName: "style", message: "スタイルは同じフォルダの <name>.module.css に書く" }] },
+      ],
+      "react/forbid-component-props": [
+        "error",
+        { forbid: [{ propName: "style", message: "スタイルは同じフォルダの <name>.module.css に書く" }] },
+      ],
     },
   },
   {

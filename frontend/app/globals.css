@@ -1,17 +1,166 @@
+/*
+ * 値は本家のページから採取した寸法と色(computed style と画面の画像)から取る。
+ * スマホとの境目は 640px(本家のスマホの外枠の最大幅)。メディアクエリの条件には CSS 変数を使えないので、
+ * 各 .module.css に @media (max-width: 640px) と書く。
+ */
+:root {
+  --color-text: #222;
+  --color-text-weak: #666;
+  --color-text-weaker: #888;
+  --color-text-weakest: #999;
+  --color-primary: #4baae0;
+  --color-primary-dark: #0990cc;
+  --color-link: #0081c2;
+  --color-border: #ddd;
+  --color-border-light: #eee;
+  --color-border-bar: #e5e5e5;
+  --color-border-button: #bbb;
+  --color-border-checkbox: #ccc;
+  --color-border-login-button: #999;
+  --color-bg: #fff;
+  --color-bg-footer: #f7f6f5;
+  --color-bg-beige: #f2f1f0;
+  --color-bg-sky: #e9f5fb;
+  --color-bg-button-gray: #ddd;
+  --color-badge-unpublished: #ead5b5;
+  --color-badge-draft: #eee;
+  --color-chapter: #915cbf;
+  --color-chapter-number: #7942a8;
+  --color-white: #fff;
+  --shadow-header: 0 1px 0 0 rgb(0 0 0 / 5%);
+  --shadow-sticky-bottom: 0 -1px 0 0 rgb(0 0 0 / 10%);
+
+  /* 本家と同じく OS のフォントを先に並べ、どれも無い環境(Linux・Android)だけ Noto を読む。--font-noto-* は layout.tsx の next/font が定義する */
+  --font-family-sans:
+    "Helvetica Neue", helvetica, arial, "ヒラギノ角ゴ Pr6N", "Hiragino Kaku Gothic Pr6N", "ヒラギノ角ゴ ProN",
+    "Hiragino Kaku Gothic ProN", "ヒラギノ角ゴ StdN", "Hiragino Kaku Gothic StdN", "Segoe UI", verdana, メイリオ, meiryo,
+    var(--font-noto-sans-jp), sans-serif;
+  --font-family-serif:
+    游明朝, yumincho, "ヒラギノ明朝 Pr6N", "Hiragino Mincho Pr6N", "ヒラギノ明朝 ProN", "Hiragino Mincho ProN",
+    "ヒラギノ明朝 StdN", "Hiragino Mincho StdN", hiraminpron-w3, hgs明朝b, hg明朝b, var(--font-noto-serif-jp), serif;
+
+  /* 名前の数字は px。小数点は _ で書く */
+  --font-size-8: 8px;
+  --font-size-9: 9px;
+  --font-size-10: 10px;
+  --font-size-11: 11px;
+  --font-size-11_5: 11.5px;
+  --font-size-12: 12px;
+  --font-size-12_6: 12.6px;
+  --font-size-14: 14px;
+  --font-size-16: 16px;
+  --font-size-16_25: 16.25px;
+  --font-size-17_5: 17.5px;
+  --font-size-18: 18px;
+  --font-size-20: 20px;
+  --font-size-21: 21px;
+  --font-size-22_75: 22.75px;
+  --font-size-24: 24px;
+  --font-size-24_5: 24.5px;
+  --font-size-28: 28px;
+  --font-size-35: 35px;
+  --font-size-42: 42px;
+  --line-height-base: 1.8;
+  --line-height-tight: 1.2;
+  --line-height-heading: 1.3;
+  --line-height-list: 1.5;
+
+  /* 段の名前は本家の余白のクラス名(NewBox_padding-*・Gap_size-*)に合わせる */
+  --space-4s: 4px;
+  --space-3s: 6px;
+  --space-2s: 8px;
+  --space-1s: 10px;
+  --space-m: 16px;
+  --space-2l: 24px;
+  --space-3l: 28px;
+  --space-4l: 32px;
+  --space-6l: 45px;
+  --space-7l: 64px;
+
+  --radius-button: 3px;
+  --radius-pill: 9999px;
+
+  --width-page: 1185px;
+  --width-page-padding: 30px;
+  --width-episode-body: 665px;
+  --width-episode-aside: 330px;
+  /* ヘッダーの帯は 1 段目(ロゴの行)と、スマホだけにある 2 段目(ナビ)からなる */
+  --header-row-height: 50px;
+  --header-subnav-height: 0px;
+  --header-height: calc(var(--header-row-height) + var(--header-subnav-height));
+}
+
+@media (max-width: 640px) {
+  :root {
+    --width-page: 640px;
+    --width-page-padding: 0px;
+    --header-row-height: 34px;
+    --header-subnav-height: 45px;
+    --shadow-header: 0 1px 0 0 rgb(0 0 0 / 10%);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  line-height: var(--line-height-base);
+  /* ヘッダーを固定しているので、ブラウザが要素へスクロールするとき(ページ内リンク・入力の検証で失敗した欄)にヘッダーの下へ隠さない */
+  scroll-padding-top: var(--header-height);
+}
+
 body {
   margin: 0;
-  font-family: sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-14);
+  -webkit-text-size-adjust: 100%;
 }
 
-main {
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+dl,
+dd,
+figure,
+blockquote,
 pre {
-  overflow-x: auto;
-  padding: 1rem;
-  background: #18181b;
-  color: #f4f4f5;
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-size: inherit;
+}
+
+/* 本家のリンクは本文と同じ色で、下線を付けない */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
 }

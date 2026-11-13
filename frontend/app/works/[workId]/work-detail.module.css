@@ -1,0 +1,4 @@
+/* 作者が入れた改行をそのまま見せる */
+.introduction {
+  white-space: pre-wrap;
+}

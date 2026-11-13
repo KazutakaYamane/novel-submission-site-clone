@@ -12,7 +12,7 @@ Tags on each rule:
 
 Node runs in the container: `docker compose exec web <cmd>`
 
-- Lint: `npm run lint`
+- Lint: `npm run lint` (ESLint, then stylelint on `**/*.css`)
 - Type check: `npm run typecheck` (`next typegen` generates `PageProps` / `LayoutProps`, then `tsc --noEmit`)
 - Unit test: `npm run test [-- path]` (Vitest)
 - Build: `npm run build`. Run it after changing any route: missing `<Suspense>` boundaries and `server-only` violations fail only at build.
@@ -30,6 +30,7 @@ Node runs in the container: `docker compose exec web <cmd>`
 app/                         routes; files used by one route live in that route's folder
   <route>/page.tsx           composes boundaries; little logic
   <route>/<name>.tsx         components used only by this route (Server or Client)
+  <route>/<name>.module.css  styles of <name>.tsx
   <route>/actions.ts         Server Actions used only by this route
   api/revalidate/route.ts    the only Route Handler: cache invalidation from Laravel
 components/                  components used by 2+ routes, one file per component (+ its actions.ts if any)
@@ -80,6 +81,18 @@ What goes where on public pages [decision]:
 - MUST [decision] `lib/api/client.ts` is the only place that calls `fetch`; other `lib/api/` files call `apiFetch` / `apiFetchAsUser`, and components call `lib/api/` functions. Enforced by `npm run lint` (`no-restricted-globals`).
 - MUST [decision] Data functions return the types the UI needs, built from `schema.d.ts`. Client Components receive only these narrow types or primitives as props, never a raw API response. Reason: anything passed to a Client Component is sent to the browser [spec].
 - MUST [decision] Server Actions live in `actions.ts` files with `"use server";` at the top. Do not define inline actions inside components.
+
+## Styles
+
+The look follows the original site. Values are measured from its pages (computed style and screenshots), not copied from its CSS.
+
+- MUST [decision] Style a component with CSS Modules in `<name>.module.css` next to `<name>.tsx`. `app/globals.css` holds only the CSS variables (`:root`), the reset, and the base text of `body`. Reason: built into Next.js, no extra dependency.
+- MUST [decision] Write colors and `font-size` as `var(--…)` defined in `app/globals.css`; do not write `#hex`, color names, `rgb()`-style functions, or the `font` shorthand in `.module.css`. Enforced by `npm run lint` (stylelint, `stylelint.config.mjs`). When a screen needs a value that is not in `globals.css`, measure it on the original site and add a variable.
+- SHOULD [decision] Write spacing and widths with the `--space-*` / `--width-*` variables when the value is one of them. Not enforced yet.
+- MUST [decision] `app/globals.css` does not reset list markers. A screen that hides them sets `list-style: none` in its module and puts `role="list"` on the `<ul>`/`<ol>`. Reason: Safari with VoiceOver stops announcing a list without markers as a list.
+- MUST [decision] Do not use the `style` attribute. Enforced by `npm run lint` (`react/forbid-dom-props`, `react/forbid-component-props`).
+- MUST [decision] Switch PC and phone layouts with `@media (max-width: 640px)` in the module. Do not branch on User-Agent. Reason: a UA branch would split the cached pages per UA. Media queries cannot read CSS variables, so write the number.
+- MUST [decision] Do not copy the original site's CSS, images, fonts, or logo. Logos and banners are self-made SVGs with the same dimensions.
 
 ## State
 

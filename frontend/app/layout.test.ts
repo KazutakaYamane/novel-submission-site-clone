@@ -12,3 +12,10 @@ describe("RootLayout の metadata", () => {
     expect(metadata.metadataBase?.toString()).toBe("https://novel.example.com/");
   });
 });
+
+describe("RootLayout の metadata.robots", () => {
+  it("全ページを検索エンジンに載せない", async () => {
+    const { metadata } = await import("./layout");
+    expect(metadata.robots).toEqual({ index: false, follow: false });
+  });
+});
