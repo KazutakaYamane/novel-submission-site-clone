@@ -48,9 +48,15 @@ variable "instance_class" {
 }
 
 variable "engine_version" {
-  description = "MySQL エンジンバージョン。"
+  description = "MySQL エンジンバージョン(メジャー.マイナー)。パッチは auto_minor_version_upgrade に任せる。"
   type        = string
-  default     = "8.0"
+  default     = "8.4"
+
+  # パラメータグループの family(mysql8.4)をこの値から作るため、パッチまで書くと family が不正になる
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+$", var.engine_version))
+    error_message = "engine_version はメジャー.マイナー(例: 8.4)で指定する。"
+  }
 }
 
 variable "allocated_storage" {

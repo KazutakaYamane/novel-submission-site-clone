@@ -111,11 +111,10 @@ services:
 
   # ---------- MySQL ----------
   db:
-    image: mysql:8.0
+    image: mysql:8.4
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-      - --default-authentication-plugin=caching_sha2_password
     environment:
       MYSQL_DATABASE: novel_submission_site
       MYSQL_USER: novel_submission_site
