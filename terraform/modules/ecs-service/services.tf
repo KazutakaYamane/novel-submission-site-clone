@@ -221,8 +221,9 @@ module "api_service" {
 
     # worker と同じ理由で api のタスクに置く。タスクが複数でも、onOneServer が
     # Redis のロックで実行を 1 台に絞る。止まると日次リセットが止まるため essential にする。
-    # schedule:work は SIGTERM を受けると実行中の schedule:run の終了を待つ。リセットの途中で
-    # デプロイやスケールインが来ても SIGKILL で DB が消えたままにならないよう、Fargate の上限まで待つ
+    # schedule:work は停止シグナル(イメージの STOPSIGNAL は SIGQUIT)を受けると、実行中の schedule:run の
+    # 終了を待つ。リセットの途中でデプロイやスケールインが来ても SIGKILL で DB が消えたままにならないよう、
+    # Fargate の上限まで待つ
     scheduler = {
       image       = var.api_app_image
       essential   = true
