@@ -3,9 +3,9 @@
 
 locals {
   service_connect_api_name = "api" # web からは http://api:8080 で到達
-  service_connect_web_name = "web" # api(app・worker)からは http://web:3000 で到達
+  service_connect_web_name = "web" # api(app・worker・scheduler)からは http://web:3000 で到達
 
-  # app と worker は同じイメージ・同じ設定で、プロセスだけが違う
+  # app・worker・scheduler は同じイメージ・同じ設定で、プロセスだけが違う
   api_environment = [
     { name = "APP_ENV", value = "production" },
     { name = "APP_DEBUG", value = "false" },
@@ -123,7 +123,7 @@ module "web_service" {
   tags = { Name = "${local.name}-web" }
 }
 
-# ----- api: Laravel (nginx + php-fpm + キューの worker) -----
+# ----- api: Laravel (nginx + php-fpm + キューの worker + スケジューラ) -----
 
 module "api_service" {
   source  = "terraform-aws-modules/ecs/aws//modules/service"
@@ -210,6 +210,24 @@ module "api_service" {
       image     = var.api_app_image
       essential = true
       command   = ["php", "artisan", "queue:work"]
+
+      environment = local.api_environment
+      secrets     = local.api_secrets
+
+      readonlyRootFilesystem = false
+
+      cloudwatch_log_group_retention_in_days = var.log_retention_in_days
+    }
+
+    # worker と同じ理由で api のタスクに置く。タスクが複数でも、onOneServer が
+    # Redis のロックで実行を 1 台に絞る。止まると日次リセットが止まるため essential にする。
+    # schedule:work は SIGTERM を受けると実行中の schedule:run の終了を待つ。リセットの途中で
+    # デプロイやスケールインが来ても SIGKILL で DB が消えたままにならないよう、Fargate の上限まで待つ
+    scheduler = {
+      image       = var.api_app_image
+      essential   = true
+      command     = ["php", "artisan", "schedule:work"]
+      stopTimeout = 120
 
       environment = local.api_environment
       secrets     = local.api_secrets

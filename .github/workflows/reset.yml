@@ -1,0 +1,40 @@
+name: reset
+
+# 本番の DB を migrate:fresh で消すため、手動実行だけにする。schedule などの自動の契機は付けない
+# (毎日の実行は api のタスクの scheduler が行う)。
+# github_deploy の信頼条件は ref:refs/heads/master なので、master で実行する
+on:
+  workflow_dispatch:
+
+# リセットを二重に走らせない。deploy とはグループを分ける: 同じグループでは待機中の実行が
+# 1 つしか残らず、待機中のデプロイやリセットが互いにキャンセルされるため
+concurrency:
+  group: reset-prod
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-1
+  AWS_ROLE_ARN: arn:aws:iam::107155696364:role/novel-submission-site-clone-github-deploy
+  CLUSTER: novel-submission-site-clone-prod
+  API_SERVICE: novel-submission-site-clone-prod-api
+
+jobs:
+  reset:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v7
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 稼働中のサービスと同じリビジョン(同じイメージ)で実行する
+      - name: reset
+        run: |
+          task_definition=$(aws ecs describe-services --cluster "$CLUSTER" --services "$API_SERVICE" \
+            --query 'services[0].taskDefinition' --output text)
+          .github/scripts/run-api-task.sh "$task_definition" php artisan app:reset --force

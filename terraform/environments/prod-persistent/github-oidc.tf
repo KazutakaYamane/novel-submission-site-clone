@@ -92,9 +92,9 @@ data "aws_iam_policy_document" "github_deploy" {
     resources = ["arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:service/${local.prod_prefix}/${local.prod_prefix}-*"]
   }
 
-  # マイグレーションの one-off task(api のタスク定義のみ・クラスタを限定)
+  # migration(deploy.yml)と手動リセット(reset.yml)の one-off task(api のタスク定義のみ・クラスタを限定)
   statement {
-    sid       = "EcsRunMigrationTask"
+    sid       = "EcsRunApiOneOffTask"
     actions   = ["ecs:RunTask"]
     resources = ["arn:aws:ecs:${var.region}:${data.aws_caller_identity.current.account_id}:task-definition/${local.prod_prefix}-api:*"]
 
