@@ -6,7 +6,7 @@
 # - prod: Fargate 用。bind mount 不可のため backend/public を焼き込む
 #   (docker/app/Dockerfile の base/dev/prod 構成と対応)
 # ------------------------------------------------------------
-FROM nginx:1.27-alpine AS base
+FROM nginx:1.31-alpine AS base
 
 RUN apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime \
