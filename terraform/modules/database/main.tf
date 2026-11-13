@@ -11,8 +11,8 @@ resource "aws_db_subnet_group" "this" {
 }
 
 resource "aws_db_parameter_group" "this" {
-  name   = "${local.name}-mysql80"
-  family = "mysql8.0"
+  name   = "${local.name}-mysql${replace(var.engine_version, ".", "")}"
+  family = "mysql${var.engine_version}"
   # RDS の description は ASCII のみ受け付ける
   description = "utf8mb4 / utf8mb4_unicode_ci (same as local compose MySQL)"
 
@@ -26,7 +26,7 @@ resource "aws_db_parameter_group" "this" {
     value = "utf8mb4_unicode_ci"
   }
 
-  tags = { Name = "${local.name}-mysql80-params" }
+  tags = { Name = "${local.name}-mysql${replace(var.engine_version, ".", "")}-params" }
 }
 
 resource "aws_db_instance" "this" {
