@@ -98,6 +98,17 @@ services:
       redis:
         condition: service_started
 
+  # ---------- スケジューラ ----------
+  # routes/console.php の予定(毎日 4:00 の app:reset)を実行する
+  scheduler:
+    extends: app
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
   # ---------- MySQL ----------
   db:
     image: mysql:8.0

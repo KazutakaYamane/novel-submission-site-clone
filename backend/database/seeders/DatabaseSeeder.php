@@ -2,21 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Infrastructure\Eloquent\Models\UserModel;
 use Illuminate\Database\Seeder;
 
+// 本番の app:reset からも実行する。本番イメージには dev 依存(Faker)が無いので、ファクトリーを使わない
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
-    {
-        // UserModel::factory(10)->create();
-
-        UserModel::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-    }
+    public function run(): void {}
 }
