@@ -13,8 +13,8 @@ network=$(aws ecs describe-services --cluster "$CLUSTER" --services "$API_SERVIC
 
 # app と同じイメージの他のコンテナ(worker・scheduler)は、ジョブやスケジュールを実行させずに待たせる。
 # このタスクは Service Connect に入らず web:3000 を解決できず、DB も app のコマンドの途中の状態になるため。
-# app が終わると essential の停止でタスクごと止まる。PID 1 の sleep は SIGTERM を無視し
-# stopTimeout まで止まらないため、trap で終わらせる
+# app が終わると essential の停止でタスクごと止まる。PID 1 のシェルは処理のないシグナルを無視し
+# stopTimeout まで止まらないため、trap で終わらせる。php-fpm のイメージの停止シグナルは SIGQUIT
 overrides=$(aws ecs describe-task-definition --task-definition "$task_definition" \
   --query 'taskDefinition.containerDefinitions' --output json \
   | jq -c --argjson command "$command" '
@@ -22,7 +22,7 @@ overrides=$(aws ecs describe-task-definition --task-definition "$task_definition
       | {containerOverrides: (
           [{name: "app", command: $command}]
           + [.[] | select(.name != "app" and .image == $image)
-                 | {name, command: ["sh", "-c", "trap '"'"'exit 0'"'"' TERM; sleep infinity & wait"]}])}')
+                 | {name, command: ["sh", "-c", "trap '"'"'exit 0'"'"' TERM QUIT INT; sleep infinity & wait"]}])}')
 
 # Fargate の容量不足などでタスクが作られないときは、tasks が空で failures に理由が入る
 result=$(aws ecs run-task \
