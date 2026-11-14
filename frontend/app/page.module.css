@@ -1,0 +1,21 @@
+.main {
+  padding-bottom: var(--space-7l);
+}
+
+/* 本家は主の列(789px)の右に週間ランキングの列(300px)を置く。ランキングは出さないので、主の列だけを同じ位置に置く */
+.newWorks {
+  max-width: 789px;
+  margin: var(--space-4l) var(--space-4l) 0;
+}
+
+.loading {
+  padding: var(--space-m) 0;
+  color: var(--color-text-weak);
+}
+
+@media (max-width: 640px) {
+  .newWorks {
+    max-width: none;
+    margin: var(--space-4l) var(--space-m) 0;
+  }
+}

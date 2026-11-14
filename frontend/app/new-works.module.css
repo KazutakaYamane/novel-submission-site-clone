@@ -1,0 +1,85 @@
+/* 本家のトップの「まずはこれから」の作品の行と同じ値。PC は 2 列で、列の間と行の下に線を引く */
+.list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* キャッチコピーの行数が左右で違っても、作品名の高さを揃える(本家と同じ) */
+.item {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  padding: var(--space-m);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.item:nth-child(odd) {
+  border-right: 1px solid var(--color-border);
+}
+
+/* 本家は作品ごとの色で塗るが、API に作品の色が無いので主色の濃い色に揃える */
+.catchphrase {
+  grid-row: 1;
+  margin-bottom: var(--space-3s);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-16);
+  font-weight: bold;
+  line-height: var(--line-height-tight);
+}
+
+.title {
+  grid-row: 2;
+  font-weight: normal;
+  line-height: var(--line-height-heading);
+}
+
+.title a {
+  font-weight: bold;
+}
+
+.author {
+  color: var(--color-text-weak);
+}
+
+.meta {
+  grid-row: 3;
+  margin-top: var(--space-4s);
+  color: var(--color-text-weak);
+  font-size: var(--font-size-12_6);
+  line-height: var(--line-height-heading);
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+.separator {
+  margin: 0 var(--space-3s);
+}
+
+.empty {
+  padding: var(--space-m) 0;
+  color: var(--color-text-weak);
+}
+
+@media (max-width: 640px) {
+  .list {
+    grid-template-columns: 1fr;
+  }
+
+  .item {
+    padding: var(--space-m) var(--space-m) var(--space-m) 0;
+  }
+
+  .item:nth-child(odd) {
+    border-right: none;
+  }
+
+  .meta {
+    font-size: var(--font-size-11_5);
+  }
+}

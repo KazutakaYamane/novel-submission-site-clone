@@ -1,5 +1,5 @@
 import { expect, test as base, type Page } from "@playwright/test";
-import { createWork, notFoundHeading, signUp, waitForForm } from "./helpers";
+import { createWork, notFoundHeading, publishNewEpisode, reloadUntil, signUp, waitForForm } from "./helpers";
 
 // 本番ビルドの web-prod を相手に、キャッシュしたゲスト向けのページに公開と非公開化が反映されることを確かめる。
 // scripts/e2e-cache.sh から --project=cache で実行する
@@ -10,29 +10,6 @@ const test = base.extend<{ guest: Page }>({
     await context.close();
   },
 });
-
-// 話を追加して本文を書き、公開する。公開ページのパスを返す
-async function publishNewEpisode(page: Page, editPath: string, title: string, body: string): Promise<string> {
-  await page.goto(editPath);
-  await waitForForm(page, "話を追加");
-  await page.getByLabel("話のタイトル").fill(title);
-  await page.getByRole("button", { name: "話を追加" }).click();
-  await expect(page).toHaveURL(new RegExp(`${editPath}/episodes/[0-9a-f-]{36}$`));
-  const path = new URL(page.url()).pathname;
-  await waitForForm(page, "下書き保存");
-  await page.getByLabel("本文").fill(body);
-  await page.getByRole("button", { name: "公開" }).click();
-  await expect(page.getByTestId("episode-status")).toHaveText("公開中");
-  return path.replace("/my/works/", "/works/");
-}
-
-// 破棄は worker 経由の非同期なので、反映されるまで開き直す
-async function reloadUntil(page: Page, path: string, assertion: () => Promise<void>) {
-  await expect(async () => {
-    await page.goto(path);
-    await assertion();
-  }).toPass();
-}
 
 test("公開した話はキャッシュ済みの目次と前の話のページに出て、非公開に戻すと消える", async ({ page, guest }) => {
   await signUp(page, "E2E 作者");
@@ -69,4 +46,19 @@ test("公開した話はキャッシュ済みの目次と前の話のページ�
     await expect(guest.getByText("第1話の本文")).toBeVisible({ timeout: 1000 });
     await expect(nextLink).toHaveCount(0, { timeout: 1000 });
   });
+});
+
+test("トップをキャッシュに載せた後に話を公開すると、トップの新着にその作品が出る", async ({ page, guest }) => {
+  const title = `トップの反映を確かめる作品 ${Date.now()}`;
+  await signUp(page, "E2E 作者");
+  const editPath = await createWork(page, title);
+  const newWorks = guest.getByRole("region", { name: "新着の更新作品" });
+
+  await reloadUntil(guest, "/", () => expect(newWorks.getByRole("listitem").first()).toBeVisible({ timeout: 1000 }));
+  await expect(newWorks.getByRole("link", { name: title })).toHaveCount(0);
+
+  await publishNewEpisode(page, editPath, "第1話", "本文");
+
+  await reloadUntil(guest, "/", () => expect(newWorks.getByRole("link", { name: title })).toBeVisible({ timeout: 1000 }));
+  await expect(newWorks.getByRole("link", { name: title })).toHaveAttribute("href", editPath.replace("/my/works/", "/works/"));
 });

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPublishedWork } from "@/lib/api/works";
 import { genreLabel, ratingFlagLabels, statusLabel } from "@/lib/work-attributes";
-import { formatDate } from "./format";
+import { formatDate } from "@/lib/format-date";
 import styles from "./work-detail.module.css";
 
 export async function WorkDetail({ params }: { params: Promise<{ workId: string }> }) {

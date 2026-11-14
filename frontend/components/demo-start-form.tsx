@@ -4,8 +4,8 @@ import { Form } from "./form";
 import { startDemoAction } from "./demo-start-actions";
 import styles from "./demo-start-form.module.css";
 
-// ヘッダーでは帯の高さに収め、失敗の文言は帯の下に重ねる。/session-expired では本文の中に並べる
-export function DemoStartForm({ variant }: { variant: "header" | "page" }) {
+// ヘッダーでは帯の高さに収め、失敗の文言は帯の下に重ねる。/session-expired では本文の中に並べ、トップの帯では中央に置く
+export function DemoStartForm({ variant }: { variant: "header" | "page" | "hero" }) {
   const [state, action, pending] = useActionState(startDemoAction, { status: "idle" });
   return (
     <Form action={action} className={styles[variant]}>
