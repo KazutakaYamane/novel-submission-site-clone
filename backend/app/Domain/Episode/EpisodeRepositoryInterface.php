@@ -42,6 +42,12 @@ interface EpisodeRepositoryInterface
     public function listPublishedInWork(string $workId): array;
 
     /**
+     * @param  list<string>  $workIds
+     * @return array<string, int> 作品 id => 公開済みの話の数。公開済みの話が無い作品は 0
+     */
+    public function countPublishedByWorks(array $workIds): array;
+
+    /**
      * @return Episode|null 話が無いか、別の作品の話か、公開済みでなければ null
      */
     public function findPublishedInWork(string $workId, string $episodeId): ?Episode;

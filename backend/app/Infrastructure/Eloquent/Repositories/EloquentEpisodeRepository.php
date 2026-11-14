@@ -71,6 +71,18 @@ final class EloquentEpisodeRepository implements EpisodeRepositoryInterface
             ->all();
     }
 
+    public function countPublishedByWorks(array $workIds): array
+    {
+        $counts = EpisodeModel::published()
+            ->whereIn('work_id', $workIds)
+            ->groupBy('work_id')
+            ->pluck(DB::raw('count(*)'), 'work_id')
+            ->map(fn (mixed $count) => (int) $count)
+            ->all();
+
+        return [...array_fill_keys($workIds, 0), ...$counts];
+    }
+
     public function findPublishedInWork(string $workId, string $episodeId): ?Episode
     {
         $model = EpisodeModel::published()->where('work_id', $workId)->find($episodeId);

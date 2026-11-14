@@ -70,6 +70,18 @@ final class InMemoryEpisodeRepository implements EpisodeRepositoryInterface, Rol
         ));
     }
 
+    public function countPublishedByWorks(array $workIds): array
+    {
+        $counts = array_fill_keys($workIds, 0);
+        foreach ($this->rows as $episode) {
+            if (isset($counts[$episode->workId]) && $episode->status === EpisodeStatus::Published) {
+                $counts[$episode->workId]++;
+            }
+        }
+
+        return $counts;
+    }
+
     public function findPublishedInWork(string $workId, string $episodeId): ?Episode
     {
         $episode = $this->findInWork($workId, $episodeId);

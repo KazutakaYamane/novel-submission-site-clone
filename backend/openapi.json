@@ -240,6 +240,52 @@
                 }
             }
         },
+        "/works": {
+            "get": {
+                "operationId": "publicWorks.listPublicWorks",
+                "tags": [
+                    "ListPublicWorks"
+                ],
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `PublicWorkSummaryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PublicWorkSummaryResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": []
+            }
+        },
         "/my/works": {
             "get": {
                 "operationId": "myWorks.listWorks",
@@ -1407,6 +1453,60 @@
                     "episodes"
                 ],
                 "title": "PublicWorkResource"
+            },
+            "PublicWorkSummaryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "catchphrase": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "genre": {
+                        "$ref": "#/components/schemas/Genre"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/WorkStatus"
+                    },
+                    "published_episode_count": {
+                        "type": "integer"
+                    },
+                    "last_episode_published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "author": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "catchphrase",
+                    "genre",
+                    "status",
+                    "published_episode_count",
+                    "last_episode_published_at",
+                    "author"
+                ],
+                "title": "PublicWorkSummaryResource"
             },
             "RatingFlag": {
                 "type": "string",

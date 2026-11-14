@@ -9,6 +9,7 @@ use App\Domain\Work\WorkNotFoundException;
 use App\Domain\Work\WorkStatus;
 use App\UseCases\PublicWork\GetPublishedEpisodeUseCase;
 use App\UseCases\PublicWork\GetPublishedWorkUseCase;
+use App\UseCases\PublicWork\ListPublishedWorksUseCase;
 use Tests\Doubles\InMemoryEpisodeRepository;
 use Tests\Doubles\InMemoryUserRepository;
 use Tests\Doubles\InMemoryWorkRepository;
@@ -129,4 +130,67 @@ describe('GetPublishedEpisodeUseCase', function () {
 
         ($this->getEpisode)('work-2', 'episode-1');
     })->throws(WorkNotFoundException::class);
+});
+
+describe('ListPublishedWorksUseCase', function () {
+    beforeEach(function () {
+        $this->addUpdatedWork = function (string $id, ?string $lastEpisodePublishedAt, ?string $userId = null): Work {
+            return $this->works->rows[$id] = new Work(
+                id: $id,
+                userId: $userId ?? $this->author->id,
+                title: "作品{$id}",
+                catchphrase: null,
+                introduction: 'あらすじ',
+                genre: Genre::Fantasy,
+                status: WorkStatus::Ongoing,
+                ratingFlags: [],
+                tags: [],
+                publishedAt: new DateTimeImmutable('2026-10-01'),
+                lastEpisodePublishedAt: $lastEpisodePublishedAt === null ? null : new DateTimeImmutable($lastEpisodePublishedAt),
+                createdAt: new DateTimeImmutable,
+            );
+        };
+        $this->listWorks = new ListPublishedWorksUseCase($this->works, $this->users, $this->episodes);
+        $this->listedIds = fn (int $limit) => array_map(fn ($summary) => $summary->work->id, ($this->listWorks)($limit));
+    });
+
+    it('最後に話を公開した日時の新しい順に、同じなら作品 ID の昇順に並べる', function () {
+        ($this->addUpdatedWork)('work-b', '2026-10-03');
+        ($this->addUpdatedWork)('work-c', '2026-10-05');
+        ($this->addUpdatedWork)('work-d', '2026-10-03');
+        ($this->addUpdatedWork)('work-a', '2026-10-01');
+
+        expect(($this->listedIds)(10))->toBe(['work-c', 'work-b', 'work-d', 'work-a']);
+    });
+
+    it('公開済みの話が無い作品は含めない', function () {
+        ($this->addUpdatedWork)('work-1', '2026-10-03');
+        ($this->addUpdatedWork)('work-2', null);
+        ($this->addWork)('work-3', null);
+
+        expect(($this->listedIds)(10))->toBe(['work-1']);
+    });
+
+    it('指定した件数までを返す', function () {
+        ($this->addUpdatedWork)('work-1', '2026-10-01');
+        ($this->addUpdatedWork)('work-2', '2026-10-02');
+        ($this->addUpdatedWork)('work-3', '2026-10-03');
+
+        expect(($this->listedIds)(2))->toBe(['work-3', 'work-2']);
+    });
+
+    it('作品ごとに作者名と公開済みの話の数を付ける', function () {
+        $other = $this->users->create('司書', 'librarian@example.com', 'hashed');
+        ($this->addUpdatedWork)('work-1', '2026-10-03');
+        ($this->addUpdatedWork)('work-2', '2026-10-02', $other->id);
+        ($this->addEpisode)('episode-1', 'work-1', 1, published: true);
+        ($this->addEpisode)('episode-2', 'work-1', 2, published: false);
+        ($this->addEpisode)('episode-3', 'work-1', 3, published: true);
+        ($this->addEpisode)('episode-4', 'work-2', 1, published: true);
+
+        $summaries = ($this->listWorks)(10);
+
+        expect(array_map(fn ($summary) => [$summary->authorName, $summary->publishedEpisodeCount], $summaries))
+            ->toBe([['図書委員', 2], ['司書', 1]]);
+    });
 });

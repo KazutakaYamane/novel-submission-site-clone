@@ -23,6 +23,18 @@ final class InMemoryUserRepository implements RollbackableDouble, UserRepository
         return null;
     }
 
+    public function findNamesByIds(array $ids): array
+    {
+        $names = [];
+        foreach ($this->rows as $row) {
+            if (in_array($row['user']->id, $ids, true)) {
+                $names[$row['user']->id] = $row['user']->name;
+            }
+        }
+
+        return $names;
+    }
+
     public function findCredentialsByEmail(string $email): ?UserCredentials
     {
         if (! isset($this->rows[$email])) {

@@ -48,6 +48,11 @@ interface WorkRepositoryInterface
     public function listByUser(string $userId): array;
 
     /**
+     * @return list<Work> 公開済みの話がある作品を、最後に話を公開した日時の新しい順に。同じ日時なら id の昇順
+     */
+    public function listByLastEpisodePublishedAt(int $limit): array;
+
+    /**
      * 渡した項目だけを書き換える。同時に別の項目を変えたリクエストの値を上書きしないため
      * tags を渡すと、作品のタグを全部置き換える
      *

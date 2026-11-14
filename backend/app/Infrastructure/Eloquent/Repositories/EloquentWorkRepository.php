@@ -78,6 +78,20 @@ final class EloquentWorkRepository implements WorkRepositoryInterface
             ->all();
     }
 
+    public function listByLastEpisodePublishedAt(int $limit): array
+    {
+        // 全話を非公開に戻した作品は published_at が残るので、last_episode_published_at で絞る
+        return WorkModel::with('tags')
+            ->whereNotNull('last_episode_published_at')
+            ->orderByDesc('last_episode_published_at')
+            ->orderBy('id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (WorkModel $model) => self::toEntity($model))
+            ->values()
+            ->all();
+    }
+
     public function update(string $id, array $changes): ?Work
     {
         return DB::transaction(function () use ($id, $changes) {
