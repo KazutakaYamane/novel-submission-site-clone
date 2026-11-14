@@ -56,7 +56,7 @@ final class AozoraText
             $i++;
         }
 
-        return [$lines[0], $lines[1] ?? '', min($i, $count)];
+        return [Str::trim($lines[0]), Str::trim($lines[1] ?? ''), min($i, $count)];
     }
 
     /**
@@ -89,10 +89,14 @@ final class AozoraText
         if (preg_match('/U\+([0-9A-Fa-f]{4,6})/', $note, $code) === 1) {
             return (string) mb_chr((int) hexdec($code[1]), 'UTF-8');
         }
-        // 青空文庫は《》｜［］＃※ などの記法に使う記号を、水準を書かない面区点(JIS X 0208 の文字)で注記する。
-        // 第3水準・第4水準(JIS X 0213 だけの文字)は Shift_JIS に無いので〓にする
+        // Shift_JIS に無い字は、JIS X 0213 の面区点に第3水準・第4水準と書いて注記される
+        if (preg_match('/第[34]水準([12])-(\d{1,2})-(\d{1,2})\z/u', $note, $code) === 1) {
+            return self::decodeShiftJis((int) $code[1], (int) $code[2], (int) $code[3], 'SJIS-2004') ?? '〓';
+        }
+        // 《》｜［］＃※ などの記法に使う記号は、水準を書かない JIS X 0208 の面区点で注記される。
+        // SJIS-2004 は ～ や － を本文の変換(FetchAozoraWorks の SJIS-win)と別の文字にするので、本文と同じ SJIS-win で変換する
         if (! str_contains($note, '水準') && preg_match('/(?<![\d-])1-(\d{1,2})-(\d{1,2})\z/', $note, $code) === 1) {
-            $char = self::jisX0208((int) $code[1], (int) $code[2]);
+            $char = self::decodeShiftJis(1, (int) $code[1], (int) $code[2], 'SJIS-win');
             if ($char !== null) {
                 // カクヨム記法では縦線の直後の《はルビにならず、文字として表示される
                 return $char === '《' ? '｜《' : $char;
@@ -102,15 +106,24 @@ final class AozoraText
         return '〓';
     }
 
-    // JIS X 0208 の区点を Shift_JIS のバイト列に直して UTF-8 に変換する
-    private static function jisX0208(int $row, int $cell): ?string
+    // JIS X 0213 の面区点を Shift_JIS-2004 のバイト列に直して変換する。第1面の配置は JIS X 0208(Shift_JIS)と同じ。
+    // 第2面は 1・3・4・5・8・12〜15・78〜94 区だけが Shift_JIS-2004 の 0xF0〜0xFC の先行バイトに割り当てられている
+    private static function decodeShiftJis(int $plane, int $row, int $cell, string $encoding): ?string
     {
         if ($row < 1 || $row > 94 || $cell < 1 || $cell > 94) {
             return null;
         }
-        $lead = (($row + 1) >> 1) + ($row <= 62 ? 0x80 : 0xC0);
+        if ($plane === 1) {
+            $lead = (($row + 1) >> 1) + ($row <= 62 ? 0x80 : 0xC0);
+        } elseif (in_array($row, [1, 3, 4, 5, 8, 12, 13, 14, 15], true)) {
+            $lead = (($row + 0x1DF) >> 1) - ($row >> 3) * 3;
+        } elseif ($row >= 78) {
+            $lead = ($row + 0x19B) >> 1;
+        } else {
+            return null;
+        }
         $trail = $row % 2 === 1 ? $cell + ($cell <= 63 ? 0x3F : 0x40) : $cell + 0x9E;
-        $char = mb_convert_encoding(chr($lead).chr($trail), 'UTF-8', 'SJIS-win');
+        $char = mb_convert_encoding(chr($lead).chr($trail), 'UTF-8', $encoding);
 
         return $char === '' || $char === '?' ? null : $char;
     }
