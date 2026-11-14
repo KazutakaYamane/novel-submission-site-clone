@@ -1,0 +1,40 @@
+.block {
+  padding-bottom: var(--space-1s);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  display: flex;
+  font-size: var(--font-size-18);
+  font-weight: bold;
+  line-height: 1;
+}
+
+.char {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid var(--color-border);
+}
+
+/* 隣の枠と線を重ね、境目の線を 1px にする */
+.char + .char {
+  margin-left: -1px;
+}
+
+.description {
+  margin-top: var(--space-2s);
+  color: var(--color-text-weak);
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: var(--font-size-16);
+  }
+
+  .description {
+    font-size: var(--font-size-11_5);
+  }
+}

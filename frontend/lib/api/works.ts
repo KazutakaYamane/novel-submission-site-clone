@@ -54,3 +54,35 @@ async function getCachedPublishedWork(workId: string): Promise<PublishedWork | n
     })),
   };
 }
+
+export type WorkSummary = {
+  id: string;
+  title: string;
+  authorName: string;
+  catchphrase: string | null;
+  genre: PublicWork["genre"];
+  status: PublicWork["status"];
+  episodeCount: number;
+  lastEpisodePublishedAt: string | null;
+};
+
+// トップの新着。どの話の公開・非公開化でも並びが変わるので、Laravel は話ごとに top を破棄する
+export async function getRecentlyUpdatedWorks(): Promise<WorkSummary[]> {
+  "use cache";
+  cacheTag("top");
+  cacheLife("days");
+  const res = await apiFetch("/works?limit=10");
+  if (!res.ok) throw new Error(`/works が ${res.status} を返した`);
+  const { data }: operations["publicWorks.listPublicWorks"]["responses"][200]["content"]["application/json"] =
+    await res.json();
+  return data.map((work) => ({
+    id: work.id,
+    title: work.title,
+    authorName: work.author.name,
+    catchphrase: work.catchphrase,
+    genre: work.genre,
+    status: work.status,
+    episodeCount: work.published_episode_count,
+    lastEpisodePublishedAt: work.last_episode_published_at,
+  }));
+}

@@ -4,7 +4,7 @@ import { waitForForm } from "./helpers";
 test("ゲストがデモ作者で始めると初期作品の編集画面へ移り、ヘッダーにデモ作者の名前が出る", async ({ page }) => {
   await page.goto("/");
   const header = page.getByRole("banner");
-  await waitForForm(page, "デモ作者として始める");
+  await waitForForm(page, "デモ作者として始める", header);
   await header.getByRole("button", { name: "デモ作者として始める" }).click();
 
   await expect(page).toHaveURL(/\/my\/works\/[0-9a-f-]{36}$/);
@@ -54,8 +54,8 @@ test("ログイン中にトークンが無効になると、ヘッダーのリ�
   context,
 }) => {
   await page.goto("/");
-  await waitForForm(page, "デモ読者として始める");
   const header = page.getByRole("banner");
+  await waitForForm(page, "デモ読者として始める", header);
   await header.getByRole("button", { name: "デモ読者として始める" }).click();
   await expect(header.getByTestId("header-user-name")).toHaveText(/^デモ読者-/);
 

@@ -1,0 +1,52 @@
+/*
+ * 本家のトップの最上部の帯。本家にあるバナーのスライダーは作らないので、高さ(PC 421px)は合わない。
+ * 帯の色は画面の幅いっぱいに塗るが、layout.module.css の .content が幅を 1185px に絞るので、border-image を左右へはみ出させて塗る。
+ * はみ出した部分は横スクロールを起こさない
+ */
+.hero {
+  padding: var(--space-4l) var(--space-m);
+  border-image: linear-gradient(var(--color-bg-sky) 0 0) fill 0 / / 0 100vw;
+  text-align: center;
+}
+
+/* PC の大きさは採取した表に無く、本家の画面の画像の字の高さから読んだ */
+.title {
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-42);
+  font-weight: bold;
+  line-height: var(--line-height-tight);
+}
+
+.description {
+  margin-top: var(--space-2l);
+}
+
+.demo {
+  margin-top: var(--space-2l);
+}
+
+.demoPlaceholder {
+  height: 36px;
+}
+
+.reset {
+  margin-top: var(--space-2s);
+  color: var(--color-text-weak);
+  font-size: var(--font-size-12_6);
+}
+
+@media (max-width: 640px) {
+  .hero {
+    padding: var(--space-2l) var(--space-m) var(--space-4l);
+  }
+
+  .title {
+    font-size: var(--font-size-20);
+    font-weight: 800;
+  }
+
+  .description {
+    margin-top: var(--space-m);
+    text-align: left;
+  }
+}

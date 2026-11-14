@@ -1,9 +1,10 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 // ハイドレーション前に送信すると素のフォーム送信になるため、data-hydrated を待ってから操作する
-// クライアント遷移の直後は前のページのフォームも残るので、送信ボタンでフォームを特定する
-export async function waitForForm(page: Page, button: string) {
-  await expect(page.locator("form[data-hydrated]", { has: page.getByRole("button", { name: button }) })).toBeVisible();
+// クライアント遷移の直後は前のページのフォームも残るので、送信ボタンでフォームを特定する。
+// トップのデモのボタンはヘッダーと本文の 2 か所にあるので、within で探す範囲を絞る
+export async function waitForForm(page: Page, button: string, within: Page | Locator = page) {
+  await expect(within.locator("form[data-hydrated]", { has: page.getByRole("button", { name: button }) })).toBeVisible();
 }
 
 export function uniqueEmail(): string {
@@ -37,3 +38,26 @@ export async function createWork(page: Page, title: string): Promise<string> {
 }
 
 export const notFoundHeading = (page: Page) => page.getByRole("heading", { name: "ページが見つかりません" });
+
+// 話を追加して本文を書き、公開する。公開ページのパスを返す
+export async function publishNewEpisode(page: Page, editPath: string, title: string, body: string): Promise<string> {
+  await page.goto(editPath);
+  await waitForForm(page, "話を追加");
+  await page.getByLabel("話のタイトル").fill(title);
+  await page.getByRole("button", { name: "話を追加" }).click();
+  await expect(page).toHaveURL(new RegExp(`${editPath}/episodes/[0-9a-f-]{36}$`));
+  const path = new URL(page.url()).pathname;
+  await waitForForm(page, "下書き保存");
+  await page.getByLabel("本文").fill(body);
+  await page.getByRole("button", { name: "公開" }).click();
+  await expect(page.getByTestId("episode-status")).toHaveText("公開中");
+  return path.replace("/my/works/", "/works/");
+}
+
+// 破棄は worker 経由の非同期なので、反映されるまで開き直す
+export async function reloadUntil(page: Page, path: string, assertion: () => Promise<void>) {
+  await expect(async () => {
+    await page.goto(path);
+    await assertion();
+  }).toPass();
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate } from "./format";
+import { formatDate } from "./format-date";
 
 describe("formatDate", () => {
   it("Asia/Tokyo の日付で「YYYY年M月D日」にする", () => {

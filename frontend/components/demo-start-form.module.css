@@ -48,7 +48,8 @@
   flex-wrap: wrap;
 }
 
-.page .button {
+.page .button,
+.hero .button {
   height: 36px;
   padding: 0 var(--space-m);
   border: 1px solid var(--color-primary-dark);
@@ -59,8 +60,20 @@
   letter-spacing: 0.5px;
 }
 
-.page .alert {
+.page .alert,
+.hero .alert {
   margin-top: var(--space-2s);
+}
+
+/* 本家のトップの「無料で新規ユーザー登録」(380×36)と同じ幅に、2 つのボタンを分けて並べる */
+.hero .buttons {
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.hero .button {
+  flex: 1;
+  padding: 0 var(--space-2s);
 }
 
 /*

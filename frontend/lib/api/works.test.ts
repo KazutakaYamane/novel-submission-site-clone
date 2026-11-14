@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { getPublishedWork } from "./works";
+import { getPublishedWork, getRecentlyUpdatedWorks } from "./works";
 
 const cache = vi.hoisted(() => ({
   cacheTag: vi.fn(),
@@ -99,5 +99,55 @@ describe("getPublishedWork", () => {
   it("404 以外の失敗はエラーにする", async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 500 }));
     await expect(getPublishedWork(WORK_ID)).rejects.toThrow("500");
+  });
+});
+
+const workSummary = {
+  id: WORK_ID,
+  title: "星を継ぐ者たち",
+  catchphrase: "最後の星が消える夜に",
+  genre: "sf",
+  status: "ongoing",
+  published_episode_count: 2,
+  last_episode_published_at: "2026-10-09T03:00:00+00:00",
+  author: { name: "山田太郎" },
+};
+
+describe("getRecentlyUpdatedWorks", () => {
+  it("/api/works?limit=10 を呼び、画面が使う項目だけを返す", async () => {
+    fetchMock.mockResolvedValue(Response.json({ data: [workSummary] }));
+    await expect(getRecentlyUpdatedWorks()).resolves.toEqual([
+      {
+        id: WORK_ID,
+        title: "星を継ぐ者たち",
+        authorName: "山田太郎",
+        catchphrase: "最後の星が消える夜に",
+        genre: "sf",
+        status: "ongoing",
+        episodeCount: 2,
+        lastEpisodePublishedAt: "2026-10-09T03:00:00+00:00",
+      },
+    ]);
+    expect(fetchMock.mock.calls[0][0]).toBe("http://nginx:8080/api/works?limit=10");
+  });
+
+  it("トークンも X-User-IP も付けない", async () => {
+    fetchMock.mockResolvedValue(Response.json({ data: [] }));
+    await getRecentlyUpdatedWorks();
+    const headers = new Headers(fetchMock.mock.calls[0][1].headers);
+    expect(headers.has("Authorization")).toBe(false);
+    expect(headers.has("X-User-IP")).toBe(false);
+  });
+
+  it("top のタグと days の期限でキャッシュする", async () => {
+    fetchMock.mockResolvedValue(Response.json({ data: [] }));
+    await getRecentlyUpdatedWorks();
+    expect(cache.cacheTag).toHaveBeenCalledWith("top");
+    expect(cache.cacheLife).toHaveBeenCalledWith("days");
+  });
+
+  it("失敗はエラーにする", async () => {
+    fetchMock.mockResolvedValue(new Response(null, { status: 500 }));
+    await expect(getRecentlyUpdatedWorks()).rejects.toThrow("500");
   });
 });
