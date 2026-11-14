@@ -53,9 +53,16 @@ describe('作品名・著者名の外字', function () {
         $document = AozoraText::parse("※［＃「土へん＋竒」、U+57FC、12-3］玉\n※［＃「てへん＋劣」、第3水準1-84-77］田\n\n　本文。\n");
 
         expect($document->title)->toBe('埼玉')
-            ->and($document->author)->toBe('〓田')
+            ->and($document->author)->toBe('挘田')
             ->and($document->episodes[0]['title'])->toBe('埼玉')
-            ->and($document->missingGlyphCount)->toBe(1);
+            ->and($document->missingGlyphCount)->toBe(0);
+    });
+
+    it('作品名と著者名の前後の空白を除く', function () {
+        $document = AozoraText::parse("山月記 \n　中島敦 \n\n　本文。\n");
+
+        expect($document->title)->toBe('山月記')
+            ->and($document->author)->toBe('中島敦');
     });
 });
 
@@ -118,11 +125,22 @@ describe('外字', function () {
         expect(aozoraBody('　※［＃「土へん＋竒」、U+57FC、12-3］玉県。'))->toBe('　埼玉県。');
     });
 
-    it('JIS の面区点だけの外字注記は〓にし、件数を数えられる', function () {
+    it('JIS X 0213 の面区点だけの外字注記(第3水準)はその文字にする', function () {
         $document = AozoraText::parse(aozoraText('　※［＃「てへん＋劣」、第3水準1-84-77］と※［＃「口＋它」、第3水準1-14-88］。'));
 
-        expect($document->episodes[0]['body'])->toBe('　〓と〓。')
-            ->and($document->missingGlyphCount)->toBe(2);
+        expect($document->episodes[0]['body'])->toBe('　挘と咜。')
+            ->and($document->missingGlyphCount)->toBe(0);
+    });
+
+    it('第4水準(JIS X 0213 の第2面)の外字注記もその文字にする', function () {
+        expect(aozoraBody('　※［＃「一／丂」、第4水準2-1-2］と※［＃「虫＋糸」、第4水準2-94-86］。'))->toBe('　丂と𪚲。');
+    });
+
+    it('面区点が書かれていない外字注記は〓にし、件数を数えられる', function () {
+        $document = AozoraText::parse(aozoraText('　僕※［＃小書き平仮名ん、185-6］とこ。'));
+
+        expect($document->episodes[0]['body'])->toBe('　僕〓とこ。')
+            ->and($document->missingGlyphCount)->toBe(1);
     });
 });
 
@@ -132,6 +150,18 @@ describe('記号の外字注記', function () {
 
         expect($document->episodes[0]['body'])->toBe('　※と［。')
             ->and($document->missingGlyphCount)->toBe(0);
+    });
+
+    // 本文は SJIS-win で UTF-8 にする(FetchAozoraWorks)ので、注記の記号も本文に直接書かれた記号と同じ文字にする
+    it('水準の書かれていない記号は、本文の文字コード変換と同じ文字にする', function () {
+        expect(aozoraBody('　※［＃波ダッシュ、1-1-33］と※［＃全角マイナス、1-1-61］'))->toBe('　～と－');
+    });
+
+    it('水準の書かれていない第2面の面区点は外字として変換せず、〓にする', function () {
+        $document = AozoraText::parse(aozoraText('　※［＃「一／丂」、底本では2-1-2］。'));
+
+        expect($document->episodes[0]['body'])->toBe('　〓。')
+            ->and($document->missingGlyphCount)->toBe(1);
     });
 
     it('《はカクヨムのルビにならないよう、縦線を前に付ける', function () {

@@ -1,5 +1,6 @@
 <?php
 
+use Database\Seeders\Aozora\FetchAozoraWorks;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -25,4 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
-    })->create();
+    })
+    // シードのデータ作りだけに使うので、app/Console/Commands の自動登録ではなく database/seeders に置いて登録する
+    ->withCommands([FetchAozoraWorks::class])
+    ->create();
