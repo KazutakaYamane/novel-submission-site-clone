@@ -35,4 +35,10 @@ describe("episodeMetadata", () => {
     expect(metadata.description).toBe(expected);
     expect(metadata.openGraph?.description).toBe(expected);
   });
+
+  it("説明文には記法を残さず、ルビは親文字だけ、傍点は中身だけにする", () => {
+    const metadata = episodeMetadata({ ...episode, body: "｜ロンドン《倫敦》の《《霧》》\n東京《とうきょう》へ" });
+    expect(metadata.description).toBe("ロンドンの霧 東京へ");
+    expect(metadata.openGraph?.description).toBe("ロンドンの霧 東京へ");
+  });
 });
