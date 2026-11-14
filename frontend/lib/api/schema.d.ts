@@ -36,6 +36,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/works": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publicWorks.listPublicWorks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/my/works": {
         parameters: {
             query?: never;
@@ -319,6 +335,19 @@ export interface components {
             };
             episodes: components["schemas"]["PublicEpisodeSummaryResource"][];
         };
+        /** PublicWorkSummaryResource */
+        PublicWorkSummaryResource: {
+            id: string;
+            title: string;
+            catchphrase: string | null;
+            genre: components["schemas"]["Genre"];
+            status: components["schemas"]["WorkStatus"];
+            published_episode_count: number;
+            last_episode_published_at: string | null;
+            author: {
+                name: string;
+            };
+        };
         /**
          * RatingFlag
          * @enum {string}
@@ -562,6 +591,31 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
+            422: components["responses"]["ValidationException"];
+        };
+    };
+    "publicWorks.listPublicWorks": {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Array of `PublicWorkSummaryResource` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["PublicWorkSummaryResource"][];
+                    };
+                };
+            };
             422: components["responses"]["ValidationException"];
         };
     };

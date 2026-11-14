@@ -16,6 +16,7 @@ use App\Http\Controllers\MyWorks\StoreWorkController;
 use App\Http\Controllers\MyWorks\UnpublishEpisodeController;
 use App\Http\Controllers\MyWorks\UpdateEpisodeController;
 use App\Http\Controllers\MyWorks\UpdateWorkController;
+use App\Http\Controllers\PublicWorks\ListPublicWorksController;
 use App\Http\Controllers\PublicWorks\ShowPublicEpisodeController;
 use App\Http\Controllers\PublicWorks\ShowPublicWorkController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,7 @@ Route::post('/auth/register', RegisterController::class);
 Route::post('/auth/login', LoginController::class)->middleware('throttle:login');
 Route::post('/demo/sessions', StartDemoSessionController::class)->middleware('throttle:demo');
 
+Route::get('/works', ListPublicWorksController::class);
 Route::get('/works/{work}', ShowPublicWorkController::class)->whereUuid('work');
 Route::get('/works/{work}/episodes/{episode}', ShowPublicEpisodeController::class)->whereUuid(['work', 'episode']);
 

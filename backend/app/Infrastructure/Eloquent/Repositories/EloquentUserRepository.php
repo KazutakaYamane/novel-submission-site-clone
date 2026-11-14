@@ -18,6 +18,12 @@ final class EloquentUserRepository implements UserRepositoryInterface
         return $model === null ? null : self::toEntity($model);
     }
 
+    public function findNamesByIds(array $ids): array
+    {
+        /** @var array<string, string> */
+        return UserModel::whereKey($ids)->pluck('name', 'id')->all();
+    }
+
     public function findCredentialsByEmail(string $email): ?UserCredentials
     {
         $model = UserModel::where('email', $email)->first(['id', 'password']);

@@ -82,6 +82,14 @@ final class InMemoryWorkRepository implements RollbackableDouble, WorkRepository
         return $works;
     }
 
+    public function listByLastEpisodePublishedAt(int $limit): array
+    {
+        $works = array_values(array_filter($this->rows, fn (Work $work) => $work->lastEpisodePublishedAt !== null));
+        usort($works, fn (Work $a, Work $b) => [$b->lastEpisodePublishedAt, $a->id] <=> [$a->lastEpisodePublishedAt, $b->id]);
+
+        return array_slice($works, 0, $limit);
+    }
+
     public function update(string $id, array $changes): ?Work
     {
         $stored = $this->rows[$id] ?? null;
