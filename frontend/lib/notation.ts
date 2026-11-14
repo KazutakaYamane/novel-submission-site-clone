@@ -111,3 +111,10 @@ function autoBaseStart(buffer: string[]): number {
   while (start > 0 && buffer.length - start < MAX_BASE_LENGTH && KANJI.test(buffer[start - 1])) start--;
   return start;
 }
+
+// 記法を描画できない場所(OGP の説明文など)向けに、読者に見える本文の文字だけを残す
+export function stripNotation(line: string): string {
+  return parseLine(line)
+    .map((token) => (token.type === "ruby" ? token.base : token.text))
+    .join("");
+}

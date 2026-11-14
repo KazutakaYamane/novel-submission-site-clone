@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseLine } from "./notation";
+import { parseLine, stripNotation } from "./notation";
 
 const text = (text: string) => ({ type: "text", text }) as const;
 const ruby = (base: string, ruby: string) => ({ type: "ruby", base, ruby }) as const;
@@ -149,5 +149,12 @@ describe("parseLine", () => {
 
   it("<・>・& はエスケープせず、そのまま text とルビに入れる", () => {
     expect(parseLine("<b>&amp;漢字《<i>》&")).toEqual([text("<b>&amp;"), ruby("漢字", "<i>"), text("&")]);
+  });
+});
+
+describe("stripNotation", () => {
+  it("ルビは親文字だけ、傍点は中身だけを残し、記法にならない文字はそのまま残す", () => {
+    expect(stripNotation("｜ロンドン《倫敦》の《《霧》》と東京《とうきょう》")).toBe("ロンドンの霧と東京");
+    expect(stripNotation("ひらがな《ルビ》と｜《")).toBe("ひらがな《ルビ》と《");
   });
 });

@@ -73,6 +73,38 @@ test("作品を作って話を書き、公開するとゲストに見え、非�
   }).toPass();
 });
 
+test("本文のルビと傍点が、ゲストの話ページでルビと傍点として表示される", async ({ page, browser }) => {
+  await signUp(page, "E2E 作者");
+  const editPath = await createWork(page, "記法を確かめる作品");
+  const workId = editPath.split("/").at(-1);
+  await page.goto(editPath);
+  await waitForForm(page, "話を追加");
+  await page.getByLabel("話のタイトル").fill("第1話");
+  await page.getByRole("button", { name: "話を追加" }).click();
+  await expect(page).toHaveURL(new RegExp(`/my/works/${workId}/episodes/[0-9a-f-]{36}$`));
+  const episodeId = new URL(page.url()).pathname.split("/").at(-1);
+
+  await waitForForm(page, "下書き保存");
+  await page.getByLabel("本文").fill("｜ロンドン《倫敦》の《《霧》》");
+  await page.getByRole("button", { name: "下書き保存" }).click();
+  await expect(page.getByRole("status")).toHaveText("保存しました");
+  await page.getByRole("button", { name: "公開" }).click();
+  await expect(page.getByTestId("episode-status")).toHaveText("公開中");
+
+  const guest = await openAsGuest(browser);
+  const body = guest.getByRole("article");
+  // キャッシュの破棄は worker 経由の非同期なので、反映されるまで開き直す
+  await expect(async () => {
+    await guest.goto(`/works/${workId}/episodes/${episodeId}`);
+    await expect(body.locator("rt")).toHaveText("倫敦", { timeout: 1000 });
+  }).toPass();
+  await expect(body.locator("ruby")).toContainText("ロンドン");
+  await expect(body.locator("em")).toHaveText("霧");
+  // computed value は既定の filled を省いて返す
+  await expect(body.locator("em")).toHaveCSS("text-emphasis-style", "sesame");
+  await expect(body.locator("em")).toHaveCSS("font-style", "normal");
+});
+
 test("エディタの完了の表示は直前の操作のものだけを出し、入力を始めると消える", async ({ page }) => {
   await signUp(page, "E2E 作者");
   const editPath = await createWork(page, "表示を確かめる作品");

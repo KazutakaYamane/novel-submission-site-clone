@@ -1,0 +1,5 @@
+/* 傍点は斜体ではなく、横書きで文字の上にゴマ点を打つ。Next.js の既定の対象ブラウザ(Safari 16.4 以上)は接頭辞なしの text-emphasis に対応している */
+.emphasis {
+  font-style: normal;
+  text-emphasis: filled sesame;
+}
