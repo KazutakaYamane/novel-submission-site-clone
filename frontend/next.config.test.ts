@@ -21,3 +21,7 @@ it('"use cache" の結果を Redis に置くハンドラを cacheHandlers.defaul
 it("事前描画したページを Redis に置くハンドラを cacheHandler に設定している", () => {
   expect(nextConfig.cacheHandler).toBe(path.resolve(process.cwd(), "cache-handlers/incremental.mjs"));
 });
+
+it("dev サーバーの HMR で再描画するとき、fetch に前の応答を使い回させない", () => {
+  expect(nextConfig.experimental?.serverComponentsHmrCache).toBe(false);
+});
