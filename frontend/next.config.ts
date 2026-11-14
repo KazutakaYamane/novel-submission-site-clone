@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   // E2E のブラウザは http://web:3000 で開く。dev サーバーは localhost 以外からの /_next/* を拒否する
   allowedDevOrigins: ["web"],
   experimental: {
+    // 既定の true では、HMR の再描画で "use cache" の中の fetch も前の 200 の応答を返す。その応答から
+    // 破棄より後の時刻のエントリができ、公開の取り消しなどの revalidateTag が効かなくなる(dev だけ)
+    serverComponentsHmrCache: false,
     serverActions: {
       // 既定の 1MB では話の本文が送れない。本文の上限は Laravel が判定する(backend/config/work.php の
       // episode_body_max_bytes = 6990474)ので、ここはそれに multipart の区切りとタイトルの分を足した大きさにする
