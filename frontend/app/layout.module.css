@@ -7,8 +7,4 @@
 
 .content {
   flex: 1;
-  width: 100%;
-  max-width: var(--width-page);
-  margin: 0 auto;
-  padding-top: var(--header-height);
 }

@@ -28,6 +28,8 @@ Node runs in the container: `docker compose exec web <cmd>`
 
 ```
 app/                         routes; files used by one route live in that route's folder
+  layout.tsx                 <html>, fonts, metadata, and the footer of every page
+  (site)/layout.tsx          the content frame under the site header (width, top padding); every route except the episode page
   <route>/page.tsx           composes boundaries; little logic
   <route>/<name>.tsx         components used only by this route (Server or Client)
   <route>/<name>.module.css  styles of <name>.tsx
@@ -55,7 +57,7 @@ lib/<topic>.ts               framework-free logic shared by 2+ routes (e.g. nota
 | Boundary | Rule |
 |---|---|
 | `layout.tsx` | MUST [spec] not `await` `params`, `cookies()`, or `headers()` at the top level. Reason: it blocks every child segment and the static shell. Pass the promise down into a component inside `<Suspense>`. |
-| Site header | MUST [decision] be rendered by each `page.tsx` and `not-found.tsx` as `<SiteHeader />` (`components/site-header.tsx`), not by `layout.tsx`. Reason: a layout is not re-rendered on client navigation [spec], so the header account would keep showing a user whose token is no longer valid. `error.tsx` (a Client Component) renders `SiteHeaderFrame` without the account. Enforced by `npm run lint` (`site-header/require-in-page`, `site-header/forbid-in-layout`). |
+| Site header | MUST [decision] be rendered by each `page.tsx` and `not-found.tsx` as `<SiteHeader />` (`components/site-header.tsx`), not by `layout.tsx`. Reason: a layout is not re-rendered on client navigation [spec], so the header account would keep showing a user whose token is no longer valid. `error.tsx` (a Client Component) renders `SiteHeaderFrame` without the account. Exception: the episode page renders its own bar without the account, as the original site does. Enforced by `npm run lint` (`site-header/require-in-page`, `site-header/forbid-in-layout`). |
 | `page.tsx` | SHOULD [decision] be a non-async component that only arranges cached sections and `<Suspense>` boundaries, so the boundaries are visible in one file. Pass `props.params` (a promise) down; await it inside the boundary [spec]. |
 | `<Suspense>` | MUST [spec] wrap every component that reads `cookies()`, `headers()`, `params`, `searchParams`, `connection()`, or uncached data. Otherwise `next build` fails. MUST [decision] put one boundary around each independent per-request section (header account, cheer, rating) so a slow section does not hold the others. |
 | `"use cache"` | MUST [decision] be placed on data functions in `lib/api/<resource>.ts`, not on components. Reason: the cache key is the function's arguments, which are IDs [spec: arguments are part of the key]. |
@@ -70,7 +72,7 @@ What goes where on public pages [decision]:
 | `/` | new works, top ranking, genres (`top`, `ranking`) | header account |
 | `/rankings/[genre]/[period]` | ranking table (`ranking`) | header account |
 | `/works/[workId]` | work, table of contents (`work:{id}`) | header account, my rating |
-| `/works/[workId]/episodes/[episodeId]` | body, prev/next (`episode:{id}`, `work:{id}`) | header account, cheer count and my cheer |
+| `/works/[workId]/episodes/[episodeId]` | episode bar, body, prev/next (`episode:{id}`, `work:{id}`) | cheer count and my cheer |
 | `/login`, `/signup`, `/session-expired`, `/my/*` | none | whole page |
 
 - MUST [decision] Do not cache cheer counts. Reason: caching them would invalidate the episode cache on every cheer.
@@ -170,7 +172,6 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublishedEpisode } from "@/lib/api/episodes";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
-import { SiteHeader } from "@/components/site-header";
 import { CheerSection } from "./cheer-section";
 
 type Props = PageProps<"/works/[workId]/episodes/[episodeId]">;
@@ -178,19 +179,16 @@ type Props = PageProps<"/works/[workId]/episodes/[episodeId]">;
 // page は境界を並べるだけ。params は Suspense の中で await する
 export default function EpisodePage({ params }: Props) {
   return (
-    <>
-      <SiteHeader />
-      <main>
-        <Suspense fallback={<p>読み込み中…</p>}>
-          <EpisodeBody params={params} />
+    <main>
+      <Suspense fallback={<p>読み込み中…</p>}>
+        <EpisodeBody params={params} />
+      </Suspense>
+      <SectionErrorBoundary message="応援を表示できませんでした">
+        <Suspense fallback={null}>
+          <CheerSection params={params} />
         </Suspense>
-        <SectionErrorBoundary message="応援を表示できませんでした">
-          <Suspense fallback={null}>
-            <CheerSection params={params} />
-          </Suspense>
-        </SectionErrorBoundary>
-      </main>
-    </>
+      </SectionErrorBoundary>
+    </main>
   );
 }
 

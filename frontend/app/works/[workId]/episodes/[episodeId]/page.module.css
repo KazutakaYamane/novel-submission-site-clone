@@ -1,0 +1,4 @@
+/* 固定した話ページの帯の下から本文を始める */
+.main {
+  padding-top: var(--episode-bar-height);
+}
