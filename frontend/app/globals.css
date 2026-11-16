@@ -47,6 +47,7 @@
   --font-size-11_5: 11.5px;
   --font-size-12: 12px;
   --font-size-12_6: 12.6px;
+  --font-size-13: 13px;
   --font-size-14: 14px;
   --font-size-16: 16px;
   --font-size-16_25: 16.25px;
@@ -88,6 +89,8 @@
   --header-row-height: 50px;
   --header-subnav-height: 0px;
   --header-height: calc(var(--header-row-height) + var(--header-subnav-height));
+  /* 話ページの帯。サイト共通のヘッダーと違い、スマホでも高さは変わらない */
+  --episode-bar-height: 50px;
 }
 
 @media (max-width: 640px) {

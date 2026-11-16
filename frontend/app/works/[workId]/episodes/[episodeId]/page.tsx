@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { SiteHeader } from "@/components/site-header";
 import { getPublishedEpisode } from "@/lib/api/episodes";
+import { EpisodeBar } from "./episode-bar";
 import { EpisodeBody } from "./episode-body";
 import { episodeMetadata } from "./metadata";
+import styles from "./page.module.css";
 
 type Props = PageProps<"/works/[workId]/episodes/[episodeId]">;
 
@@ -16,12 +17,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return episodeMetadata(episode);
 }
 
-// page は境界を並べるだけ。params は Suspense の中で await する
+// page は境界を並べるだけ。params は Suspense の中で await する。
+// 本家の話ページはサイト共通のヘッダーの代わりに話ページの帯を出すので、<SiteHeader /> を描画しない
 export default function EpisodePage({ params }: Props) {
   return (
     <>
-      <SiteHeader />
-      <main>
+      <Suspense fallback={null}>
+        <EpisodeBar params={params} />
+      </Suspense>
+      <main className={styles.main}>
         <Suspense fallback={<p>読み込み中…</p>}>
           <EpisodeBody params={params} />
         </Suspense>

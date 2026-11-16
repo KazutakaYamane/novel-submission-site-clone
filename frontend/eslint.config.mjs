@@ -85,6 +85,8 @@ const eslintConfig = defineConfig([
   },
   {
     files: ["app/**/page.tsx", "app/**/not-found.tsx"],
+    // 話ページは本家と同じく、ログイン状態を出さない話ページの帯を出す
+    ignores: ["app/works/[[]workId]/episodes/[[]episodeId]/page.tsx"],
     plugins: { "site-header": siteHeaderPlugin },
     rules: { "site-header/require-in-page": "error" },
   },

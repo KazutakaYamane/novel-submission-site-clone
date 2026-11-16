@@ -1,0 +1,101 @@
+.bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  height: var(--episode-bar-height);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-header);
+}
+
+.iconLink {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--episode-bar-height);
+  height: var(--episode-bar-height);
+  color: var(--color-text);
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* 本家の PC の帯は、閉じるボタンの右の縦線から作品名と話の題名の 2 行が始まり、その右にロゴが続く */
+.titles {
+  width: 375px;
+  padding: 0 var(--space-1s) 0 20px;
+  border-left: 1px solid var(--color-border);
+  line-height: var(--line-height-list);
+}
+
+.workTitle,
+.episodeTitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.workTitle {
+  font-size: var(--font-size-12);
+}
+
+.episodeTitle {
+  color: var(--color-text-weaker);
+  font-size: var(--font-size-11);
+}
+
+.logoLink {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: var(--episode-bar-height);
+  color: var(--color-text);
+}
+
+.logo {
+  width: 100px;
+  height: 19px;
+}
+
+.toc {
+  margin-left: auto;
+  color: var(--color-primary);
+}
+
+.tocFrame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  /* スマホの帯は題名を出さず、ロゴを中央に置く */
+  .titles {
+    display: none;
+  }
+
+  .logoLink {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .toc {
+    color: var(--color-text);
+  }
+
+  .tocFrame {
+    border: 0;
+  }
+}

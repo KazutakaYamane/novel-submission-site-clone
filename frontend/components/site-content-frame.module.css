@@ -1,0 +1,7 @@
+/* 固定したヘッダーの下から本文を始める */
+.frame {
+  width: 100%;
+  max-width: var(--width-page);
+  margin: 0 auto;
+  padding-top: var(--header-height);
+}
