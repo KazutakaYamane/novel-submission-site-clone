@@ -1,4 +1,203 @@
+/*
+ * 本家の作品ページの値。PC は主の列と目次の列(440px)を横に並べ、スマホは目次を本文の下に入れる。
+ * 本家にある作品の色の帯・★・フォローなどのボタン・タブは、データか機能が無いので出さない
+ */
+/* 1185px の枠では本家と同じ 745px と 440px になり、それより狭い PC の幅では同じ比で縮めて主の列を残す */
+.work {
+  display: grid;
+  grid-template-columns: minmax(0, 745fr) minmax(0, 440fr);
+}
+
+.info {
+  padding: var(--space-7l) var(--space-4l);
+}
+
+.title {
+  font-size: var(--font-size-35);
+  font-weight: bold;
+  line-height: var(--line-height-heading);
+}
+
+.author {
+  margin-top: var(--space-3s);
+}
+
+.actions {
+  margin-top: var(--space-2l);
+}
+
+.read {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 130px;
+  height: 36px;
+  border: 1px solid var(--color-primary-dark);
+  border-radius: var(--radius-button);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.overview {
+  margin-top: var(--space-2l);
+  padding-top: var(--space-4l);
+  border-top: 1px solid var(--color-border);
+}
+
+/* 本家は作品ごとの色で塗るが、API に作品の色が無いのでトップの新着と同じく主色の濃い色にする */
+.catchphrase {
+  margin-bottom: var(--space-4l);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-20);
+  font-weight: bold;
+  line-height: var(--line-height-tight);
+  text-align: center;
+}
+
 /* 作者が入れた改行をそのまま見せる */
 .introduction {
   white-space: pre-wrap;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2s);
+  margin-top: var(--space-m);
+}
+
+/* 高さ 31px は本家の札の寸法。上下の padding 8px を除いた 15px を行の高さにする */
+.tag {
+  padding: var(--space-2s) var(--space-1s);
+  border-radius: var(--radius-button);
+  background: var(--color-bg-beige);
+  font-size: var(--font-size-12_6);
+  line-height: 15px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.meta {
+  margin-top: var(--space-4l);
+  padding-top: var(--space-m);
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-weak);
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+.toc {
+  padding: var(--space-m) var(--space-4l) 60px;
+  border-left: 1px solid var(--color-border-light);
+}
+
+.tocHeading {
+  color: var(--color-text-weak);
+  font-size: var(--font-size-11_5);
+  font-weight: normal;
+}
+
+.episodes {
+  margin: var(--space-2s) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.episode {
+  padding: var(--space-2s) 0;
+  line-height: var(--line-height-list);
+}
+
+.episodeTitle {
+  display: block;
+}
+
+.empty {
+  margin-top: var(--space-2s);
+  color: var(--color-text-weak);
+}
+
+.episodeDate {
+  display: block;
+  color: var(--color-text-weak);
+  font-size: var(--font-size-11_5);
+}
+
+/*
+ * スマホは本家と同じく「1話目から読む」を目次の後ろに回し、画面の下に貼り付ける。
+ * sticky の範囲を作品全体にするため、.info を display: contents にして子を .work の並びに入れる
+ */
+@media (max-width: 640px) {
+  .work {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .info {
+    display: contents;
+  }
+
+  .title,
+  .author,
+  .overview {
+    margin-right: var(--space-m);
+    margin-left: var(--space-m);
+  }
+
+  .title {
+    margin-top: var(--space-m);
+    font-size: var(--font-size-18);
+  }
+
+  .author {
+    margin-top: 2px;
+  }
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+    order: 1;
+    margin-top: 0;
+    padding: var(--space-1s);
+    background: var(--color-bg);
+    box-shadow: var(--shadow-sticky-bottom);
+  }
+
+  .read {
+    width: 157px;
+  }
+
+  .overview {
+    margin-top: var(--space-m);
+    padding-top: var(--space-m);
+  }
+
+  .catchphrase {
+    margin-bottom: 0;
+    font-size: var(--font-size-16);
+    text-align: left;
+  }
+
+  .meta {
+    margin-top: var(--space-m);
+    font-size: var(--font-size-11_5);
+  }
+
+  .toc {
+    margin-top: var(--space-2l);
+    padding: var(--space-m);
+    border-top: 1px solid var(--color-border);
+    border-left: none;
+  }
 }
