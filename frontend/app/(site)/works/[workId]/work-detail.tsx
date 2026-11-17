@@ -1,59 +1,100 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPublishedWork } from "@/lib/api/works";
+import { Fragment } from "react";
+import { getPublishedWork, type PublishedWork } from "@/lib/api/works";
 import { genreLabel, ratingFlagLabels, statusLabel } from "@/lib/work-attributes";
 import { formatDate } from "@/lib/format-date";
+import { MetaSeparator } from "@/components/meta-separator";
 import styles from "./work-detail.module.css";
 
 export async function WorkDetail({ params }: { params: Promise<{ workId: string }> }) {
   const { workId } = await params;
   const work = await getPublishedWork(workId);
   if (!work) notFound();
-  const ratings = ratingFlagLabels(work.ratingFlags);
+  const first = work.episodes[0];
   return (
-    <article>
-      <h1>{work.title}</h1>
-      {work.catchphrase && <p>{work.catchphrase}</p>}
-      <dl>
-        <dt>作者</dt>
-        <dd>{work.authorName}</dd>
-        <dt>ジャンル</dt>
-        <dd>{genreLabel(work.genre)}</dd>
-        <dt>連載状態</dt>
-        <dd>{statusLabel(work.status)}</dd>
-        <dt>セルフレイティング</dt>
-        <dd>{ratings.length > 0 ? ratings.join("・") : "なし"}</dd>
-        <dt>タグ</dt>
-        <dd>{work.tags.length > 0 ? work.tags.join("、") : "なし"}</dd>
-        {work.lastEpisodePublishedAt && (
-          <>
-            <dt>最終更新</dt>
-            <dd>
-              <time dateTime={work.lastEpisodePublishedAt}>{formatDate(work.lastEpisodePublishedAt)}</time>
-            </dd>
-          </>
+    <article className={styles.work}>
+      <div className={styles.info}>
+        <h1 className={styles.title}>{work.title}</h1>
+        <p className={styles.author}>{work.authorName}</p>
+        {first && (
+          <div className={styles.actions} data-testid="work-actions">
+            <Link href={`/works/${work.id}/episodes/${first.id}`} className={styles.read}>
+              1話目から読む
+            </Link>
+          </div>
         )}
-      </dl>
-      <section>
-        <h2>あらすじ</h2>
-        <p className={styles.introduction}>{work.introduction}</p>
-      </section>
-      <section>
-        <h2>目次</h2>
-        <ol>
-          {work.episodes.map((episode) => (
-            <li key={episode.id}>
-              <Link href={`/works/${work.id}/episodes/${episode.id}`}>{episode.title}</Link>
-              {episode.publishedAt && (
-                <>
-                  {" "}
-                  <time dateTime={episode.publishedAt}>{formatDate(episode.publishedAt)}</time>
-                </>
-              )}
-            </li>
-          ))}
-        </ol>
+        <div className={styles.overview}>
+          {work.catchphrase && <p className={styles.catchphrase}>{work.catchphrase}</p>}
+          <p className={styles.introduction}>{work.introduction}</p>
+          {work.tags.length > 0 && <Tags tags={work.tags} />}
+          <Meta work={work} />
+        </div>
+      </div>
+      <section className={styles.toc} aria-labelledby="toc-heading">
+        <h2 id="toc-heading" className={styles.tocHeading}>
+          目次
+        </h2>
+        {work.episodes.length === 0 ? (
+          <p className={styles.empty}>まだ公開された話はありません</p>
+        ) : (
+          <ol role="list" className={styles.episodes}>
+            {work.episodes.map((episode) => (
+              <li key={episode.id} className={styles.episode}>
+                <Link href={`/works/${work.id}/episodes/${episode.id}`} className={styles.episodeTitle}>
+                  {episode.title}
+                </Link>
+                {episode.publishedAt && (
+                  <span className={styles.episodeDate}>
+                    <time dateTime={episode.publishedAt}>{formatDate(episode.publishedAt)}</time>公開
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
       </section>
     </article>
+  );
+}
+
+// 札の間の「、」は画面に出さず、読み上げとコピーでタグの区切りがわかるようにする。
+// 目次の <ol> を main の中の唯一のリストに保つため、タグはリストにしない
+function Tags({ tags }: { tags: string[] }) {
+  return (
+    <p className={styles.tags}>
+      {tags.map((tag, i) => (
+        <Fragment key={tag}>
+          {i > 0 && <span className={styles.visuallyHidden}>、</span>}
+          <span className={styles.tag}>{tag}</span>
+        </Fragment>
+      ))}
+    </p>
+  );
+}
+
+function Meta({ work }: { work: PublishedWork }) {
+  const items = [
+    genreLabel(work.genre),
+    `${statusLabel(work.status)} 全${work.episodes.length}話`,
+    ...ratingFlagLabels(work.ratingFlags),
+  ];
+  return (
+    <p className={styles.meta} data-testid="work-meta">
+      {items.map((item, i) => (
+        <Fragment key={item}>
+          {i > 0 && <MetaSeparator />}
+          <span className={styles.metaItem}>{item}</span>
+        </Fragment>
+      ))}
+      {work.lastEpisodePublishedAt && (
+        <>
+          <MetaSeparator />
+          <span className={styles.metaItem}>
+            <time dateTime={work.lastEpisodePublishedAt}>{formatDate(work.lastEpisodePublishedAt)}</time> 更新
+          </span>
+        </>
+      )}
+    </p>
   );
 }

@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import { getRecentlyUpdatedWorks, type WorkSummary } from "@/lib/api/works";
 import { formatDate } from "@/lib/format-date";
 import { genreLabel, statusLabel } from "@/lib/work-attributes";
+import { MetaSeparator } from "@/components/meta-separator";
 import styles from "./new-works.module.css";
 
 export async function NewWorks() {
@@ -29,13 +30,13 @@ function WorkItem({ work }: { work: WorkSummary }) {
       </h3>
       <p className={styles.meta}>
         <span className={styles.metaItem}>{genreLabel(work.genre)}</span>
-        <Separator />
+        <MetaSeparator />
         <span className={styles.metaItem}>
           {statusLabel(work.status)} {work.episodeCount}話
         </span>
         {work.lastEpisodePublishedAt && (
           <>
-            <Separator />
+            <MetaSeparator />
             <span className={styles.metaItem}>
               <time dateTime={work.lastEpisodePublishedAt}>{formatDate(work.lastEpisodePublishedAt)}</time> 更新
             </span>
@@ -43,13 +44,5 @@ function WorkItem({ work }: { work: WorkSummary }) {
         )}
       </p>
     </li>
-  );
-}
-
-function Separator() {
-  return (
-    <span aria-hidden="true" className={styles.separator}>
-      •
-    </span>
   );
 }
