@@ -1,11 +1,11 @@
 ---
 name: implement-task
-description: Implement one task memo end to end — read it, open the GitHub issue, branch, implement test-first, then run code-review. Use only when the user names a task to implement (e.g. `/implement-task T-0019`).
+description: Implement one task memo end to end — read it, open the GitHub issue, branch, implement test-first, run code-review, then verify the change in the running app. Use only when the user names a task to implement (e.g. `/implement-task T-0019`).
 argument-hint: <task id, e.g. T-0019> [code-review level]
 disable-model-invocation: true
 ---
 
-Implement the task named in `$ARGUMENTS` and stop after handling the code review's findings. This skill only orders the steps; the rules themselves are in `AGENTS.md`, `backend/AGENTS.md`, `frontend/AGENTS.md`, and the `interviewer-docs` skill. Follow them.
+Implement the task named in `$ARGUMENTS` and stop after verifying the reviewed change in the running app. This skill only orders the steps; the rules themselves are in `AGENTS.md`, `backend/AGENTS.md`, `frontend/AGENTS.md`, and the `interviewer-docs` skill. Follow them.
 
 ## 1. Read the task
 
@@ -44,7 +44,11 @@ Run the `code-review` skill on the working-tree diff, passing the level from `$A
 - Fix the findings that hold. Follow "Tests" in `AGENTS.md`, rerun the affected checks, and record the commands and output in 結果.
 - Append both lists to the task's 作業ログ: the findings you fixed and how, and the findings you left with the reason for each.
 
-## 5. Report
+## 5. Verify
 
-- If every criterion is checked and every finding that holds is fixed, set `status: done` and move the task file to `docs/agent_memo/done/tasks/`. Otherwise leave it in `todo/` and say what remains.
-- Tell the user: the issue URL, the branch, what changed per criterion, check results, the findings you fixed (what was wrong and how you fixed it), the findings you left (with the reason for each), and any `README.md` passages the change invalidated (the author rewrites them).
+Load the `verify` skill and run it on the working tree after the review fixes, with the task's 受け入れ条件 as the intent. The verify skill appends its evidence to the task's 結果.
+
+## 6. Report
+
+- If every criterion is checked, every finding that holds is fixed, and verify passed, set `status: done` and move the task file to `docs/agent_memo/done/tasks/`. Otherwise leave it in `todo/` and say what remains.
+- Tell the user: the issue URL, the branch, what changed per criterion, check results, the findings you fixed (what was wrong and how you fixed it), the findings you left (with the reason for each), the verify evidence per criterion (or what failed and why), and any `README.md` passages the change invalidated (the author rewrites them).
