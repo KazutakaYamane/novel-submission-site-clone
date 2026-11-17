@@ -1,0 +1,32 @@
+/* 本家のワークスペースの「次のエピソードを執筆」(塗り)と「章と並び順を編集」(灰色): 高さ 30px、枠 1px、約 13px の太字 */
+.button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 0 var(--space-1s);
+  border: 1px solid;
+  border-radius: var(--radius-workspace);
+  font-size: var(--font-size-13);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: default;
+}
+
+.primary {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.secondary {
+  border-color: var(--color-border-button);
+  background: var(--color-bg-button-gray);
+  color: var(--color-text);
+}

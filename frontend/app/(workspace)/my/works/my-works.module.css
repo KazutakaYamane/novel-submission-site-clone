@@ -1,0 +1,61 @@
+/* 本家の作品の一覧: 幅 800px の中央寄せ */
+.main {
+  max-width: var(--width-workspace);
+  margin: 0 auto;
+}
+
+/* 本家: 上の帯から一覧の上線まで 49px。灰色のボタンは右端から 10px */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2s);
+  height: 49px;
+  padding: 0 var(--space-1s);
+}
+
+.heading {
+  overflow: hidden;
+  font-size: var(--font-size-13);
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+  list-style: none;
+}
+
+/* 本家: 高さ 60px、左 14px に札、札の右に作品名 約 14px の太字 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 60px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  overflow: hidden;
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 本家のスマホ: 行は高さ 70px、札は左 12px、ボタンは右端から 6px */
+@media (max-width: 640px) {
+  .toolbar {
+    height: 51px;
+    padding: 0 6px 0 var(--space-2s);
+  }
+
+  .row {
+    height: 70px;
+    padding: 0 12px;
+  }
+}

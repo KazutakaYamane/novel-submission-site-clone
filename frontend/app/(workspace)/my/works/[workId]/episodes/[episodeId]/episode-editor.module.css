@@ -1,0 +1,102 @@
+/* 本家の話の編集の上の帯: 高さ 50px、下線 1px #E5E5E5。左に閉じる、中央に「(題名)を編集」約 13px、右端から 9px にボタン */
+.bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 50px;
+  border-bottom: 1px solid var(--color-border-bar);
+  background: var(--color-bg);
+}
+
+.close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 49px;
+}
+
+.closeIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.barTitle {
+  overflow: hidden;
+  font-size: var(--font-size-13);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* スマホで題名を隠しても右の列に置く */
+.actions {
+  display: flex;
+  grid-column: 3;
+  justify-content: flex-end;
+  gap: var(--space-1s);
+  padding-right: 9px;
+}
+
+/* 本家: 本文の列は中央寄せ。幅は話ページの本文と同じ 665px にした */
+.column {
+  width: 100%;
+  max-width: var(--width-episode-body);
+  margin: 0 auto;
+  padding: calc(50px + var(--space-6l)) 0 var(--space-7l);
+}
+
+/* 本家: 「作品名 ▸ 1話目」約 12px #999 */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2s);
+  color: var(--color-text-weakest);
+  font-size: var(--font-size-12);
+}
+
+.metaSeparator::before {
+  content: "▸";
+  margin-right: var(--space-2s);
+}
+
+.publicLink {
+  color: var(--color-link);
+}
+
+/* 本家の題名と本文は枠の無い入力欄。題名は 約 16px、本文は明朝体 */
+.title {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-2s);
+  padding: 0;
+  border: 0;
+  font-size: var(--font-size-16);
+}
+
+.body {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-4l);
+  padding: 0;
+  border: 0;
+  font-family: var(--font-family-serif);
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-base);
+  resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .barTitle {
+    display: none;
+  }
+
+  .column {
+    padding-right: var(--space-m);
+    padding-left: var(--space-m);
+  }
+}

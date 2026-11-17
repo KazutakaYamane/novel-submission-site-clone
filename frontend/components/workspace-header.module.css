@@ -1,0 +1,133 @@
+/* 本家のワークスペースの上の帯: 高さ 45px、下線 1px #E5E5E5。固定せず、本文と一緒に流れる */
+.bar {
+  border-bottom: 1px solid var(--color-border-bar);
+  background: var(--color-bg);
+}
+
+.inner {
+  display: grid;
+  grid-template-areas: "brand nav account";
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: 44px;
+  align-items: center;
+  max-width: var(--width-workspace);
+  margin: 0 auto;
+  padding: 0 var(--space-1s);
+}
+
+.brand {
+  display: flex;
+  grid-area: brand;
+  align-items: center;
+  gap: var(--space-4s);
+}
+
+.logoLink {
+  display: flex;
+}
+
+.logo {
+  width: 16px;
+  height: 16px;
+}
+
+.logoSquare {
+  fill: var(--color-logo);
+}
+
+.logoMark {
+  stroke: var(--color-white);
+}
+
+/* 本家: 約 14px の太字 */
+.title {
+  font-size: var(--font-size-14);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  grid-area: nav;
+  height: 100%;
+  margin-left: 34px;
+}
+
+/* 本家: アイコン 20 前後と 約 11px のラベル。今いる項目は #0990CC。項目は 1 つで、どのページでも今いる項目になる */
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4s);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-11);
+  white-space: nowrap;
+}
+
+.navIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.account {
+  display: flex;
+  grid-area: account;
+  align-items: center;
+  gap: var(--space-2s);
+  min-width: 0;
+}
+
+.userName {
+  max-width: 200px;
+  overflow: hidden;
+  font-size: var(--font-size-13);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.logout {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-weak);
+  font-size: var(--font-size-13);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* 本家のスマホ: 1 段目(高さ 32px、下線 1px #DDD)と、5 項目を等分した 2 段目のナビ(高さ 44px) */
+@media (max-width: 640px) {
+  .inner {
+    grid-template-areas:
+      "brand account"
+      "nav nav";
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 31px 44px;
+    max-width: none;
+    padding: 0;
+  }
+
+  .brand {
+    padding-left: var(--space-2s);
+  }
+
+  .account {
+    padding-right: var(--space-2s);
+  }
+
+  .userName {
+    max-width: 120px;
+  }
+
+  .nav {
+    margin-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .navLink {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    width: 20%;
+    font-size: var(--font-size-10);
+  }
+}

@@ -29,7 +29,8 @@ Node runs in the container: `docker compose exec web <cmd>`
 ```
 app/                         routes; files used by one route live in that route's folder
   layout.tsx                 <html>, fonts, metadata, and the footer of every page
-  (site)/layout.tsx          the content frame under the site header (width, top padding); every route except the episode page
+  (site)/layout.tsx          the content frame under the site header (width, top padding); public pages and auth pages, except the episode page
+  (workspace)/my/            the author's pages (/my/*) under the workspace bar instead of the site header
   <route>/page.tsx           composes boundaries; little logic
   <route>/<name>.tsx         components used only by this route (Server or Client)
   <route>/<name>.module.css  styles of <name>.tsx
@@ -57,7 +58,7 @@ lib/<topic>.ts               framework-free logic shared by 2+ routes (e.g. nota
 | Boundary | Rule |
 |---|---|
 | `layout.tsx` | MUST [spec] not `await` `params`, `cookies()`, or `headers()` at the top level. Reason: it blocks every child segment and the static shell. Pass the promise down into a component inside `<Suspense>`. |
-| Site header | MUST [decision] be rendered by each `page.tsx` and `not-found.tsx` as `<SiteHeader />` (`components/site-header.tsx`), not by `layout.tsx`. Reason: a layout is not re-rendered on client navigation [spec], so the header account would keep showing a user whose token is no longer valid. `error.tsx` (a Client Component) renders `SiteHeaderFrame` without the account. Exception: the episode page renders its own bar without the account, as the original site does. Enforced by `npm run lint` (`site-header/require-in-page`, `site-header/forbid-in-layout`). |
+| Site header | MUST [decision] be rendered by each `page.tsx` and `not-found.tsx` as `<SiteHeader />` (`components/site-header.tsx`), not by `layout.tsx`. Pages under `(workspace)/` render `<WorkspaceHeader />` (`components/workspace-header.tsx`) instead, by the same rule. Reason: a layout is not re-rendered on client navigation [spec], so the header account would keep showing a user whose token is no longer valid. `error.tsx` (a Client Component) renders `SiteHeaderFrame` without the account. Exception: the episode page and the episode editor render their own bar without the account, as the original site does. Enforced by `npm run lint` (`site-header/require-in-page`, `site-header/forbid-in-layout`). |
 | `page.tsx` | SHOULD [decision] be a non-async component that only arranges cached sections and `<Suspense>` boundaries, so the boundaries are visible in one file. Pass `props.params` (a promise) down; await it inside the boundary [spec]. |
 | `<Suspense>` | MUST [spec] wrap every component that reads `cookies()`, `headers()`, `params`, `searchParams`, `connection()`, or uncached data. Otherwise `next build` fails. MUST [decision] put one boundary around each independent per-request section (header account, cheer, rating) so a slow section does not hold the others. |
 | `"use cache"` | MUST [decision] be placed on data functions in `lib/api/<resource>.ts`, not on components. Reason: the cache key is the function's arguments, which are IDs [spec: arguments are part of the key]. |

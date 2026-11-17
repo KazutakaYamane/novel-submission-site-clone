@@ -2,24 +2,24 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-const PAGE_HEADER = new Set(["SiteHeader"]);
-const HEADER_ELEMENTS = new Set(["SiteHeader", "SiteHeaderFrame"]);
+const PAGE_HEADERS = new Set(["SiteHeader", "WorkspaceHeader"]);
+const HEADER_ELEMENTS = new Set(["SiteHeader", "SiteHeaderFrame", "WorkspaceHeader"]);
 
 function rendersElement(node, names) {
   return node.name.type === "JSXIdentifier" && names.has(node.name.name);
 }
 
 // frontend/AGENTS.md の「Site header」: layout はクライアントの遷移で描画し直されないので、
-// ログイン状態を含むヘッダーは各 page が描画する
+// ログイン状態を含むヘッダー(サイト共通のヘッダーかワークスペースの帯)は各 page が描画する
 const siteHeaderPlugin = {
   rules: {
     "require-in-page": {
-      meta: { type: "problem", messages: { missing: "page.tsx・not-found.tsx は <SiteHeader /> を描画する" } },
+      meta: { type: "problem", messages: { missing: "page.tsx・not-found.tsx は <SiteHeader /> か <WorkspaceHeader /> を描画する" } },
       create(context) {
         let found = false;
         return {
           JSXOpeningElement(node) {
-            if (rendersElement(node, PAGE_HEADER)) found = true;
+            if (rendersElement(node, PAGE_HEADERS)) found = true;
           },
           "Program:exit"(node) {
             if (!found) context.report({ node, messageId: "missing" });
@@ -85,8 +85,11 @@ const eslintConfig = defineConfig([
   },
   {
     files: ["app/**/page.tsx", "app/**/not-found.tsx"],
-    // 話ページは本家と同じく、ログイン状態を出さない話ページの帯を出す
-    ignores: ["app/works/[[]workId]/episodes/[[]episodeId]/page.tsx"],
+    // 話ページと話の編集は本家と同じく、ログイン状態を出さない専用の帯を出す
+    ignores: [
+      "app/works/[[]workId]/episodes/[[]episodeId]/page.tsx",
+      "app/(workspace)/my/works/[[]workId]/episodes/[[]episodeId]/page.tsx",
+    ],
     plugins: { "site-header": siteHeaderPlugin },
     rules: { "site-header/require-in-page": "error" },
   },

@@ -1,0 +1,22 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2s);
+}
+
+.label {
+  color: var(--color-text-weak);
+  font-size: var(--font-size-12);
+  white-space: nowrap;
+}
+
+.input {
+  width: 200px;
+}
+
+@media (max-width: 640px) {
+  .input {
+    width: auto;
+    flex: 1;
+  }
+}
