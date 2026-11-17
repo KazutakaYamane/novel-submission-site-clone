@@ -6,6 +6,7 @@ import { genreLabel, ratingFlagLabels, statusLabel } from "@/lib/work-attributes
 import { formatDate } from "@/lib/format-date";
 import { MetaSeparator } from "@/components/meta-separator";
 import styles from "./work-detail.module.css";
+import { VisuallyHidden } from "@/components/visually-hidden";
 
 export async function WorkDetail({ params }: { params: Promise<{ workId: string }> }) {
   const { workId } = await params;
@@ -65,7 +66,7 @@ function Tags({ tags }: { tags: string[] }) {
     <p className={styles.tags}>
       {tags.map((tag, i) => (
         <Fragment key={tag}>
-          {i > 0 && <span className={styles.visuallyHidden}>、</span>}
+          {i > 0 && <VisuallyHidden>、</VisuallyHidden>}
           <span className={styles.tag}>{tag}</span>
         </Fragment>
       ))}

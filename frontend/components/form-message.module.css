@@ -1,0 +1,8 @@
+.message {
+  margin-top: var(--space-4s);
+  font-size: var(--font-size-12);
+}
+
+.alert {
+  color: var(--color-error);
+}

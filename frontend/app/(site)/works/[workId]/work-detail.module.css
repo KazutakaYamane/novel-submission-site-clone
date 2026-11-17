@@ -77,14 +77,6 @@
   line-height: 15px;
 }
 
-.visuallyHidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
 
 .meta {
   margin-top: var(--space-4l);

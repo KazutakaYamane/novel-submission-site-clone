@@ -27,8 +27,12 @@
   --color-chapter: #915cbf;
   --color-chapter-number: #7942a8;
   --color-white: #fff;
+  --color-logo: #2792ca;
+  /* 本家のエラーの表示は採取していない。本文の #222 と区別がつく赤にした */
+  --color-error: #d0021b;
   --shadow-header: 0 1px 0 0 rgb(0 0 0 / 5%);
   --shadow-sticky-bottom: 0 -1px 0 0 rgb(0 0 0 / 10%);
+  --shadow-box: 0 1px 0 0 #f2f2f2;
 
   /* 本家と同じく OS のフォントを先に並べ、どれも無い環境(Linux・Android)だけ Noto を読む。--font-noto-* は layout.tsx の next/font が定義する */
   --font-family-sans:
@@ -49,6 +53,7 @@
   --font-size-12_6: 12.6px;
   --font-size-13: 13px;
   --font-size-14: 14px;
+  --font-size-15: 15px;
   --font-size-16: 16px;
   --font-size-16_25: 16.25px;
   --font-size-17_5: 17.5px;
@@ -80,11 +85,15 @@
 
   --radius-button: 3px;
   --radius-pill: 9999px;
+  /* ワークスペースのボタン・入力欄は公開ページの 3px より小さい */
+  --radius-workspace: 2px;
 
   --width-page: 1185px;
   --width-page-padding: 30px;
   --width-episode-body: 665px;
   --width-episode-aside: 330px;
+  --width-workspace: 800px;
+  --width-workspace-narrow: 768px;
   /* ヘッダーの帯は 1 段目(ロゴの行)と、スマホだけにある 2 段目(ナビ)からなる */
   --header-row-height: 50px;
   --header-subnav-height: 0px;

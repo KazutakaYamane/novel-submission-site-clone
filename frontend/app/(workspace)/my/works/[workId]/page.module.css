@@ -1,0 +1,61 @@
+/* 本家の作品の管理: 幅 約 768px の中央寄せ。スマホは左右 12px */
+.main {
+  max-width: var(--width-workspace-narrow);
+  margin: 0 auto;
+  padding-bottom: var(--space-7l);
+}
+
+.episodes {
+  margin-top: var(--space-4l);
+}
+
+.episodesHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2s);
+  padding-bottom: var(--space-1s);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* 本家: 約 15px の太字 */
+.episodesHeading {
+  font-size: var(--font-size-15);
+  font-weight: 700;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* 本家: 高さ 51px、下線 1px #DDD。札・題名 約 14px・「編集」約 12px #0990CC */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-m);
+  height: 51px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--font-size-14);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edit {
+  flex-shrink: 0;
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-12);
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 0 12px var(--space-7l);
+  }
+}

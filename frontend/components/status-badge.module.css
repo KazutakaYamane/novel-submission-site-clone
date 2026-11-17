@@ -1,0 +1,27 @@
+.badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 55px;
+  height: 16px;
+  font-size: var(--font-size-11);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.unpublished {
+  background: var(--color-badge-unpublished);
+  color: var(--color-text);
+}
+
+.draft {
+  background: var(--color-badge-draft);
+  color: var(--color-text-weakest);
+}
+
+/* 本家の画像に公開中の札が無いので、主色の塗りにした */
+.published {
+  background: var(--color-primary);
+  color: var(--color-white);
+}

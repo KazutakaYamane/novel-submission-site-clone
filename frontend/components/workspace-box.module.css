@@ -1,0 +1,16 @@
+/* 本家: 枠 1px #DDD と下に 1px の影。見出しは高さ 31px、背景 #F2F1F0、約 13px の太字 */
+.box {
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-box);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  height: 31px;
+  padding: 0 12px;
+  background: var(--color-bg-beige);
+  font-size: var(--font-size-13);
+  font-weight: 700;
+}

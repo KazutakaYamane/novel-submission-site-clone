@@ -1,0 +1,12 @@
+/* 本家の作品の管理と同じ、幅 768px の中央寄せ */
+.main {
+  max-width: var(--width-workspace-narrow);
+  margin: 0 auto;
+  padding-bottom: var(--space-7l);
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 0 12px var(--space-7l);
+  }
+}

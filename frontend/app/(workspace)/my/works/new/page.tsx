@@ -1,17 +1,19 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import { SiteHeader } from "@/components/site-header";
 import { WorkForm } from "@/components/work-form";
+import { WorkspaceBox } from "@/components/workspace-box";
+import { WorkspaceBreadcrumb } from "@/components/workspace-breadcrumb";
+import { WorkspaceHeader } from "@/components/workspace-header";
 import { getCurrentUser } from "@/lib/api/me";
 import { redirectUnauthenticated } from "@/lib/auth";
 import { createWorkAction } from "./actions";
+import styles from "./page.module.css";
 
 export default function NewWorkPage() {
   return (
     <>
-      <SiteHeader />
-      <main>
-        <h1>新しい作品</h1>
+      <WorkspaceHeader current="section" />
+      <main className={styles.main}>
+        <WorkspaceBreadcrumb current="新しい作品" />
         <Suspense fallback={<p>読み込み中…</p>}>
           <NewWork />
         </Suspense>
@@ -24,11 +26,8 @@ export default function NewWorkPage() {
 async function NewWork() {
   if (!(await getCurrentUser())) return redirectUnauthenticated();
   return (
-    <>
+    <WorkspaceBox id="work-settings" title="小説設定">
       <WorkForm action={createWorkAction} submitLabel="作品を作る" />
-      <p>
-        <Link href="/my/works">作品管理へ戻る</Link>
-      </p>
-    </>
+    </WorkspaceBox>
   );
 }

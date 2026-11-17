@@ -1,0 +1,37 @@
+/* 本家の「小説設定」の箱の項目: ラベル 約 12px #666、項目の間に線 1px #DDD */
+.field {
+  margin: 0;
+  padding: var(--space-1s) 12px;
+  border: 0;
+}
+
+.field + .field {
+  border-top: 1px solid var(--color-border);
+}
+
+.label {
+  display: block;
+  margin-bottom: var(--space-4s);
+  color: var(--color-text-weak);
+  font-size: var(--font-size-12);
+}
+
+/* legend は fieldset の枠線の上に乗るので、float で項目の中に入れる */
+.group > .label {
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+
+.options {
+  display: flex;
+  clear: both;
+  flex-wrap: wrap;
+  gap: var(--space-4s) var(--space-m);
+}
+
+.options label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4s);
+}
