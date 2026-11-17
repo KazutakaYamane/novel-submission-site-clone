@@ -2,6 +2,8 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
+  // test.only を残したまま CI を通すと、その 1 件だけで E2E が成功になる
+  forbidOnly: !!process.env.CI,
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   use: {
     trace: "retain-on-failure",
