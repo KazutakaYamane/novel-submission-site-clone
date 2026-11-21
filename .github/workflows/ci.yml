@@ -89,18 +89,20 @@ jobs:
       - name: start containers
         run: |
           printf 'UID=%s\nGID=%s\n' "$(id -u)" "$(id -g)" > .env
-          # web の npm ci と next dev の起動を、composer install と並行に進める
-          docker compose up -d app web
+          # ランナーの Compose は、前の呼び出しで起動したコンテナを、後の呼び出しで依存として起動するときに作り直す。
+          # 作り直された web は npm ci からやり直してテストに間に合わないため、依存は 1 回の up で起動し、後の呼び出しは --no-deps にする。
+          # web の npm ci と next dev の起動は、composer install と並行に進む
+          docker compose up -d app web nginx
           docker compose exec -T app composer install --no-interaction --no-progress
           docker compose exec -T app sh -c 'cp .env.example .env && php artisan key:generate --no-interaction'
           # smoke.spec.ts などはシードの作品を前提にする
           docker compose exec -T app php artisan migrate --seed --no-interaction
           # worker は公開・非公開化のときに web のキャッシュを破棄する。vendor が揃ってから起動する
-          docker compose up -d nginx worker
+          docker compose up -d --no-deps worker
           timeout 600 sh -c 'until docker compose logs web | grep -q "Ready in"; do sleep 3; done' \
             || { docker compose logs web; exit 1; }
       - name: e2e
-        run: docker compose run --rm e2e
+        run: docker compose run --rm --no-deps e2e
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
