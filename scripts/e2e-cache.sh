@@ -21,4 +21,5 @@ trap 'exit 143' TERM
 # テストは Laravel(nginx → app → db)を呼ぶので、dev の環境が止まっていても動くように一緒に起動する
 docker compose --profile e2e up -d --build --wait web-prod nginx
 NEXT_REVALIDATE_URL=http://web-prod:3000 docker compose up -d --no-deps --force-recreate worker
-docker compose --profile e2e run --rm e2e-cache
+# web-prod は上の --wait で起動済み。依存として起動させると、Compose によっては作り直して起動を待たずに始める
+docker compose --profile e2e run --rm --no-deps e2e-cache

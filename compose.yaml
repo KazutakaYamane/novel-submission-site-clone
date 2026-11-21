@@ -237,6 +237,8 @@ services:
     environment:
       # 非 root 実行時に npm のキャッシュ先が書き込み可能になるようにする
       HOME: /tmp
+      # GitHub Actions の CI=true を playwright.config.ts の forbidOnly に渡す
+      CI: ${CI:-}
     volumes:
       - ./e2e:/e2e
     command: ["sh", "-c", "npm ci && npx playwright test --project=dev"]
