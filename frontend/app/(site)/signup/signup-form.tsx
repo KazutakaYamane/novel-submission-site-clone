@@ -1,30 +1,25 @@
 "use client";
 import { useActionState } from "react";
-import { FieldErrors } from "@/components/field-errors";
+import { AuthTextField } from "@/components/auth-text-field";
+import { ErrorBox } from "@/components/error-box";
 import { Form } from "@/components/form";
+import { PillButton } from "@/components/pill-button";
 import { signupAction } from "./actions";
+import styles from "./signup-form.module.css";
 
 export function SignupForm() {
   const [state, action, pending] = useActionState(signupAction, { status: "idle" });
   return (
     <Form action={action}>
-      <p>
-        <label htmlFor="name">名前</label>
-        <input id="name" name="name" autoComplete="nickname" required />
-      </p>
-      <FieldErrors state={state} name="name" />
-      <p>
-        <label htmlFor="email">メールアドレス</label>
-        <input id="email" name="email" type="email" autoComplete="email" required />
-      </p>
-      <FieldErrors state={state} name="email" />
-      <p>
-        <label htmlFor="password">パスワード</label>
-        <input id="password" name="password" type="password" autoComplete="new-password" required />
-      </p>
-      <FieldErrors state={state} name="password" />
-      {state.status === "error" && state.message && <p role="alert">{state.message}</p>}
-      <button disabled={pending}>登録する</button>
+      <ErrorBox messages={state.status === "error" && state.message ? [state.message] : []} />
+      <AuthTextField label="名前" name="name" autoComplete="nickname" required state={state} />
+      <AuthTextField label="メールアドレス" name="email" type="email" autoComplete="email" required state={state} />
+      <AuthTextField label="パスワード" name="password" type="password" autoComplete="new-password" required state={state} />
+      <div className={styles.actions}>
+        <PillButton variant="fill" disabled={pending}>
+          登録する
+        </PillButton>
+      </div>
     </Form>
   );
 }

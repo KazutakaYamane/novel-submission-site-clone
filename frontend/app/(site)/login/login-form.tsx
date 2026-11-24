@@ -1,25 +1,32 @@
 "use client";
 import { useActionState } from "react";
-import { FieldErrors } from "@/components/field-errors";
+import { AuthTextField } from "@/components/auth-text-field";
+import { ErrorBox } from "@/components/error-box";
 import { Form } from "@/components/form";
+import { PillButton } from "@/components/pill-button";
+import type { ActionState } from "@/lib/action-state";
 import { loginAction } from "./actions";
+import styles from "./login-form.module.css";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, { status: "idle" });
   return (
     <Form action={action}>
-      <p>
-        <label htmlFor="email">メールアドレス</label>
-        <input id="email" name="email" type="email" autoComplete="email" required />
-      </p>
-      <FieldErrors state={state} name="email" />
-      <p>
-        <label htmlFor="password">パスワード</label>
-        <input id="password" name="password" type="password" autoComplete="current-password" required />
-      </p>
-      <FieldErrors state={state} name="password" />
-      {state.status === "error" && state.message && <p role="alert">{state.message}</p>}
-      <button disabled={pending}>ログイン</button>
+      <ErrorBox messages={errorMessages(state)} />
+      <AuthTextField label="メールアドレス" name="email" type="email" autoComplete="email" required />
+      <AuthTextField label="パスワード" name="password" type="password" autoComplete="current-password" required />
+      <div className={styles.actions}>
+        <PillButton variant="fill" disabled={pending}>
+          ログイン
+        </PillButton>
+      </div>
     </Form>
   );
+}
+
+// 本家と同じく、どの欄の失敗かを分けずにフォームの上にまとめて出す
+function errorMessages(state: ActionState): string[] {
+  if (state.status !== "error") return [];
+  const messages = Object.values(state.fieldErrors ?? {}).flat();
+  return state.message ? [state.message, ...messages] : messages;
 }

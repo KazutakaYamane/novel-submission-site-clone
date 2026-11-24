@@ -1,0 +1,10 @@
+/* 本家のログインのエラー: 背景 rgb(255, 235, 238)、角丸 4px、上下 20px・左右 16px、14px rgb(193, 27, 51)、下の欄まで 32px */
+.box {
+  margin-bottom: var(--space-4l);
+  padding: 20px var(--space-m);
+  border-radius: var(--radius-input);
+  background: var(--color-bg-error);
+  color: var(--color-error);
+  font-size: var(--font-size-14);
+  line-height: 1.5;
+}
