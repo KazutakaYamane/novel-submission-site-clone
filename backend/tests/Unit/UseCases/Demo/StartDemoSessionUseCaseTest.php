@@ -11,6 +11,8 @@ use App\Domain\Shared\UuidGeneratorInterface;
 use App\Domain\Work\Genre;
 use App\Domain\Work\RatingFlag;
 use App\Domain\Work\WorkStatus;
+use App\UseCases\Auth\LoginUseCase;
+use App\UseCases\Auth\RegisterUserUseCase;
 use App\UseCases\Demo\StartDemoSessionUseCase;
 use App\UseCases\Work\ImportWorkUseCase;
 use Tests\Doubles\FixedClock;
@@ -68,10 +70,10 @@ beforeEach(function () {
         ],
     );
 
+    $hasher = new PrefixPasswordHasher;
     $this->startDemoSession = new StartDemoSessionUseCase(
-        $this->users,
-        new PrefixPasswordHasher,
-        $this->tokens,
+        new RegisterUserUseCase($this->users, $hasher, $this->tokens, $transaction),
+        new LoginUseCase($this->users, $hasher, $this->tokens),
         $transaction,
         $uuids,
         $this->sampleWorks,

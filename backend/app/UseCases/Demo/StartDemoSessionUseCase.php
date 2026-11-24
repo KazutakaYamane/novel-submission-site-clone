@@ -2,25 +2,22 @@
 
 namespace App\UseCases\Demo;
 
-use App\Domain\Auth\AccessTokensInterface;
-use App\Domain\Auth\AuthenticatedUser;
 use App\Domain\Demo\DemoRole;
 use App\Domain\Demo\DemoSession;
 use App\Domain\Demo\SampleEpisode;
 use App\Domain\Demo\SampleWorkSourceInterface;
 use App\Domain\Shared\ClockInterface;
-use App\Domain\Shared\PasswordHasherInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\Shared\UuidGeneratorInterface;
-use App\Domain\User\UserRepositoryInterface;
+use App\UseCases\Auth\LoginUseCase;
+use App\UseCases\Auth\RegisterUserUseCase;
 use App\UseCases\Work\ImportWorkUseCase;
 
 final readonly class StartDemoSessionUseCase
 {
     public function __construct(
-        private UserRepositoryInterface $users,
-        private PasswordHasherInterface $hasher,
-        private AccessTokensInterface $tokens,
+        private RegisterUserUseCase $registerUser,
+        private LoginUseCase $login,
         private TransactionInterface $transaction,
         private UuidGeneratorInterface $uuids,
         private SampleWorkSourceInterface $sampleWorks,
@@ -35,15 +32,17 @@ final readonly class StartDemoSessionUseCase
             DemoRole::Author => 'デモ作者',
             DemoRole::Reader => 'デモ読者',
         };
-        // 再ログインはボタンを押し直してもらうので、パスワードはユーザーに見せずに捨てる
-        $hashedPassword = $this->hasher->hash(bin2hex(random_bytes(32)));
+        $email = "demo-{$uuid}@example.com";
+        // 同じユーザーに戻る手段は持たない(ADR 0015)ので、パスワードはこの処理の中だけで使い、利用者に返さない
+        $password = bin2hex(random_bytes(32));
 
-        return $this->transaction->run(function () use ($role, $uuid, $label, $hashedPassword) {
-            // UUID の重複は起こらない前提で、existsByEmail で確かめない
-            $user = $this->users->create($label.'-'.substr($uuid, 0, 4), "demo-{$uuid}@example.com", $hashedPassword);
-            $sampleWorkId = $role === DemoRole::Author ? $this->importSampleWork($user->id) : null;
+        return $this->transaction->run(function () use ($role, $uuid, $label, $email, $password) {
+            // 会員登録の UseCase もトークンを発行するが、利用者に渡すのはログインで発行したトークンだけにする
+            ($this->registerUser)($label.'-'.substr($uuid, 0, 4), $email, $password);
+            $authenticated = ($this->login)($email, $password);
+            $sampleWorkId = $role === DemoRole::Author ? $this->importSampleWork($authenticated->user->id) : null;
 
-            return new DemoSession(new AuthenticatedUser($user, $this->tokens->issue($user->id)), $sampleWorkId);
+            return new DemoSession($authenticated, $sampleWorkId);
         });
     }
 

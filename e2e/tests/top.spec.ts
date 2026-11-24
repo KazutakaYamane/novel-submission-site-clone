@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createWork, publishNewEpisode, reloadUntil, signUp } from "./helpers";
+import { createWork, startDemoAuthor, publishNewEpisode, reloadUntil, waitForForm } from "./helpers";
 
 const newWorks = (page: Page) => page.getByRole("region", { name: "新着の更新作品" });
 
@@ -20,8 +20,11 @@ test("トップにサイトの説明、デモのボタン、リセットの時�
 });
 
 test("ログイン中は、トップの帯にデモのボタンを出さない", async ({ page }) => {
-  await signUp(page, "E2E 読者");
-  await page.goto("/");
+  await page.goto("/login");
+  const main = page.getByRole("main");
+  await waitForForm(page, "デモ読者として始める", main);
+  await main.getByRole("button", { name: "デモ読者として始める" }).click();
+  await expect(page).toHaveURL("/");
   const hero = page.getByRole("main").getByRole("region", { name: "novel-site-clone" });
   await expect(hero).toContainText("データは毎日 4:00 にリセットされます");
   await expect(newWorks(page).getByRole("listitem").first()).toBeVisible();
@@ -42,7 +45,7 @@ test("新着の作品の行に、キャッチコピー・作者名・ジャン�
   page,
 }) => {
   const title = `トップに出る作品 ${Date.now()}`;
-  await signUp(page, "E2E 作者");
+  const authorName = await startDemoAuthor(page);
   const editPath = await createWork(page, title);
   await publishNewEpisode(page, editPath, "第1話", "本文");
 
@@ -53,7 +56,7 @@ test("新着の作品の行に、キャッチコピー・作者名・ジャン�
 
   const item = newWorks(page).getByRole("listitem").filter({ has: page.getByRole("link", { name: title }) });
   await expect(item).toContainText("最後の星が消える夜に");
-  await expect(item).toContainText(`${title}／E2E 作者`);
+  await expect(item).toContainText(`${title}／${authorName}`);
   await expect(item).toContainText("SF");
   await expect(item).toContainText("連載中 1話");
   const today = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", dateStyle: "long" }).format(new Date());

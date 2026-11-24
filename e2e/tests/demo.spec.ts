@@ -24,11 +24,11 @@ test("ゲストがデモ読者で始めると / へ移る", async ({ page }) => 
   await expect(page.getByRole("banner").getByTestId("header-user-name")).toHaveText(/^デモ読者-/);
 });
 
-test("ゲストのヘッダーにログイン・新規登録のリンクとデモのボタンがある", async ({ page }) => {
+test("ゲストのヘッダーにログインのリンクとデモのボタンがあり、会員登録のリンクは無い", async ({ page }) => {
   await page.goto("/");
   const header = page.getByRole("banner");
   await expect(header.getByRole("link", { name: "ログイン" })).toHaveAttribute("href", "/login");
-  await expect(header.getByRole("link", { name: /^新規登録/ })).toHaveAttribute("href", "/signup");
+  await expect(header.getByRole("link", { name: /新規登録|会員登録/ })).toHaveCount(0);
   await expect(header.getByRole("button", { name: "デモ作者として始める" })).toBeVisible();
   await expect(header.getByRole("button", { name: "デモ読者として始める" })).toBeVisible();
 });
@@ -45,7 +45,9 @@ test("無効なトークンの cookie で /my/works を開くと、/session-expi
   await expect(main).toContainText("データは毎日 4:00 にリセットされます");
   await expect(main.getByRole("button", { name: "デモ作者として始める" })).toBeVisible();
   await expect(main.getByRole("button", { name: "デモ読者として始める" })).toBeVisible();
-  await expect(main.getByRole("link", { name: "ログインする" })).toHaveAttribute("href", "/login");
+  // ログインは無効なので、会員登録したユーザー向けの案内とログインへのリンクは出さない
+  await expect(main).not.toContainText("会員登録");
+  await expect(main.getByRole("link")).toHaveCount(0);
   // Laravel が 401 を返すトークンでは、ヘッダーは未ログインの表示になる
   await expect(page.getByRole("banner").getByRole("link", { name: "ログイン" })).toBeVisible();
 });

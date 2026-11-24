@@ -74,7 +74,7 @@ What goes where on public pages [decision]:
 | `/rankings/[genre]/[period]` | ranking table (`ranking`) | header account |
 | `/works/[workId]` | work, table of contents (`work:{id}`) | header account, my rating |
 | `/works/[workId]/episodes/[episodeId]` | episode bar, body, prev/next (`episode:{id}`, `work:{id}`) | cheer count and my cheer |
-| `/login`, `/signup`, `/session-expired`, `/my/*` | none | whole page |
+| `/login`, `/session-expired`, `/my/*` | none | whole page |
 
 - MUST [decision] Do not cache cheer counts. Reason: caching them would invalidate the episode cache on every cheer.
 - MUST [decision] Do not use `generateStaticParams`. Reason: Laravel is unreachable during `next build`, and with Cache Components it must return at least one param [spec]. Unknown params are served from the App Shell and upgraded in the background [spec].
@@ -124,7 +124,7 @@ Decide in this order and stop at the first match:
   - 403/404 → `notFound()` in pages; returned as an error result in Server Actions.
   - 422 → returned to the caller (only from Server Actions).
   - Other → throw; the nearest `catchError` or `error.tsx` handles it.
-- MUST [spec] Server Components cannot set or delete cookies. A stale token cookie stays until the next login, demo start, or logout replaces or deletes it.
+- MUST [spec] Server Components cannot set or delete cookies. A stale token cookie stays until the next demo start or logout replaces or deletes it.
 
 ## Mutations
 
@@ -138,7 +138,7 @@ Decide in this order and stop at the first match:
 
 ## Auth
 
-- MUST [decision] Token cookie: name `auth_token`, `httpOnly`, `secure` (except in development), `sameSite: "lax"`, `path: "/"`, `maxAge` equal to Laravel's token expiration. Set only in the login, signup, and demo-start actions; delete only in the logout action and on 401 in actions.
+- MUST [decision] Token cookie: name `auth_token`, `httpOnly`, `secure` (except in development), `sameSite: "lax"`, `path: "/"`, `maxAge` equal to Laravel's token expiration. Set only in the demo-start action; delete only in the logout action and on 401 in actions.
 - MUST [decision] Login checks in pages exist only to redirect guests. Laravel decides access on every request.
 - MUST [decision] Do not authenticate in `proxy.ts`. Reason: validating the token needs a Laravel call, which would run on every request.
 
@@ -300,7 +300,7 @@ The `as` casts stand in for the generated `schema.d.ts` types until they exist; 
 11. Does every Server Action validate argument shapes before calling Laravel?
 12. Do form actions return `ActionState` and map 422 `errors` to `fieldErrors`?
 13. Does a successful write call `refresh()`, and do actions avoid `revalidateTag`/`updateTag`?
-14. Is the token cookie set or deleted only in the login, signup, demo-start, and logout actions and on 401 in actions?
+14. Is the token cookie set or deleted only in the demo-start and logout actions and on 401 in actions?
 15. Are there no `export const revalidate|dynamic|fetchCache`, no `middleware.ts`, no `pages/`? (grep)
 16. Are there no secrets in `NEXT_PUBLIC_*`? (grep `.env*` and code)
 17. Is every new file in the folder of its only user, with no role folders added?

@@ -1,5 +1,5 @@
 import { expect, test as base, type Page } from "@playwright/test";
-import { createWork, notFoundHeading, publishNewEpisode, reloadUntil, signUp, waitForForm } from "./helpers";
+import { createWork, startDemoAuthor, notFoundHeading, publishNewEpisode, reloadUntil, waitForForm } from "./helpers";
 
 // 本番ビルドの web-prod を相手に、キャッシュしたゲスト向けのページに公開と非公開化が反映されることを確かめる。
 // scripts/e2e-cache.sh から --project=cache で実行する
@@ -12,7 +12,7 @@ const test = base.extend<{ guest: Page }>({
 });
 
 test("公開した話はキャッシュ済みの目次と前の話のページに出て、非公開に戻すと消える", async ({ page, guest }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, "キャッシュを確かめる作品");
   const workPath = editPath.replace("/my/works/", "/works/");
   const firstPath = await publishNewEpisode(page, editPath, "第1話 はじまり", "第1話の本文");
@@ -50,7 +50,7 @@ test("公開した話はキャッシュ済みの目次と前の話のページ�
 
 test("トップをキャッシュに載せた後に話を公開すると、トップの新着にその作品が出る", async ({ page, guest }) => {
   const title = `トップの反映を確かめる作品 ${Date.now()}`;
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, title);
   const newWorks = guest.getByRole("region", { name: "新着の更新作品" });
 
