@@ -1,0 +1,28 @@
+/* 本家のメールのログイン・会員登録: 見出し 22px 700、説明 14px(行の高さ 21px)、説明から最初のラベルまで 32px。スマホは左右 16px */
+.panel {
+  max-width: calc(var(--width-auth) + 2 * var(--space-m));
+  margin: 0 auto;
+  padding: var(--space-7l) var(--space-m);
+}
+
+.title {
+  color: var(--color-black);
+  font-size: var(--font-size-22);
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.description {
+  margin-top: var(--space-2s);
+  line-height: 1.5;
+}
+
+.body {
+  margin-top: var(--space-4l);
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding-top: var(--space-2l);
+  }
+}

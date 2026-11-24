@@ -16,7 +16,8 @@
   --color-border-bar: #e5e5e5;
   --color-border-button: #bbb;
   --color-border-checkbox: #ccc;
-  --color-border-login-button: #999;
+  /* 本家のログインの画面の入力欄とログイン方式のボタンの枠 */
+  --color-border-control: #999;
   --color-bg: #fff;
   --color-bg-footer: #f7f6f5;
   --color-bg-beige: #f2f1f0;
@@ -28,8 +29,9 @@
   --color-chapter-number: #7942a8;
   --color-white: #fff;
   --color-logo: #2792ca;
-  /* 本家のエラーの表示は採取していない。本文の #222 と区別がつく赤にした */
-  --color-error: #d0021b;
+  --color-black: #000;
+  --color-error: #c11b33;
+  --color-bg-error: #ffebee;
   --shadow-header: 0 1px 0 0 rgb(0 0 0 / 5%);
   --shadow-sticky-bottom: 0 -1px 0 0 rgb(0 0 0 / 10%);
   --shadow-box: 0 1px 0 0 #f2f2f2;
@@ -60,6 +62,7 @@
   --font-size-18: 18px;
   --font-size-20: 20px;
   --font-size-21: 21px;
+  --font-size-22: 22px;
   --font-size-22_75: 22.75px;
   --font-size-24: 24px;
   --font-size-24_5: 24.5px;
@@ -87,6 +90,7 @@
   --radius-pill: 9999px;
   /* ワークスペースのボタン・入力欄は公開ページの 3px より小さい */
   --radius-workspace: 2px;
+  --radius-input: 4px;
 
   --width-page: 1185px;
   --width-page-padding: 30px;
@@ -94,6 +98,9 @@
   --width-episode-aside: 330px;
   --width-workspace: 800px;
   --width-workspace-narrow: 768px;
+  /* 本家のメールのログインの入力欄と、ログイン方式のボタンの幅 */
+  --width-auth: 508px;
+  --width-auth-button: 328px;
   /* ヘッダーの帯は 1 段目(ロゴの行)と、スマホだけにある 2 段目(ナビ)からなる */
   --header-row-height: 50px;
   --header-subnav-height: 0px;

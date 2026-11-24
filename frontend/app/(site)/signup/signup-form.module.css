@@ -1,0 +1,4 @@
+/* 本家の会員登録は、欄の下の注意書きからボタンまで 32px */
+.actions {
+  margin-top: var(--space-4l);
+}

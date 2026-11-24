@@ -44,11 +44,6 @@
 }
 
 /* 本家の塗りのボタン(「1話目から読む」)と同じ値 */
-.page .buttons {
-  flex-wrap: wrap;
-}
-
-.page .button,
 .hero .button {
   height: 36px;
   padding: 0 var(--space-m);
@@ -60,7 +55,6 @@
   letter-spacing: 0.5px;
 }
 
-.page .alert,
 .hero .alert {
   margin-top: var(--space-2s);
 }
@@ -74,6 +68,20 @@
 .hero .button {
   flex: 1;
   padding: 0 var(--space-2s);
+}
+
+/* 本家のログイン方式のボタン: 幅 328 を中央に、間 16px で縦に並べる。スマホは幅いっぱい */
+.auth .buttons {
+  flex-direction: column;
+  gap: var(--space-m);
+  max-width: var(--width-auth-button);
+  margin: 0 auto;
+}
+
+.auth .alert {
+  margin-top: var(--space-2s);
+  color: var(--color-error);
+  text-align: center;
 }
 
 /*
@@ -92,6 +100,10 @@
 }
 
 @media (max-width: 640px) {
+  .auth .buttons {
+    max-width: none;
+  }
+
   .header .button {
     flex: 1;
     min-width: 0;

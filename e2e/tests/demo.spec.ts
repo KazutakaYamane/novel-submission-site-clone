@@ -16,8 +16,9 @@ test("ゲストがデモ作者で始めると初期作品の編集画面へ移�
 
 test("ゲストがデモ読者で始めると / へ移る", async ({ page }) => {
   await page.goto("/login");
-  await waitForForm(page, "デモ読者として始める");
-  await page.getByRole("banner").getByRole("button", { name: "デモ読者として始める" }).click();
+  const header = page.getByRole("banner");
+  await waitForForm(page, "デモ読者として始める", header);
+  await header.getByRole("button", { name: "デモ読者として始める" }).click();
 
   await expect(page).toHaveURL("/");
   await expect(page.getByRole("banner").getByTestId("header-user-name")).toHaveText(/^デモ読者-/);
