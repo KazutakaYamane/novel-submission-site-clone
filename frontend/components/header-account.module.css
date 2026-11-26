@@ -33,21 +33,6 @@
   height: 100%;
 }
 
-/* 本家の「新規登録(無料)」: 高さ 34px の丸い塗り、padding 8px 12px、12.6px、字間 1px */
-.signup {
-  display: flex;
-  align-items: center;
-  height: 34px;
-  padding: var(--space-2s) 12px;
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-pill);
-  background: var(--color-primary);
-  color: var(--color-white);
-  font-size: var(--font-size-12_6);
-  letter-spacing: 1px;
-  white-space: nowrap;
-}
-
 .demo {
   margin-right: var(--space-2s);
 }
@@ -68,18 +53,6 @@
   .link {
     padding: 0 1px;
     font-size: var(--font-size-11_5);
-  }
-
-  /* 本家のスマホの「新規登録」: 高さ 22px、左右 8px、11.5px */
-  .signup {
-    height: 22px;
-    padding: 0 var(--space-2s);
-    font-size: var(--font-size-11_5);
-    letter-spacing: 0;
-  }
-
-  .pcOnly {
-    display: none;
   }
 
   /* 1 段目には入らないので、2 段目(高さ 45px)の幅いっぱいに置く */

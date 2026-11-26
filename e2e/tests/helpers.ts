@@ -7,18 +7,17 @@ export async function waitForForm(page: Page, button: string, within: Page | Loc
   await expect(within.locator("form[data-hydrated]", { has: page.getByRole("button", { name: button }) })).toBeVisible();
 }
 
-export function uniqueEmail(): string {
-  return `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
-}
-
-export async function signUp(page: Page, name: string) {
-  await page.goto("/signup");
-  await waitForForm(page, "登録する");
-  await page.getByLabel("名前").fill(name);
-  await page.getByLabel("メールアドレス").fill(uniqueEmail());
-  await page.getByLabel("パスワード").fill("password123");
-  await page.getByRole("button", { name: "登録する" }).click();
-  await expect(page).toHaveURL("/my/works");
+// デモ作者で始めて作品の一覧へ移り、ヘッダーに出る作者名を返す。デモ作者は初期作品を 1 つ持って始まる
+export async function startDemoAuthor(page: Page): Promise<string> {
+  await page.goto("/login");
+  const main = page.getByRole("main");
+  await waitForForm(page, "デモ作者として始める", main);
+  await main.getByRole("button", { name: "デモ作者として始める" }).click();
+  await expect(page).toHaveURL(/\/my\/works\/[0-9a-f-]{36}$/);
+  await page.goto("/my/works");
+  const name = page.getByRole("banner").getByTestId("header-user-name");
+  await expect(name).toHaveText(/^デモ作者-/);
+  return (await name.textContent()) ?? "";
 }
 
 // 作品を作り、編集画面の URL を返す

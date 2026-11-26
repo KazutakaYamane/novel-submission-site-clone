@@ -1,7 +1,0 @@
-/* 本家のログイン方式の見出し(「他のログイン方式」): 14px 中央、下のボタンまで 16px */
-.demoLabel {
-  margin: var(--space-4l) 0 var(--space-m);
-  font-size: var(--font-size-14);
-  line-height: 16px;
-  text-align: center;
-}

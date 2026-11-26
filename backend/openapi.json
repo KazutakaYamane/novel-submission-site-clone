@@ -362,56 +362,6 @@
                 }
             }
         },
-        "/auth/login": {
-            "post": {
-                "operationId": "auth.login",
-                "tags": [
-                    "Login"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/LoginRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        },
-                                        "token": {
-                                            "type": "string"
-                                        },
-                                        "expires_at": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "data",
-                                        "token",
-                                        "expires_at"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                },
-                "security": []
-            }
-        },
         "/auth/logout": {
             "post": {
                 "operationId": "auth.logout",
@@ -534,56 +484,6 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
-            }
-        },
-        "/auth/register": {
-            "post": {
-                "operationId": "auth.register",
-                "tags": [
-                    "Register"
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/RegisterRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "`UserResource`",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "$ref": "#/components/schemas/UserResource"
-                                        },
-                                        "token": {
-                                            "type": "string"
-                                        },
-                                        "expires_at": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "required": [
-                                        "data",
-                                        "token",
-                                        "expires_at"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
-                    }
-                },
-                "security": []
             }
         },
         "/my/works/{work}/episodes/{episode}": {
@@ -1231,23 +1131,6 @@
                 ],
                 "title": "Genre"
             },
-            "LoginRequest": {
-                "type": "object",
-                "properties": {
-                    "email": {
-                        "type": "string",
-                        "format": "email"
-                    },
-                    "password": {
-                        "type": "string"
-                    }
-                },
-                "required": [
-                    "email",
-                    "password"
-                ],
-                "title": "LoginRequest"
-            },
             "PublicEpisodeResource": {
                 "type": "object",
                 "properties": {
@@ -1516,32 +1399,6 @@
                     "sexual"
                 ],
                 "title": "RatingFlag"
-            },
-            "RegisterRequest": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "maxLength": 255
-                    },
-                    "email": {
-                        "type": "string",
-                        "format": "email",
-                        "description": "\u91cd\u8907\u306f DB \u3092\u898b\u306a\u3044\u3068\u6c7a\u307e\u3089\u306a\u3044\u305f\u3081\u3001RegisterUserUseCase \u304c\u78ba\u304b\u3081\u308b",
-                        "maxLength": 255
-                    },
-                    "password": {
-                        "type": "string",
-                        "minLength": 8,
-                        "maxLength": 255
-                    }
-                },
-                "required": [
-                    "name",
-                    "email",
-                    "password"
-                ],
-                "title": "RegisterRequest"
             },
             "StartDemoSessionRequest": {
                 "type": "object",

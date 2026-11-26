@@ -28,9 +28,6 @@ export async function HeaderAccount() {
       <Link href="/login" className={styles.link}>
         ログイン
       </Link>
-      <Link href="/signup" className={styles.signup}>
-        新規登録<span className={styles.pcOnly}>(無料)</span>
-      </Link>
     </div>
   );
 }

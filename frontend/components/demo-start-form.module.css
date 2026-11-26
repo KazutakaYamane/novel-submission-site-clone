@@ -13,7 +13,7 @@
   opacity: 0.6;
 }
 
-/* 本家の「新規登録(無料)」と同じ高さ 34px の丸いボタン。新規登録より目立たないよう、枠線だけにする */
+/* 本家のヘッダーの「新規登録(無料)」と同じ高さ 34px の丸いボタンを、枠線だけで描く */
 .header {
   position: relative;
 }
@@ -78,25 +78,26 @@
   margin: 0 auto;
 }
 
+/* 本家のログイン方式のボタン: 高さ 48、角丸 9999px、枠 1px、文字 14px */
+.auth .button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--space-m);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-14);
+  line-height: 1;
+}
+
 .auth .alert {
   margin-top: var(--space-2s);
   color: var(--color-error);
   text-align: center;
-}
-
-/*
- * 641〜800px では、ロゴ・デモのボタン 2 つ・ログイン・新規登録が帯の 1 段目に入らない。
- * 「として始める」を見た目だけ隠す。ボタンの名前は aria-label で変えない
- */
-@media (min-width: 641px) and (max-width: 800px) {
-  .header .suffix {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
 }
 
 @media (max-width: 640px) {

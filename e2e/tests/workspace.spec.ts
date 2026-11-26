@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContextOptions, type Locator, type Page } from "@playwright/test";
-import { createWork, signUp, waitForForm } from "./helpers";
+import { createWork, startDemoAuthor, waitForForm } from "./helpers";
 
 // 本家のワークスペース(作品の一覧・作品の管理・話の編集)の画像から読んだ寸法と比べる。PC は 1280×800、スマホは 390×844
 const PC = { width: 1280, height: 800 };
@@ -8,11 +8,12 @@ const SP = { width: 390, height: 844 };
 let storageState: BrowserContextOptions["storageState"];
 let editPath: string;
 let episodePath: string;
+let authorName: string;
 
 test.beforeAll(async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
-  await signUp(page, "E2E 作者");
+  authorName = await startDemoAuthor(page);
   editPath = await createWork(page, "ワークスペースを確かめる作品");
   await waitForForm(page, "話を追加");
   await page.getByLabel("話のタイトル").fill("第1話");
@@ -52,7 +53,7 @@ test.describe("PC の幅(1280px)", () => {
       const nav = bar.getByRole("link", { name: "作品の管理" });
       await expect(nav).toHaveAttribute("href", "/my/works");
       await expect(nav).toHaveCSS("color", "rgb(9, 144, 204)");
-      await expect(bar.getByTestId("header-user-name")).toHaveText("E2E 作者");
+      await expect(bar.getByTestId("header-user-name")).toHaveText(authorName);
       await expect(bar.getByRole("button", { name: "ログアウト" })).toBeVisible();
       await page.context().close();
     }

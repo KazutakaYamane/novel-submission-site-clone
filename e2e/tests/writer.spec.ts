@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
-import { createWork, notFoundHeading, signUp, waitForForm } from "./helpers";
+import { createWork, startDemoAuthor, notFoundHeading, waitForForm } from "./helpers";
 
 // browser.newContext() で作ったコンテキストは Playwright が閉じないので、テストごとに閉じる
 const openedContexts: BrowserContext[] = [];
@@ -15,7 +15,7 @@ async function openAsGuest(browser: Browser): Promise<Page> {
 }
 
 test("作品を作って話を書き、公開するとゲストに見え、非公開に戻すと見えなくなる", async ({ page, browser }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, "星を継ぐ者たち");
   const workId = editPath.split("/").at(-1);
 
@@ -74,7 +74,7 @@ test("作品を作って話を書き、公開するとゲストに見え、非�
 });
 
 test("本文のルビと傍点が、ゲストの話ページでルビと傍点として表示される", async ({ page, browser }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, "記法を確かめる作品");
   const workId = editPath.split("/").at(-1);
   await page.goto(editPath);
@@ -106,7 +106,7 @@ test("本文のルビと傍点が、ゲストの話ページでルビと傍点�
 });
 
 test("エディタの完了の表示は直前の操作のものだけを出し、入力を始めると消える", async ({ page }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, "表示を確かめる作品");
   await page.goto(editPath);
   await waitForForm(page, "話を追加");
@@ -130,7 +130,7 @@ test("エディタの完了の表示は直前の操作のものだけを出し�
 });
 
 test("タイトルが空のまま作品を作ろうとすると、タイトルの欄にエラーが出る", async ({ page }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   await page.goto("/my/works/new");
   await waitForForm(page, "作品を作る");
   await page.getByLabel("あらすじ").fill("あらすじの本文");
@@ -142,7 +142,7 @@ test("タイトルが空のまま作品を作ろうとすると、タイトル�
 });
 
 test("作品フォームで 422 が返っても、入力した値が残る", async ({ page }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   await page.goto("/my/works/new");
   await waitForForm(page, "作品を作る");
   await page.getByLabel("キャッチコピー").fill("残したいキャッチコピー");
@@ -161,7 +161,7 @@ test("作品フォームで 422 が返っても、入力した値が残る", asy
 });
 
 test("エディタで 422 が返っても、書いた本文が残る", async ({ page }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, "本文を残す作品");
   await page.goto(editPath);
   await waitForForm(page, "話を追加");
@@ -179,11 +179,11 @@ test("エディタで 422 が返っても、書いた本文が残る", async ({ 
 });
 
 test("他人の作品・存在しない作品の編集画面は 404 になる", async ({ page, browser }) => {
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, "他人には見せない作品");
 
   const other = await openAsGuest(browser);
-  await signUp(other, "E2E 別の人");
+  await startDemoAuthor(other);
   await other.goto(editPath);
   await expect(notFoundHeading(other)).toBeVisible();
 

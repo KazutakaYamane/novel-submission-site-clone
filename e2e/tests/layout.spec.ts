@@ -25,22 +25,16 @@ test.describe("PC の幅(1280px)", () => {
     expect(await box(page, "header a svg")).toMatchObject({ width: 130, height: 25 });
   });
 
-  test("ゲストのヘッダーの右端に、高さ 50px のログインと高さ 34px の丸い新規登録が並ぶ", async ({ page }) => {
+  test("ゲストのヘッダーの右端に、高さ 50px のログインが並ぶ", async ({ page }) => {
     await page.goto("/login");
     const header = page.getByRole("banner");
     const login = header.getByRole("link", { name: "ログイン" });
-    const signup = header.getByRole("link", { name: /^新規登録/ });
     await expect(login).toHaveCSS("font-size", "12.6px");
     await expect(login).toHaveCSS("padding-left", "16px");
-    await expect(signup).toHaveCSS("border-radius", "9999px");
-    await expect(signup).toHaveCSS("background-color", "rgb(75, 170, 224)");
     const loginBox = await login.boundingBox();
-    const signupBox = await signup.boundingBox();
     expect(loginBox).toMatchObject({ y: 0, height: 50 });
-    expect(signupBox).toMatchObject({ y: 8, height: 34 });
     // 中身の右端は (1280 + 1185) / 2 - 30
-    expect(signupBox!.x + signupBox!.width).toBe(1202.5);
-    expect(loginBox!.x + loginBox!.width).toBeLessThanOrEqual(signupBox!.x);
+    expect(loginBox!.x + loginBox!.width).toBe(1202.5);
   });
 
   test("デモのボタンはログインの左に、高さ 34px で並ぶ", async ({ page }) => {
@@ -71,7 +65,6 @@ test("スマホより少し広い幅(641px)でも、ゲストのヘッダーの�
     header.getByRole("button", { name: "デモ作者として始める" }),
     header.getByRole("button", { name: "デモ読者として始める" }),
     header.getByRole("link", { name: "ログイン" }),
-    header.getByRole("link", { name: /^新規登録/ }),
   ]) {
     const b = await item.boundingBox();
     expect(b!.x).toBeGreaterThanOrEqual(0);
@@ -97,20 +90,12 @@ test.describe("スマホの幅(390px)", () => {
     expect(await box(page, "header a svg")).toMatchObject({ x: 10, width: 83, height: 16 });
   });
 
-  test("ゲストのヘッダーの 1 段目の右に、高さ 34px のログインと高さ 22px の新規登録が並ぶ", async ({ page }) => {
+  test("ゲストのヘッダーの 1 段目の右に、高さ 34px のログインが並ぶ", async ({ page }) => {
     await page.goto("/login");
     const header = page.getByRole("banner");
     const login = header.getByRole("link", { name: "ログイン" });
-    const signup = header.getByRole("link", { name: /^新規登録/ });
     await expect(login).toHaveCSS("font-size", "11.5px");
-    await expect(signup).toHaveCSS("font-size", "11.5px");
-    await expect(signup).toHaveCSS("padding-left", "8px");
-    await expect(signup).toHaveText("新規登録", { useInnerText: true });
-    const loginBox = await login.boundingBox();
-    const signupBox = await signup.boundingBox();
-    expect(loginBox).toMatchObject({ y: 0, height: 34 });
-    expect(signupBox).toMatchObject({ y: 6, height: 22 });
-    expect(loginBox!.x + loginBox!.width).toBeLessThanOrEqual(signupBox!.x);
+    expect(await login.boundingBox()).toMatchObject({ y: 0, height: 34 });
   });
 
   test("デモのボタンは 2 段目に、幅を分けて並ぶ", async ({ page }) => {
@@ -137,7 +122,7 @@ test.describe("スマホの幅(390px)", () => {
 test("スクロールして表示した要素が、固定したヘッダーの下に隠れない", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 300 });
   await page.goto("/login");
-  const button = page.getByRole("button", { name: "ログイン" });
+  const button = page.getByRole("main").getByRole("button", { name: "デモ読者として始める" });
   // 入力の検証で失敗した欄やページ内リンクの先へ、ブラウザが要素を上端に合わせてスクロールするときと同じ動き
   await button.evaluate((el) => el.scrollIntoView({ block: "start" }));
   // スクロール量は整数に丸められ、行間 25.2px のため要素の位置は小数になるので、1px 未満の差は許す
