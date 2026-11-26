@@ -68,22 +68,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["auth.login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/logout": {
         parameters: {
             query?: never;
@@ -126,22 +110,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["myWorks.publishEpisode"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["auth.register"];
         delete?: never;
         options?: never;
         head?: never;
@@ -282,12 +250,6 @@ export interface components {
          * @enum {string}
          */
         Genre: "fantasy" | "action" | "sf" | "love_story" | "romance" | "drama" | "horror" | "mystery" | "nonfiction" | "history" | "criticism" | "others" | "maho" | "fan_fiction";
-        /** LoginRequest */
-        LoginRequest: {
-            /** Format: email */
-            email: string;
-            password: string;
-        };
         /** MyWorkSummaryResource */
         MyWorkSummaryResource: {
             id: string;
@@ -371,16 +333,6 @@ export interface components {
          * @enum {string}
          */
         RatingFlag: "cruelty" | "violence" | "sexual";
-        /** RegisterRequest */
-        RegisterRequest: {
-            name: string;
-            /**
-             * Format: email
-             * @description 重複は DB を見ないと決まらないため、RegisterUserUseCase が確かめる
-             */
-            email: string;
-            password: string;
-        };
         /** StartDemoSessionRequest */
         StartDemoSessionRequest: {
             role: components["schemas"]["DemoRole"];
@@ -688,35 +640,6 @@ export interface operations {
             422: components["responses"]["ValidationException"];
         };
     };
-    "auth.login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginRequest"];
-            };
-        };
-        responses: {
-            /** @description `UserResource` */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["UserResource"];
-                        token: string;
-                        expires_at: string;
-                    };
-                };
-            };
-            422: components["responses"]["ValidationException"];
-        };
-    };
     "auth.logout": {
         parameters: {
             query?: never;
@@ -799,35 +722,6 @@ export interface operations {
                 };
             };
             404: components["responses"]["ModelNotFoundException"];
-            422: components["responses"]["ValidationException"];
-        };
-    };
-    "auth.register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description `UserResource` */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        data: components["schemas"]["UserResource"];
-                        token: string;
-                        expires_at: string;
-                    };
-                };
-            };
             422: components["responses"]["ValidationException"];
         };
     };

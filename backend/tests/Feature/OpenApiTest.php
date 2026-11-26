@@ -12,8 +12,6 @@ beforeEach(function () {
 it('すべての API の操作を含む', function () {
     expect($this->document['paths'])->toHaveKeys([
         '/health',
-        '/auth/register',
-        '/auth/login',
         '/auth/logout',
         '/me',
     ]);
@@ -36,21 +34,17 @@ it('auth:sanctum のルートにだけ Bearer の security scheme を付ける',
     $bearer = [['http' => []]];
     expect($security('/me', 'get'))->toBe($bearer)
         ->and($security('/auth/logout', 'post'))->toBe($bearer)
-        ->and($security('/auth/login', 'post'))->toBe([])
-        ->and($security('/auth/register', 'post'))->toBe([])
+        ->and($security('/demo/sessions', 'post'))->toBe([])
         ->and($security('/health', 'get'))->toBe([]);
 });
 
-it('登録とログインの応答にトークンと有効期限を含む', function (string $path, string $status) {
-    $schema = $this->document['paths'][$path]['post']['responses'][$status]['content']['application/json']['schema'];
+it('デモログインの応答にトークンと有効期限を含む', function () {
+    $schema = $this->document['paths']['/demo/sessions']['post']['responses']['201']['content']['application/json']['schema'];
 
     expect($schema['required'] ?? [])->toContain('data', 'token', 'expires_at')
         ->and($schema['properties']['token']['type'])->toBe('string')
         ->and($schema['properties']['expires_at']['type'])->toBe('string');
-})->with([
-    ['/auth/register', '201'],
-    ['/auth/login', '200'],
-]);
+});
 
 it('ヘルスチェックの応答に依存先ごとの結果の型を含む', function () {
     $checks = $this->document['paths']['/health']['get']['responses']['200']['content']['application/json']['schema']['properties']['checks'];

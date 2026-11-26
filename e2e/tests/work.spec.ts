@@ -1,16 +1,17 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createWork, publishNewEpisode, reloadUntil, signUp, waitForForm } from "./helpers";
+import { createWork, startDemoAuthor, publishNewEpisode, reloadUntil, waitForForm } from "./helpers";
 
 // 本家の作品ページから採取した寸法と比べる。PC は 1280×800、スマホは 390×844
 const WORK_TITLE = "作品ページを確かめる作品";
 
 let workPath: string;
 let episodePaths: string[];
+let authorName: string;
 
 test.beforeAll(async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
-  await signUp(page, "E2E 作者");
+  authorName = await startDemoAuthor(page);
   const editPath = await createWork(page, WORK_TITLE);
   workPath = editPath.replace("/my/works/", "/works/");
   episodePaths = [
@@ -57,7 +58,7 @@ test.describe("PC の幅(1280px)", () => {
     await expect(title).toHaveCSS("font-size", "35px");
     await expect(title).toHaveCSS("font-weight", "700");
     await expect(title).toHaveCSS("line-height", "45.5px");
-    const author = page.getByRole("main").getByText("E2E 作者", { exact: true });
+    const author = page.getByRole("main").getByText(authorName, { exact: true });
     await expect(author).toHaveCSS("font-size", "14px");
     await expect(author).toHaveCSS("color", "rgb(34, 34, 34)");
   });
@@ -166,7 +167,7 @@ test.describe("スマホの幅(390px)", () => {
 test("公開済みの話が無い作品には「1話目から読む」を出さない", async ({ page, browser }) => {
   const context = await browser.newContext();
   const author = await context.newPage();
-  await signUp(author, "E2E 作者");
+  await startDemoAuthor(author);
   const editPath = await createWork(author, "話を非公開に戻した作品");
   const episodePath = await publishNewEpisode(author, editPath, "第1話", "本文");
   await author.goto(episodePath.replace("/works/", "/my/works/"));

@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createWork, publishNewEpisode, reloadUntil, signUp } from "./helpers";
+import { createWork, startDemoAuthor, publishNewEpisode, reloadUntil } from "./helpers";
 
 // 本家の話ページから採取した寸法と比べる。PC は 1280×800、スマホは 390×844
 const WORK_TITLE = "話ページを確かめる作品";
@@ -11,7 +11,7 @@ let episodePaths: string[];
 test.beforeAll(async ({ browser }) => {
   const context = await browser.newContext();
   const page = await context.newPage();
-  await signUp(page, "E2E 作者");
+  await startDemoAuthor(page);
   const editPath = await createWork(page, WORK_TITLE);
   workPath = editPath.replace("/my/works/", "/works/");
   episodePaths = [
@@ -154,7 +154,7 @@ test("最初の話に前の話へのリンク、最後の話に次の話への�
 test("前後の話がどちらも無い話には、前後の話の帯を出さない", async ({ page, browser }) => {
   const context = await browser.newContext();
   const author = await context.newPage();
-  await signUp(author, "E2E 作者");
+  await startDemoAuthor(author);
   const editPath = await createWork(author, "1 話だけの作品");
   const path = await publishNewEpisode(author, editPath, "第1話", "ただ一つの話の本文");
   await context.close();

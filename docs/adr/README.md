@@ -18,3 +18,4 @@
 | [0012](0012-deploy-after-ci.md) | デプロイの前にCIを実行する | 採用(実装前) |
 | [0013](0013-laravel-calls-nextjs-via-service-connect.md) | Laravel は Service Connect 経由の通信で Next.js のキャッシュを破棄する | 採用(実装前) |
 | [0014](0014-demo-login-daily-reset.md) | デモログインと日次リセット | 採用(実装前) |
+| [0015](0015-disable-signup-login.md) | 会員登録とログインの入口を閉じ、処理はデモログインだけが使う | 採用 |
