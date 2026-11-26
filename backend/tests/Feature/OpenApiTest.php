@@ -162,3 +162,15 @@ it('公開済みの話の応答の前後の話を、id と title を持つ型か
         ->and($neighbor['type'])->toBe(['object', 'null'])
         ->and(array_keys($neighbor['properties']))->toBe(['id', 'title']);
 })->with(['previous', 'next']);
+
+it('自分の作品の一覧の応答に、話の数と更新日時の型を含む', function () {
+    $item = $this->document['paths']['/my/works']['get']['responses']['200']['content']['application/json']['schema']['properties']['data']['items'];
+    $schema = isset($item['$ref'])
+        ? $this->document['components']['schemas'][str_replace('#/components/schemas/', '', $item['$ref'])]
+        : $item;
+
+    expect($schema['properties']['published_episode_count']['type'])->toBe('integer')
+        ->and($schema['properties']['draft_episode_count']['type'])->toBe('integer')
+        ->and($schema['properties']['updated_at']['type'])->toBe('string')
+        ->and($schema['required'])->toContain('published_episode_count', 'draft_episode_count', 'updated_at');
+});

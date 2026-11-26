@@ -2,19 +2,23 @@
 
 namespace App\Infrastructure\Eloquent\Repositories;
 
+use App\Domain\Episode\EpisodeStatus;
 use App\Domain\Work\Genre;
+use App\Domain\Work\MyWorkSummary;
+use App\Domain\Work\MyWorkSummaryRepositoryInterface;
 use App\Domain\Work\RatingFlag;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkRepositoryInterface;
 use App\Domain\Work\WorkStatus;
 use App\Infrastructure\Eloquent\Models\TagModel;
 use App\Infrastructure\Eloquent\Models\WorkModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
  * @phpstan-import-type WorkChanges from WorkRepositoryInterface
  */
-final class EloquentWorkRepository implements WorkRepositoryInterface
+final class EloquentWorkRepository implements MyWorkSummaryRepositoryInterface, WorkRepositoryInterface
 {
     public function create(
         string $userId,
@@ -65,15 +69,23 @@ final class EloquentWorkRepository implements WorkRepositoryInterface
         return $model === null ? null : self::toEntity($model);
     }
 
-    public function listByUser(string $userId): array
+    public function listSummariesByUser(string $userId): array
     {
+        // works.updated_at は作品の行を書き換えたときだけ変わり、話の保存では変わらない。
+        // 話の保存のたびに作品の行を書き換えず、話の数と更新日時は読むときに episodes から集計する
         return WorkModel::with('tags')
+            ->withCount([
+                'episodes as published_episode_count' => fn (Builder $query) => $query->where('status', EpisodeStatus::Published->value),
+                'episodes as draft_episode_count' => fn (Builder $query) => $query->where('status', EpisodeStatus::Draft->value),
+            ])
+            ->withMax('episodes', 'updated_at')
+            ->withCasts(['episodes_max_updated_at' => 'datetime'])
             ->where('user_id', $userId)
-            ->latest()
-            // created_at は秒単位なので、同じ秒の作品は UUIDv7 の id で作った順に並べる
+            ->orderByRaw('GREATEST(updated_at, COALESCE(episodes_max_updated_at, updated_at)) DESC')
+            // updated_at は秒単位なので、同じ秒の作品は UUIDv7 の id で作った順に並べる
             ->orderByDesc('id')
             ->get()
-            ->map(fn (WorkModel $model) => self::toEntity($model))
+            ->map(fn (WorkModel $model) => self::toSummary($model))
             ->values()
             ->all();
     }
@@ -197,6 +209,19 @@ final class EloquentWorkRepository implements WorkRepositoryInterface
             publishedAt: $model->published_at?->toDateTimeImmutable(),
             lastEpisodePublishedAt: $model->last_episode_published_at?->toDateTimeImmutable(),
             createdAt: $model->created_at->toDateTimeImmutable(),
+        );
+    }
+
+    /**
+     * listSummariesByUser の withCount・withMax で集計した列を読む
+     */
+    private static function toSummary(WorkModel $model): MyWorkSummary
+    {
+        return new MyWorkSummary(
+            work: self::toEntity($model),
+            publishedEpisodeCount: (int) $model->getAttribute('published_episode_count'),
+            draftEpisodeCount: (int) $model->getAttribute('draft_episode_count'),
+            updatedAt: max($model->updated_at, $model->getAttribute('episodes_max_updated_at') ?? $model->updated_at)->toDateTimeImmutable(),
         );
     }
 }

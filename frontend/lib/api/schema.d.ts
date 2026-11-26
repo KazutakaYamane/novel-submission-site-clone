@@ -250,6 +250,24 @@ export interface components {
          * @enum {string}
          */
         Genre: "fantasy" | "action" | "sf" | "love_story" | "romance" | "drama" | "horror" | "mystery" | "nonfiction" | "history" | "criticism" | "others" | "maho" | "fan_fiction";
+        /** MyWorkSummaryResource */
+        MyWorkSummaryResource: {
+            id: string;
+            title: string;
+            catchphrase: string | null;
+            introduction: string;
+            genre: components["schemas"]["Genre"];
+            status: components["schemas"]["WorkStatus"];
+            rating_flags: components["schemas"]["RatingFlag"][];
+            tags: string[];
+            published_at: string | null;
+            last_episode_published_at: string | null;
+            created_at: string;
+            published_episode_count: number;
+            draft_episode_count: number;
+            /** @description 作品の更新日時と、その作品の話の更新日時のうち最も新しいもの */
+            updated_at: string;
+        };
         /** PublicEpisodeResource */
         PublicEpisodeResource: {
             id: string;
@@ -580,14 +598,14 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Array of `WorkResource` */
+            /** @description Array of `MyWorkSummaryResource` */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["WorkResource"][];
+                        data: components["schemas"]["MyWorkSummaryResource"][];
                     };
                 };
             };

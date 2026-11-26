@@ -73,15 +73,6 @@ final class InMemoryWorkRepository implements RollbackableDouble, WorkRepository
         return $work;
     }
 
-    public function listByUser(string $userId): array
-    {
-        $works = array_values(array_filter($this->rows, fn (Work $work) => $work->userId === $userId));
-        // 本物は同じ時刻なら UUIDv7 の id の降順。ここでは連番の id で代える
-        usort($works, fn (Work $a, Work $b) => [$b->createdAt, $b->id] <=> [$a->createdAt, $a->id]);
-
-        return $works;
-    }
-
     public function listByLastEpisodePublishedAt(int $limit): array
     {
         $works = array_values(array_filter($this->rows, fn (Work $work) => $work->lastEpisodePublishedAt !== null));
