@@ -1,6 +1,8 @@
 <?php
 
 use App\Domain\Work\Genre;
+use App\Domain\Work\MyWorkSummary;
+use App\Domain\Work\MyWorkSummaryRepositoryInterface;
 use App\Domain\Work\RatingFlag;
 use App\Domain\Work\Work;
 use App\Domain\Work\WorkAccessDeniedException;
@@ -74,12 +76,31 @@ describe('CreateWorkUseCase', function () {
 });
 
 describe('ListMyWorksUseCase', function () {
-    it('自分の作品だけを新しい順に返す', function () {
-        $old = ($this->addWork)('work-old', 'user-1', createdAt: '2026-10-01');
-        $new = ($this->addWork)('work-new', 'user-1', createdAt: '2026-10-02');
-        ($this->addWork)('work-other', 'user-2');
+    beforeEach(function () {
+        $this->summaries = new class implements MyWorkSummaryRepositoryInterface
+        {
+            /** @var array<string, MyWorkSummary> 作品 id => 一覧の 1 件 */
+            public array $rows = [];
 
-        expect((new ListMyWorksUseCase($this->works))('user-1'))->toBe([$new, $old]);
+            public function listSummariesByUser(string $userId): array
+            {
+                $summaries = array_values(array_filter($this->rows, fn (MyWorkSummary $summary) => $summary->work->userId === $userId));
+                // 本物は同じ日時なら UUIDv7 の id の降順。ここでは連番の id で代える
+                usort($summaries, fn (MyWorkSummary $a, MyWorkSummary $b) => [$b->updatedAt, $b->work->id] <=> [$a->updatedAt, $a->work->id]);
+
+                return $summaries;
+            }
+        };
+    });
+
+    it('自分の作品だけを、話の数と更新日時をつけて更新日時の新しい順に返す', function () {
+        $summaries = $this->summaries;
+        $summary = fn (Work $work, string $updatedAt) => $summaries->rows[$work->id] = new MyWorkSummary($work, 2, 1, new DateTimeImmutable($updatedAt));
+        $old = $summary(($this->addWork)('work-old', 'user-1', createdAt: '2026-10-02'), '2026-10-03');
+        $new = $summary(($this->addWork)('work-new', 'user-1', createdAt: '2026-10-01'), '2026-10-04');
+        $summary(($this->addWork)('work-other', 'user-2'), '2026-10-05');
+
+        expect((new ListMyWorksUseCase($summaries))('user-1'))->toBe([$new, $old]);
     });
 });
 

@@ -2,20 +2,20 @@
 
 namespace App\UseCases\Work;
 
-use App\Domain\Work\Work;
-use App\Domain\Work\WorkRepositoryInterface;
+use App\Domain\Work\MyWorkSummary;
+use App\Domain\Work\MyWorkSummaryRepositoryInterface;
 
 final readonly class ListMyWorksUseCase
 {
     public function __construct(
-        private WorkRepositoryInterface $works,
+        private MyWorkSummaryRepositoryInterface $summaries,
     ) {}
 
     /**
-     * @return list<Work>
+     * @return list<MyWorkSummary>
      */
     public function __invoke(string $userId): array
     {
-        return $this->works->listByUser($userId);
+        return $this->summaries->listSummariesByUser($userId);
     }
 }

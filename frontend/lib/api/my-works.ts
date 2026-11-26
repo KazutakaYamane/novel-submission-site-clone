@@ -6,7 +6,15 @@ import type { components, operations } from "./schema";
 
 type WorkResource = components["schemas"]["WorkResource"];
 
-export type MyWorkSummary = { id: string; title: string; published: boolean };
+export type MyWorkSummary = {
+  id: string;
+  title: string;
+  published: boolean;
+  publishedEpisodeCount: number;
+  draftEpisodeCount: number;
+  // 作品の更新日時と、その作品の話の更新日時のうち最も新しいもの(ISO 8601)
+  updatedAt: string;
+};
 
 export type MyWork = {
   id: string;
@@ -27,7 +35,14 @@ export async function listMyWorks(): Promise<MyWorkSummary[]> {
   );
   // 一覧は作品を指定しないので、403・404 は返らない
   if (!body) throw new Error("/my/works が 403 か 404 を返した");
-  return body.data.map((work) => ({ id: work.id, title: work.title, published: work.published_at !== null }));
+  return body.data.map((work) => ({
+    id: work.id,
+    title: work.title,
+    published: work.published_at !== null,
+    publishedEpisodeCount: work.published_episode_count,
+    draftEpisodeCount: work.draft_episode_count,
+    updatedAt: work.updated_at,
+  }));
 }
 
 export async function getMyWork(workId: string): Promise<MyWork | null> {

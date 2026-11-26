@@ -294,7 +294,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Array of `WorkResource`",
+                        "description": "Array of `MyWorkSummaryResource`",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -303,7 +303,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "$ref": "#/components/schemas/WorkResource"
+                                                "$ref": "#/components/schemas/MyWorkSummaryResource"
                                             }
                                         }
                                     },
@@ -1247,6 +1247,86 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "MyWorkSummaryResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "catchphrase": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "introduction": {
+                        "type": "string"
+                    },
+                    "genre": {
+                        "$ref": "#/components/schemas/Genre"
+                    },
+                    "status": {
+                        "$ref": "#/components/schemas/WorkStatus"
+                    },
+                    "rating_flags": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RatingFlag"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_episode_published_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string"
+                    },
+                    "published_episode_count": {
+                        "type": "integer"
+                    },
+                    "draft_episode_count": {
+                        "type": "integer"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "description": "\u4f5c\u54c1\u306e\u66f4\u65b0\u65e5\u6642\u3068\u3001\u305d\u306e\u4f5c\u54c1\u306e\u8a71\u306e\u66f4\u65b0\u65e5\u6642\u306e\u3046\u3061\u6700\u3082\u65b0\u3057\u3044\u3082\u306e"
+                    }
+                },
+                "required": [
+                    "id",
+                    "title",
+                    "catchphrase",
+                    "introduction",
+                    "genre",
+                    "status",
+                    "rating_flags",
+                    "tags",
+                    "published_at",
+                    "last_episode_published_at",
+                    "created_at",
+                    "published_episode_count",
+                    "draft_episode_count",
+                    "updated_at"
+                ],
+                "title": "MyWorkSummaryResource"
             },
             "PublicEpisodeResource": {
                 "type": "object",

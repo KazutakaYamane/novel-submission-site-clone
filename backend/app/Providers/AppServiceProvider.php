@@ -12,6 +12,7 @@ use App\Domain\Shared\PublicPageCacheInterface;
 use App\Domain\Shared\TransactionInterface;
 use App\Domain\Shared\UuidGeneratorInterface;
 use App\Domain\User\UserRepositoryInterface;
+use App\Domain\Work\MyWorkSummaryRepositoryInterface;
 use App\Domain\Work\WorkRepositoryInterface;
 use App\Infrastructure\Clock\LaravelClock;
 use App\Infrastructure\Database\DatabaseTransaction;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     public array $bindings = [
         UserRepositoryInterface::class => EloquentUserRepository::class,
         WorkRepositoryInterface::class => EloquentWorkRepository::class,
+        MyWorkSummaryRepositoryInterface::class => EloquentWorkRepository::class,
         EpisodeRepositoryInterface::class => EloquentEpisodeRepository::class,
         PasswordHasherInterface::class => LaravelPasswordHasher::class,
         DependencyCheckerInterface::class => LaravelDependencyChecker::class,

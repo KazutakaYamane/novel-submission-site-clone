@@ -43,11 +43,6 @@ interface WorkRepositoryInterface
     public function findByIdForUpdate(string $id): ?Work;
 
     /**
-     * @return list<Work> 作成日時の新しい順。同じ日時なら後に作った順
-     */
-    public function listByUser(string $userId): array;
-
-    /**
      * @return list<Work> 公開済みの話がある作品を、最後に話を公開した日時の新しい順に。同じ日時なら id の昇順
      */
     public function listByLastEpisodePublishedAt(int $limit): array;

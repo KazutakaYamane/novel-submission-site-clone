@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['user_id', 'title', 'catchphrase', 'introduction', 'genre', 'status', 'rating_flags'])]
 #[UseFactory(WorkFactory::class)]
@@ -32,6 +33,14 @@ class WorkModel extends Model
         // 中間テーブルに順序を持たせないので、小文字にした名前のコードポイント順で返す。
         // name の照合順序で並べると、大文字小文字以外が違うだけの名前(「ハハ」と「パパ」)の順が決まらない
         return $this->belongsToMany(TagModel::class, 'work_tags', 'work_id', 'tag_id')->orderBy('normalized_name');
+    }
+
+    /**
+     * @return HasMany<EpisodeModel, $this>
+     */
+    public function episodes(): HasMany
+    {
+        return $this->hasMany(EpisodeModel::class, 'work_id');
     }
 
     /**

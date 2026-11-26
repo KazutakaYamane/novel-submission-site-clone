@@ -60,16 +60,47 @@ afterEach(() => {
 });
 
 describe("listMyWorks", () => {
-  it("トークンを付けて /api/my/works を呼び、タイトルと公開状態を返す", async () => {
+  it("トークンを付けて /api/my/works を呼び、タイトル・公開状態・話の数・更新日時を返す", async () => {
+    const summary = {
+      ...workResource,
+      published_episode_count: 0,
+      draft_episode_count: 2,
+      updated_at: "2026-10-21T05:00:00+00:00",
+    };
     fetchMock.mockResolvedValue(
       Response.json({
-        data: [workResource, { ...workResource, id: "w2", title: "第二作", published_at: "2026-10-09T03:00:00+00:00" }],
+        data: [
+          summary,
+          {
+            ...summary,
+            id: "w2",
+            title: "第二作",
+            published_at: "2026-10-09T03:00:00+00:00",
+            published_episode_count: 3,
+            draft_episode_count: 0,
+            updated_at: "2026-10-09T03:00:00+00:00",
+          },
+        ],
       }),
     );
 
     await expect(listMyWorks()).resolves.toEqual([
-      { id: WORK_ID, title: "星を継ぐ者たち", published: false },
-      { id: "w2", title: "第二作", published: true },
+      {
+        id: WORK_ID,
+        title: "星を継ぐ者たち",
+        published: false,
+        publishedEpisodeCount: 0,
+        draftEpisodeCount: 2,
+        updatedAt: "2026-10-21T05:00:00+00:00",
+      },
+      {
+        id: "w2",
+        title: "第二作",
+        published: true,
+        publishedEpisodeCount: 3,
+        draftEpisodeCount: 0,
+        updatedAt: "2026-10-09T03:00:00+00:00",
+      },
     ]);
     const [url, init] = fetchMock.mock.calls[0];
     expect(url).toBe("http://nginx:8080/api/my/works");
